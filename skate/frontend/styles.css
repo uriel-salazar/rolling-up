@@ -1,0 +1,22 @@
+*{
+    box-sizing: border-box;
+    margin: 0;
+    
+}
+
+.nav-content{
+
+    display: flex;
+    gap:20px;
+    justify-content: flex-end;
+    padding: 15px;
+    background-color: aqua;
+}
+
+
+.nav-elements{
+    margin-right: 25px;
+}
+.nav-elements:first-child{
+    margin-right: auto;
+}
