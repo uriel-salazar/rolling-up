@@ -3,7 +3,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import render,get_object_or_404
 from .models import User,Spots,Rating
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
 from .serializers import UserSerializer,SpotSerializer,RatingSerializer
 from rest_framework.pagination import LimitOffsetPagination
 
@@ -16,11 +16,17 @@ class UserViewSet(ModelViewSet):
     """ User must be authenticated to get http methods like 
     post or delete. 
     """
-
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    pagination_class = LimitOffsetPagination
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    pagination_class = LimitOffsetPagination
+    def get_permissions(self):
+        """ Anybody can create an user but you still have
+        to get authenticated to get acces to more https methods 
+        like put or delete. """
+        if self.action == 'create': # If it's post 
+             return [AllowAny()]
+        return [IsAuthenticatedOrReadOnly()]
+    
     
 class SpotsViewSet(ModelViewSet):
     
