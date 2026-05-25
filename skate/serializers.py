@@ -6,10 +6,12 @@ from skate.media_api import image_logic
 from django.core.files.base import ContentFile
 
 class UserSerializer(serializers.ModelSerializer):
+    
+    password = serializers.CharField(write_only=True) 
+    #only user can see their password.
     class Meta:
         model = User
         fields = ['id','username','email','password','created_at']
-    
     
     
     def validate_password(self, value):
