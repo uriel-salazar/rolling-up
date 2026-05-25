@@ -6,7 +6,6 @@ from skate.media_api import image_logic
 from django.core.files.base import ContentFile
 
 class UserSerializer(serializers.ModelSerializer):
-    password=serializers.CharField(write_only=True)
     class Meta:
         model = User
         fields = ['id','username','email','password','created_at']
@@ -79,6 +78,8 @@ class RatingSerializer(serializers.ModelSerializer):
         # Return it as decimal 
         def get_score(self,column):
             return Decimal(column.score)
+        
+    
         
         
             

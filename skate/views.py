@@ -3,6 +3,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import render,get_object_or_404
 from .models import User,Spots,Rating
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
 from .serializers import UserSerializer,SpotSerializer,RatingSerializer
 from rest_framework.pagination import LimitOffsetPagination
@@ -19,6 +20,25 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
+    
+    @extend_schema(
+        request=UserSerializer,
+        examples=[
+            OpenApiExample(
+                "Create user example",
+                value={
+                    "username": "robert86",
+                    "email": "robert@gmail.com",
+                    "password": "a_secure_password"
+                },
+                request_only=True,
+            )
+        ],
+    ) 
+    def create(self, request, *args, **kwargs):
+        """Function to attach it to decorator"""
+        return super().create(request, *args, **kwargs)
+
     def get_permissions(self):
         """ Anybody can create an user but you still have
         to get authenticated to get acces to more https methods 
@@ -26,6 +46,7 @@ class UserViewSet(ModelViewSet):
         if self.action == 'create': # If it's post 
              return [AllowAny()]
         return [IsAuthenticatedOrReadOnly()]
+    
     
     
 class SpotsViewSet(ModelViewSet):
