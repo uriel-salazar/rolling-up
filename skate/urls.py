@@ -11,7 +11,7 @@ from drf_spectacular.views import  SpectacularAPIView,SpectacularSwaggerView
 
 urlpatterns = [
     path('',home), # html of home 
-    path('admin/', admin.site.urls),
+    path(settings.ADMIN_URL, admin.site.urls),
     # get token 
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     #refresh token url 
