@@ -15,7 +15,9 @@ def home(request):
 
 class UserViewSet(ModelViewSet):
     """ User must be authenticated to get http methods like 
-    post or delete. 
+    put and delete.
+    Includes functions like get_permissions() to check for authenticity. 
+    With pagination included
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer

@@ -2,6 +2,14 @@ from PIL import Image
 from io import BytesIO
 
 def image_resize_800(file):
+    """ Resizes image to 800x800 and sets a quality of 85
+
+    Args:
+        file (_type_): original image 
+
+    Returns:
+        output (BytesIO): image result
+    """
 
     image = Image.open(file)
             
