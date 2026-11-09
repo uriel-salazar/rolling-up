@@ -1,12 +1,14 @@
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.generics import RetrieveUpdateAPIView
 from django.shortcuts import render,get_object_or_404
 from .models import User,Spots,Rating
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
 from .serializers import UserSerializer,SpotSerializer,RatingSerializer
 from rest_framework.pagination import LimitOffsetPagination
+from .permissions import IsOwnerOrReadOnly
 
 
 def home(request):
@@ -22,6 +24,7 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
+    
     
     @extend_schema(
         request=UserSerializer,
@@ -45,15 +48,24 @@ class UserViewSet(ModelViewSet):
         """ Anybody can create an user but you still have
         to get authenticated to get acces to more https methods 
         like put or delete. """
-        if self.action == 'create': # If it's post 
-             return [AllowAny()]
-        return [IsAuthenticatedOrReadOnly()]
-    
+        
+        def get_permissions(self):
+            if self.action == 'create':
+                return [AllowAny()]
+            return [IsAuthenticated()]
+
+        def get_queryset(self):
+            user = self.request.user
+            if not user.is_authenticated:
+                return User.objects.none()
+            if user.is_staff:
+                return User.objects.all()
+            return User.objects.filter(pk=user.pk)
     
     
 class SpotsViewSet(ModelViewSet):
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
     
     queryset= Spots.objects.all()
     pagination_class = LimitOffsetPagination
@@ -72,7 +84,7 @@ class RatingViewSet(ModelViewSet):
     mini_serializer_class= RatingSerializer
     queryset = Rating.objects.all()
     pagination_class = LimitOffsetPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsOwnerOrReadOnly]
     
     def perform_create(self, serializer):
         spot = get_object_or_404(

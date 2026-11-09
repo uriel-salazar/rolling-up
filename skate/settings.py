@@ -1,6 +1,7 @@
 from datetime import timedelta
 import os 
 from pathlib import Path
+import dj_database_url
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +19,17 @@ DEBUG = os.environ.get("DEBUG") == "True"
 
 ADMIN_URL = os.getenv("ADMIN_URL", "admin/")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 
 # Application definition
@@ -40,6 +51,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -71,16 +83,27 @@ WSGI_APPLICATION = 'skate.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),   
-        'USER': os.environ.get("DB_USER"), 
-        'PASSWORD': os.environ.get("DB_PASSWORD"),
-        'HOST': os.environ.get("DB_HOST"),
-        'PORT': os.environ.get("DB_PORT")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get("DB_USER"),
+            'PASSWORD': os.environ.get("DB_PASSWORD"),
+            'HOST': os.environ.get("DB_HOST"),
+            'PORT': os.environ.get("DB_PORT")
+        }
+    }
 
 
 # Password validation
@@ -177,4 +200,13 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
