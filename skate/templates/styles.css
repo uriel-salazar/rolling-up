@@ -18,6 +18,18 @@
     list-style: none;
 }
 .nav-list a{
-    color:black;
+    color:rgb(182, 176, 176);
     text-decoration: none;
+}
+
+.nav-one h1{
+    color: rgb(213, 210, 202);
+}
+
+#navbar-section{
+    background-color: rgb(31, 32, 34);
+}
+
+.hero-image{
+    background-image: (rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("hero-image.jpg");
 }

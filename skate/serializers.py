@@ -37,7 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
     
-    def words_username(self, username):
+    def validate_username(self, username):
         """ 
         Username must have at least 5 words. 
 
@@ -67,35 +67,63 @@ class SpotSerializer(serializers.ModelSerializer):
         model=Spots
         fields = ['id', 'name_spot','image_url','body', 'created_at']
         read_only_fields = ['id','created_at','user']
-        
-    def create(self,validated_data):
-        instance = super().create(validated_data)
+
+    def validate_image_url(self, value):
+        if value is None:
+            return value
+
+        max_size = 5 * 1024 * 1024
+        if value.size > max_size:
+            raise serializers.ValidationError("Image must be 5 MB or smaller.")
+
+        allowed_types = {"image/jpeg", "image/png", "image/webp"}
+        content_type = getattr(value, "content_type", None)
+        if content_type not in allowed_types:
+            raise serializers.ValidationError(
+                "Unsupported image format. Use JPEG, PNG or WebP."
+            )
+        return value
+
+    def _resize_image(self, instance):
+        if not instance.image_url:
+            return
+
         original_name = instance.image_url.name
-        
-        if instance.image_url:
-            #function that resizes image 
-            resized_image = image_logic.image_resize_800(instance.image_url)
-    
-            instance.image_url.delete(save=False) # Deletes original image 
-            instance.image_url.save(
+        #function that resizes image 
+        resized_image = image_logic.image_resize_800(instance.image_url)
+
+        instance.image_url.delete(save=False) # Deletes original image 
+        instance.image_url.save(
             original_name,  # using original url name 
             ContentFile(resized_image.getvalue()),
             save=True
         )
 
+    def create(self,validated_data):
+        instance = super().create(validated_data)
+        self._resize_image(instance)
         return instance
-            
-            
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        if 'image_url' in validated_data:
+            self._resize_image(instance)
+        return instance
+
+
 class RatingSerializer(serializers.ModelSerializer):
-        class Meta:
-            model = Rating
-            fields = "__all__"
-            read_only_fields = ['id','created_at','user','spot']
-        
-        # Return it as decimal 
-        def get_score(self,column):
-            return Decimal(column.score)
-        
+    score = serializers.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        min_value=Decimal('1'),
+        max_value=Decimal('5'),
+        coerce_to_string=False,
+    )
+
+    class Meta:
+        model = Rating
+        fields = "__all__"
+        read_only_fields = ['id','created_at','user','spot']
     
         
         
