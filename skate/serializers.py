@@ -29,6 +29,8 @@ class UserSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
+        """ Create user and save their password
+        """
         user = User(
             username=validated_data['username'],
             email=validated_data['email'],
@@ -85,6 +87,10 @@ class SpotSerializer(serializers.ModelSerializer):
         return value
 
     def _resize_image(self, instance):
+        """ 
+        Rewrite the old image with a resized image of 800x800 and keep
+        the original url name.
+        """
         if not instance.image_url:
             return
 
@@ -115,7 +121,8 @@ class RatingSerializer(serializers.ModelSerializer):
     score = serializers.DecimalField(
         max_digits=4,
         decimal_places=2,
-        min_value=Decimal('1'),
+        # rating consists of 1 to 5 score 
+        min_value=Decimal('1'), 
         max_value=Decimal('5'),
         coerce_to_string=False,
     )
