@@ -86,34 +86,37 @@ class SpotSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def _resize_image(self, instance):
+    def _process_image(self, image):
         """ 
-        Rewrite the old image with a resized image of 800x800 and keep
-        the original url name.
+        Resize the uploaded image to 800x800 with quality 85 before it is
+        stored, keeping the original file name.
         """
-        if not instance.image_url:
-            return
-
-        original_name = instance.image_url.name
-        #function that resizes image 
-        resized_image = image_logic.image_resize_800(instance.image_url)
-
-        instance.image_url.delete(save=False) # Deletes original image 
-        instance.image_url.save(
-            original_name,  # using original url name 
-            ContentFile(resized_image.getvalue()),
-            save=True
-        )
+        try:
+            image.seek(0)
+            resized_image = image_logic.image_resize_800(image)
+        except Exception:
+            raise serializers.ValidationError(
+                {"image_url": "Could not process the uploaded image."}
+            )
+        return ContentFile(resized_image.getvalue(), name=image.name)
 
     def create(self,validated_data):
-        instance = super().create(validated_data)
-        self._resize_image(instance)
-        return instance
+        if validated_data.get('image_url'):
+            validated_data['image_url'] = self._process_image(validated_data['image_url'])
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
+        old_image_name = instance.image_url.name if instance.image_url else None
+        new_image = validated_data.get('image_url')
+
+        if new_image:
+            validated_data['image_url'] = self._process_image(new_image)
+
         instance = super().update(instance, validated_data)
-        if 'image_url' in validated_data:
-            self._resize_image(instance)
+
+        if new_image and old_image_name and old_image_name != instance.image_url.name:
+            instance.image_url.storage.delete(old_image_name)
+
         return instance
 
 

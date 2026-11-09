@@ -17,6 +17,20 @@ SECRET_KEY=os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG") == "True"
 
+USE_CLOUDINARY = os.environ.get("USE_CLOUDINARY", "False").lower() == "true"
+
+_cloudinary_cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+_cloudinary_api_key = os.environ.get("CLOUDINARY_API_KEY")
+_cloudinary_api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+
+if _cloudinary_cloud_name and _cloudinary_api_key and _cloudinary_api_secret:
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": _cloudinary_cloud_name,
+        "API_KEY": _cloudinary_api_key,
+        "API_SECRET": _cloudinary_api_secret,
+        "SECURE": True,
+    }
+
 ADMIN_URL = os.getenv("ADMIN_URL", "admin/")
 
 ALLOWED_HOSTS = [
@@ -46,6 +60,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
    # 'django.contrib.sites' #fix /admin endpoint 
 ]
+
+if USE_CLOUDINARY:
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
 
 
 
@@ -203,7 +220,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": (
+            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            if USE_CLOUDINARY
+            else "django.core.files.storage.FileSystemStorage"
+        ),
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
