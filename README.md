@@ -230,10 +230,20 @@ policy](https://operations.osmfoundation.org/policies/nominatim/):
   application,
 * the answers are cached for 24 hours, so a popular search is not
   requested again,
-* the endpoint is throttled to `30/min` per user,
+* the whole application is limited to **one request per second**,
+  globally and not per user, because the policy applies the limit to
+  the sum of the traffic of every user,
 * a search needs at least three characters,
-* the browser waits 400 ms after the last keystroke before it asks,
-  and cancels the request that is still running when a new one starts.
+* the search is only sent when the visitor asks for it, with the
+  **Buscar** button or with the `Enter` key.
+
+> **No auto-complete.** The policy states that *"auto-complete search
+> is not yet supported by Nominatim and you must not implement such a
+> service on the client side using the API"*, and lists it under the
+> uses that are **strictly forbidden**. The form therefore does not
+> search while the visitor types: the results only appear once the
+> search is confirmed. The visitor still gets a list of results to
+> pick from, so nothing is lost.
 
 Not every skatepark exists in OpenStreetMap. The search is a helper,
 never a requirement: a spot can always be placed by clicking on the
@@ -270,7 +280,79 @@ without a location keeps `NULL`.
 | `GEOCODE_CACHE_SECONDS`     | `86400`        | How long a search is cached, seconds.       |
 | `GEOCODE_LANGUAGE`          | `es`           | Language of the results.                    |
 | `GEOCODE_THROTTLE_RATE`     | `30/min`       | Searches allowed per user and minute.       |
+| `NOMINATIM_MAX_REQUESTS_PER_SECOND` | `1`    | Requests per second for the whole site.     |
 | `NOMINATIM_USER_AGENT`      | `RollingUp-SkateSpots/1.0 (...)` | User-Agent sent to Nominatim.      |
+| `OSM_TILE_URL`              | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | Tile URL of the map.      |
+| `OSM_TILE_MAX_ZOOM`         | `19`           | Highest zoom level of the map.              |
+| `OSM_TILE_SUBDOMAINS`       | *(empty)*      | Only for a provider that uses subdomains.   |
+| `OSM_TILE_API_KEY`          | *(empty)*      | Key of the tile provider, CARTO needs one.  |
+| `OSM_CONTACT_EMAIL`         | `rollingup.app@gmail.com` | Contact address shown on the map. |
+| `SECURE_REFERRER_POLICY`    | `strict-origin-when-cross-origin` | Lets the browser send the Referer to the tile servers. |
+
+---
+
+## Following the OpenStreetMap usage policies
+
+The application uses three services of the OpenStreetMap Foundation.
+Each one has its own usage policy and the application follows all
+three.
+
+### The tiles &mdash; [Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/)
+
+The provider of the tiles is a setting, so it can be changed without a
+new release, which is what the policy asks for.
+
+| Provider | Key | Notes |
+| -------- | --- | ----- |
+| The standard OpenStreetMap tiles (default) | not needed | Free, no account. The dark look is done with a CSS filter. |
+| The CARTO dark basemaps | **required** | Looks better for a dark interface, but CARTO asks for an API key since September 2026. |
+
+| Requirement | How it is met |
+| ----------- | ------------- |
+| Use exactly `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | The default `OSM_TILE_URL` is that url and it has no `{s}` subdomain shortcut, the `a.` / `b.` / `c.` hosts are **not** used. |
+| Show a clear attribution | The attribution is rendered by Leaflet in the corner of the map and keeps a readable size and contrast. It is never hidden behind a toggle or off screen. |
+| Offer a way to report a map problem | The attribution links to `https://www.openstreetmap.org/fixthemap`. |
+| Publish a contact address | The attribution links to `OSM_CONTACT_EMAIL`. |
+| Send a valid `Referer` | `SECURE_REFERRER_POLICY` is set to `strict-origin-when-cross-origin`. Django's default, `same-origin`, drops the `Referer` on every cross origin request, which the policy forbids. |
+| Do not hide the tile URL in the code | `OSM_TILE_URL` is a setting, so the service can be switched without a new release. |
+| Do not prefetch or scrape tiles | Nothing is fetched that the visitor is not looking at. There is no offline mode. |
+| Honour the caching headers | The browser caches the tiles with the headers the server sends. |
+| Credit both projects on CARTO | The attribution adds the credit of CARTO when that provider is used, as their terms ask. |
+
+> **Without a CARTO key the map does not work.** Since September 2026
+> CARTO answers every request without a key with the same placeholder
+> tile that says *API KEY REQUIRED*, whatever the location is. Get a
+> free key at <https://carto.com/basemaps/apikey/> and put it in
+> `OSM_TILE_API_KEY`.
+>
+> ```bash
+> OSM_TILE_URL="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+> OSM_TILE_SUBDOMAINS="abcd"
+> OSM_TILE_MAX_ZOOM="20"
+> OSM_TILE_API_KEY="your_key_here"
+> ```
+
+### The geocoder &mdash; [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/)
+
+| Requirement | How it is met |
+| ----------- | ------------- |
+| Maximum of one request per second | `NOMINATIM_MAX_REQUESTS_PER_SECOND` (1 by default) is applied globally by `skate.geocode.services`, so the traffic of every user is added up and stays under the limit. |
+| Identify the application | Every request carries `User-Agent: RollingUp-SkateSpots/1.0 (https://rolling-up.onrender.com)`. |
+| Cache the results | The answers are cached for 24 hours. |
+| Use a proxy | The browser never calls Nominatim, it goes through `/api/geocode/search/`. |
+| **No auto-complete** | The form does not search while the visitor types. The search is only sent when it is confirmed, because the policy forbids building an auto-complete on the public API. |
+| Display the attribution | The search box shows *"Búsqueda por © OpenStreetMap contributors"*. |
+| Stay switchable | `NOMINATIM_API_URL` is a setting. |
+
+### The data &mdash; Overpass API
+
+The importer sends one query per run, with the same identifying
+`User-Agent`, and it caches the answers it receives.
+
+> **Note:** the global rate limit is held in the memory of the process.
+> When the application runs with more than one worker, each worker
+> keeps its own counter. Use a shared cache or a single worker if the
+> traffic grows.
 
 ---
 

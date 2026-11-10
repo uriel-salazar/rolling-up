@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import threading
+import time
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -25,6 +27,51 @@ from django.conf import settings
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
+
+
+class NominatimRateLimiter:
+    """Keep the whole application below the Nominatim request limit.
+
+    The Nominatim usage policy allows an absolute maximum of one
+    request per second **for the whole site**, the traffic of every
+    user is added up. A per user throttle is therefore not enough, the
+    limit has to be global.
+
+    The limiter serialises the requests and spaces them out, so two
+    users searching at the same time result in one request and one
+    queued behind it.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._last_request = 0.0
+
+    def reset(self) -> None:
+        """Forget the last request, mostly useful for the tests."""
+        with self._lock:
+            self._last_request = 0.0
+
+    def acquire(self) -> None:
+        """Wait until a request may be sent."""
+        max_per_second = settings.NOMINATIM_MAX_REQUESTS_PER_SECOND
+        if max_per_second <= 0:
+            return
+
+        interval = 1.0 / max_per_second
+
+        with self._lock:
+            now = time.monotonic()
+            wait_for = self._last_request + interval - now
+            if wait_for > 0:
+                logger.debug(
+                    "Waiting %ss before the next Nominatim request.", round(wait_for, 2)
+                )
+                time.sleep(wait_for)
+            self._last_request = time.monotonic()
+
+
+_rate_limiter = NominatimRateLimiter()
+
 
 
 class GeocodingError(Exception):
@@ -83,7 +130,13 @@ def _cache_key(query: str) -> str:
 
 
 def _request_nominatim(query: str) -> List[Dict[str, Any]]:
-    """Perform the actual request against Nominatim."""
+    """Perform the actual request against Nominatim.
+
+    The global rate limiter is used here, right before the request, so
+    the answers that come from the cache never wait for it.
+    """
+    _rate_limiter.acquire()
+
     params = {
         "q": query,
         "format": "jsonv2",

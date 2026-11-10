@@ -8,13 +8,16 @@ and the geocoding proxy. The Nominatim service is always mocked.
 from __future__ import annotations
 
 import logging
+import re
+import time
 from io import BytesIO
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.conf import settings
+from django.test import TestCase, override_settings
 from PIL import Image
 from rest_framework.test import APIClient
 
@@ -350,6 +353,7 @@ class SpotFormPageTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@override_settings(NOMINATIM_MAX_REQUESTS_PER_SECOND=0)
 class GeocodeSearchTests(TestCase):
     """The Nominatim proxy."""
 
@@ -438,6 +442,133 @@ class GeocodeSearchTests(TestCase):
         response = self.client.get("/api/geocode/search/", {"q": "one too many"})
 
         self.assertEqual(response.status_code, 429)
+
+
+class NominatimRateLimiterTests(TestCase):
+    """The whole application has to stay below one request per second.
+
+    The Nominatim usage policy applies the limit to the whole site and
+    not to every user on its own, so the limit is global.
+    """
+
+    def setUp(self):
+        from skate.geocode import services
+
+        self.services = services
+        self.limiter = services._rate_limiter
+        self.limiter.reset()
+
+    def tearDown(self):
+        self.limiter.reset()
+
+    def test_two_requests_are_spaced_out(self):
+        with override_settings(NOMINATIM_MAX_REQUESTS_PER_SECOND=20):
+            started = time.monotonic()
+            self.limiter.acquire()
+            self.limiter.acquire()
+            elapsed = time.monotonic() - started
+
+        # At 20 requests per second the second one waits 50 milliseconds.
+        self.assertGreaterEqual(elapsed, 0.04)
+
+    def test_the_limit_can_be_switched_off(self):
+        with override_settings(NOMINATIM_MAX_REQUESTS_PER_SECOND=0):
+            started = time.monotonic()
+            self.limiter.acquire()
+            self.limiter.acquire()
+            elapsed = time.monotonic() - started
+
+        self.assertLess(elapsed, 0.01)
+
+    def test_the_default_rate_is_one_request_per_second(self):
+        self.assertEqual(settings.NOMINATIM_MAX_REQUESTS_PER_SECOND, 1.0)
+
+
+class TileUsagePolicyTests(TestCase):
+    """The map follows the tile usage policy of the OpenStreetMap servers.
+
+    https://operations.osmfoundation.org/policies/tiles/
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="skater", email="skater@example.com", password="secret-password"
+        )
+        self.client = APIClient()
+
+    def test_the_tile_url_is_the_one_the_policy_asks_for(self):
+        """The standard OpenStreetMap tiles are the default."""
+        self.assertEqual(
+            settings.OSM_TILE_URL,
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        )
+
+    def test_the_tile_url_has_no_subdomain_shortcut(self):
+        """The policy asks for exactly the url above, without {s}."""
+        self.assertNotIn("{s}", settings.OSM_TILE_URL)
+        self.assertEqual(settings.OSM_TILE_SUBDOMAINS, "")
+
+    def test_the_map_uses_the_configured_tile_url(self):
+        response = self.client.get("/spots/new/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, settings.OSM_TILE_URL)
+
+    def test_the_carto_basemaps_can_be_used_instead(self):
+        """The provider is a setting, so it can be changed at any time."""
+        with override_settings(
+            OSM_TILE_URL="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+            OSM_TILE_SUBDOMAINS="abcd",
+        ):
+            response = self.client.get("/spots/new/")
+
+        html = response.content.decode()
+
+        self.assertIn("basemaps.cartocdn.com", html)
+        self.assertIn('data-tile-subdomains="abcd"', html)
+        # CARTO asks for the credit of both projects.
+        self.assertIn("carto.com/attribution", html)
+
+    def test_the_attribution_is_shown_on_the_map(self):
+        response = self.client.get("/spots/new/")
+
+        self.assertContains(response, "OpenStreetMap")
+        self.assertContains(response, "openstreetmap.org/copyright")
+
+    def test_the_map_offers_a_link_to_report_a_problem(self):
+        response = self.client.get("/spots/new/")
+
+        self.assertContains(response, "openstreetmap.org/fixthemap")
+
+    def test_the_map_publishes_a_contact_address(self):
+        response = self.client.get("/spots/new/")
+
+        self.assertContains(response, settings.OSM_CONTACT_EMAIL)
+
+    def test_the_attribution_is_one_well_formed_attribute(self):
+        """The links inside the attribution must not cut the attribute."""
+        response = self.client.get("/spots/new/")
+        html = response.content.decode()
+
+        match = re.search(r'data-tile-attribution="([^"]*)"', html)
+
+        self.assertIsNotNone(match)
+        self.assertIn('contributors', match.group(1))
+        self.assertIn('openstreetmap.org/copyright', match.group(1))
+        self.assertIn('fixthemap', match.group(1))
+
+    def test_the_browser_sends_a_referer_to_the_tile_servers(self):
+        """Django must not drop the Referer on the cross origin requests."""
+        self.assertEqual(
+            settings.SECURE_REFERRER_POLICY, "strict-origin-when-cross-origin"
+        )
+
+    def test_the_referer_policy_reaches_the_response(self):
+        response = self.client.get("/spots/new/")
+
+        self.assertEqual(
+            response.headers.get("Referrer-Policy"), "strict-origin-when-cross-origin"
+        )
 
 
 class FakeNominatimResponse:

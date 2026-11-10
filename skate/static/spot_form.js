@@ -7,8 +7,12 @@
  *
  * The search goes through the backend proxy at /api/geocode/search/,
  * which identifies the application, caches the answers and throttles
- * the requests. Requests are debounced here so nothing is sent on
- * every keystroke.
+ * the requests.
+ *
+ * The search is only sent when the visitor asks for it, by pressing
+ * Enter or the search button. The Nominatim usage policy forbids
+ * building an auto-complete on top of the public API, so nothing is
+ * requested while the visitor is typing.
  */
 
 (function () {
@@ -17,7 +21,6 @@
     // Guadalajara, Mexico. Used when the spot has no location yet.
     const DEFAULT_CENTER = [20.6767, -103.3475];
     const DEFAULT_ZOOM = 13;
-    const SEARCH_DEBOUNCE_MS = 400;
     const MIN_QUERY_LENGTH = 3;
 
     const mapElement = document.getElementById('map');
@@ -27,6 +30,7 @@
 
     const form = document.getElementById('spot-form');
     const searchInput = document.getElementById('location-search');
+    const searchButton = document.getElementById('search-button');
     const resultsBox = document.getElementById('search-results');
     const latitudeInput = document.getElementById('latitude');
     const longitudeInput = document.getElementById('longitude');
@@ -40,7 +44,6 @@
 
     let map = null;
     let marker = null;
-    let debounceTimer = null;
     let searchController = null;
 
     // -----------------------------------------------------------------
@@ -140,11 +143,22 @@
             scrollWheelZoom: false,
         });
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution:
-                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
+        // The tile URL and the attribution come from the server, so the
+        // provider can be switched without a new release. The usage
+        // policies of the tile services ask for exactly that, and for a
+        // clearly visible attribution.
+        // https://operations.osmfoundation.org/policies/tiles/
+        const tileOptions = {
+            maxZoom: Number(mapElement.dataset.tileMaxZoom) || 19,
+            attribution: mapElement.dataset.tileAttribution,
+        };
+
+        // Only the providers that use subdomains need this one.
+        if (mapElement.dataset.tileSubdomains) {
+            tileOptions.subdomains = mapElement.dataset.tileSubdomains;
+        }
+
+        L.tileLayer(mapElement.dataset.tileUrl, tileOptions).addTo(map);
 
         // The wheel should only zoom the map once the user clicked it,
         // otherwise the page can not be scrolled over the map.
@@ -259,23 +273,35 @@
             });
     }
 
-    searchInput.addEventListener('input', function () {
+    /**
+     * Run the search the visitor asked for.
+     *
+     * Nothing is sent while the visitor types: the Nominatim usage
+     * policy forbids an auto-complete built on the public API. The
+     * request is only sent when the search is confirmed.
+     */
+    function submitSearch() {
         const query = searchInput.value.trim();
-
-        window.clearTimeout(debounceTimer);
 
         if (query.length < MIN_QUERY_LENGTH) {
             hideResults();
+            showStatus(
+                'Escribe al menos ' + MIN_QUERY_LENGTH + ' caracteres para buscar.',
+                'error'
+            );
             return;
         }
 
-        debounceTimer = window.setTimeout(function () {
-            runSearch(query);
-        }, SEARCH_DEBOUNCE_MS);
-    });
+        runSearch(query);
+    }
+
+    searchButton.addEventListener('click', submitSearch);
 
     searchInput.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            submitSearch();
+        } else if (event.key === 'Escape') {
             hideResults();
         }
     });
