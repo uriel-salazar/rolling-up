@@ -146,18 +146,27 @@ header .navbar{
 /* Hero section styling */ 
 
 .hero-section{
+    position: relative;
     min-height: 100vh;
-    background-color: var(--primary-color);
+    background-color: #111;
+    background-image: linear-gradient(90deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.5) 45%, rgba(0,0,0,0) 80%), url("images/stocksnap-skateboarding-2562281_1920.jpg");
+    background-size: cover;
+    background-position: center right;
+    background-repeat: no-repeat;
     overflow-x: clip;
 }
 
 
-.hero-section .section-content{
+.hero-section .hero-content{
     display: flex;
     align-items: center;
-    min-height: 100vh;
+    min-height: 100%;
     color: var(--white-color);
-    justify-content:space-between;
+    justify-content: flex-start;
+    position: relative;
+    z-index: 2;
+    padding-left: 6%;
+    padding-top: 100px;
 }
 
 .hero-section .hero-details .title{
@@ -165,9 +174,9 @@ header .navbar{
     color: var(--secondary-color);
     font-family: 'Miniver',sans-serif;
     display: inline-block;
-    transform-origin: left center;
     padding-block: 0.15em;
     margin-bottom: 4px;
+    max-width: 600px;
     animation: animated-text 0.7s ease both;
 }
 
@@ -187,7 +196,7 @@ header .navbar{
 
 .hero-section .hero-details .subtitle{
     margin-top: 8px;
-    max-width: 70%;
+    max-width: 600px;
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-semibold);
 
@@ -195,7 +204,7 @@ header .navbar{
 
 .hero-section .hero-details .description{
     font-size: var(--font-size-m);
-    max-width: 70%;
+    max-width: 600px;
     margin-bottom: 2rem;
     font-size: var(--font-size-m);
 }
@@ -213,7 +222,7 @@ header .navbar{
    
     padding: 10px 26px;
     border: 2px solid transparent;
-    color: var(--primary-color);
+    color: var(--white-color);
     border-radius: var(--border-radius-m);
     background-color: var(--secondary-color);
     font-weight: var(--font-weight-medium);
@@ -302,11 +311,11 @@ header .navbar{
     }
 
 
-    .hero-section .section-content{
+    .hero-section .hero-content{
     gap: 50px;
-    text-align: center;
-    padding: 30px 20px 20px;
-    flex-direction: column-reverse;
+    text-align: left;
+    padding: 100px 20px 20px;
+    flex-direction: column;
     justify-content: center;
     }
         
