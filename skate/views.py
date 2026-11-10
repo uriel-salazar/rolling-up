@@ -1,8 +1,9 @@
-
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import RetrieveUpdateAPIView
+from django.db import IntegrityError
 from django.shortcuts import render,get_object_or_404
+from rest_framework import status
 from .models import User,Spots,Rating
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
@@ -77,12 +78,20 @@ class SpotsViewSet(ModelViewSet):
         serializer.save(user=self.request.user)
     
 class RatingViewSet(ModelViewSet):
-    
+
     serializer_class = RatingSerializer
-    mini_serializer_class= RatingSerializer
     queryset = Rating.objects.all()
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAuthenticated,IsOwnerOrReadOnly]
+
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except IntegrityError:
+            return Response(
+                {"detail": "You already rated this spot."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     def perform_create(self, serializer):
         spot_id = self.kwargs.get('spots_id')

@@ -11,14 +11,13 @@ class UserSerializer(serializers.ModelSerializer):
     
     """
     
-    password = serializers.CharField(write_only=True) 
-    email = serializers.CharField(write_only=True)
-    #only user can see their password.
+    password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(write_only=True)
+    # email and password are never exposed in responses
     class Meta:
         model = User
         fields = ['id','username','email','password','created_at']
-    
-    
+
     def validate_password(self, value):
         """
         Add password validation from settings.py
@@ -51,8 +50,8 @@ class UserSerializer(serializers.ModelSerializer):
         Returns:
             username
         """
-        if len(username.split()) < 5:
-            raise serializers.ValidationError(f"'{username}' must have at least 5 words.")
+        if len(username) < 5:
+            raise serializers.ValidationError(f"'{username}' must have at least 5 characters.")
         return username
 class SpotSerializer(serializers.ModelSerializer):
     """ Serializer for spots.
