@@ -4,6 +4,7 @@ from rest_framework.generics import RetrieveUpdateAPIView
 from django.db import IntegrityError
 from django.shortcuts import render,get_object_or_404
 from rest_framework import status
+from rest_framework.response import Response
 from .models import User,Spots,Rating
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny

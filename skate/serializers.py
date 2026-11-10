@@ -35,8 +35,18 @@ class UserSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             email=validated_data['email'],
         )
-        user.set_password(validated_data['password'])  
+        user.set_password(validated_data['password'])
         user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        """ Hash the password before updating the user
+        """
+        password = validated_data.pop('password', None)
+        user = super().update(instance, validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
         return user
     
     def validate_username(self, username):
