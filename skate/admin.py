@@ -27,9 +27,10 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Spots)
 class SpotsAdmin(admin.ModelAdmin):
-    list_display = ('name_spot', 'user', 'created_at')
+    list_display = ('name_spot', 'user', 'source', 'created_at')
+    list_filter = ('source', 'osm_type')
     search_fields = ('name_spot',)
-    readonly_fields = ('created_at',)
+    readonly_fields = ('created_at', 'source', 'osm_id', 'osm_type', 'osm_metadata')
 
 
 @admin.register(Rating)

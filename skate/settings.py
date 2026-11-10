@@ -215,6 +215,35 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 
+
+# OpenStreetMap / Overpass API configuration
+#
+# Used by the `import_osm_skateparks` management command. The endpoint
+# and timings can be overridden through the environment without touching
+# the code. No credentials are required: the Overpass API is a public
+# service, but it does require a descriptive User-Agent.
+
+OVERPASS_API_URL = os.environ.get(
+    "OVERPASS_API_URL", "https://overpass-api.de/api/interpreter"
+)
+OVERPASS_TIMEOUT = int(os.environ.get("OVERPASS_TIMEOUT", "120"))
+OVERPASS_MAX_RETRIES = int(os.environ.get("OVERPASS_MAX_RETRIES", "3"))
+OVERPASS_RETRY_BACKOFF = float(os.environ.get("OVERPASS_RETRY_BACKOFF", "3"))
+OVERPASS_USER_AGENT = os.environ.get(
+    "OVERPASS_USER_AGENT",
+    "RollingUp-SkateSpots/1.0 (https://rolling-up.onrender.com)",
+)
+
+# Nominatim is used only to turn a place name into a bounding box when
+# the Overpass `geocodeArea` specialiser is not available.
+NOMINATIM_API_URL = os.environ.get(
+    "NOMINATIM_API_URL", "https://nominatim.openstreetmap.org/search"
+)
+NOMINATIM_TIMEOUT = int(os.environ.get("NOMINATIM_TIMEOUT", "30"))
+
+# Username of the service account that owns OSM imported spots.
+OSM_SERVICE_USER = os.environ.get("OSM_SERVICE_USER", "osm_importer")
+
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 

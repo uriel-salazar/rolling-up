@@ -20,6 +20,7 @@ PyJWT==2.12.1
 python-dotenv==1.2.2
 PyYAML==6.0.3
 referencing==0.37.0
+requests==2.34.2
 rpds-py==0.30.0
 sqlparse==0.5.5
 tzdata==2026.2

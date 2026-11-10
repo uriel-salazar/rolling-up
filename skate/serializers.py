@@ -77,8 +77,17 @@ class SpotSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model=Spots
-        fields = ['id', 'name_spot','image_url','body', 'created_at']
-        read_only_fields = ['id','created_at','user']
+        fields = [
+            'id', 'name_spot', 'image_url', 'body', 'created_at',
+            'latitude', 'longitude', 'source', 'osm_id', 'osm_type',
+            'osm_metadata',
+        ]
+        # The provenance fields are managed by the importer, a user may
+        # not set them through the API.
+        read_only_fields = [
+            'id', 'created_at', 'user', 'source',
+            'osm_id', 'osm_type', 'osm_metadata',
+        ]
 
     def validate_image_url(self, value):
         if value is None:
