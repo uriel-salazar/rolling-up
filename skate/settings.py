@@ -46,6 +46,20 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 
+# Production security settings
+# Only active when DEBUG=False (set in .env), so local http dev still works
+#
+
+#if not DEBUG:
+  #  SECURE_SSL_REDIRECT = True
+ #   SESSION_COOKIE_SECURE = True
+ #   CSRF_COOKIE_SECURE = True
+ #  SECURE_HSTS_SECONDS = 31536000  # 1 year
+ #   SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#
+
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -218,6 +232,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'skate' / 'static']
 
 STORAGES = {
     "default": {

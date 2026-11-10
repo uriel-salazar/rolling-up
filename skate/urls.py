@@ -10,7 +10,7 @@ from drf_spectacular.views import  SpectacularAPIView,SpectacularSwaggerView
 
 
 urlpatterns = [
-    path('',home), # html of home 
+    path('',home), # html of home
     path(settings.ADMIN_URL, admin.site.urls),
     # get token 
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -31,5 +31,6 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 

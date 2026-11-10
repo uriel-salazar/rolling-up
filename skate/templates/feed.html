@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <section id="navbar-section">
+        <div class="nav-bar">
+            <div class="nav-one">
+                <h1> Skate Spots API </h1>
+            </div>
+            <div class="nav-list">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/feed/">Feed</a></li>
+                    <li><a href="/profile/">Profile</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="spots-feed">
+        <h2>All spots</h2>
+        <div id="spots-list"></div>
+    </section>
+
+    <script>
+        async function loadSpots() {
+            const res = await fetch('/api/spots/?limit=20');
+            const data = await res.json();
+            const list = document.getElementById('spots-list');
+
+            if (!data.results || data.results.length === 0) {
+                list.innerHTML = '<p>No spots yet.</p>';
+                return;
+            }
+
+            list.innerHTML = data.results.map(spot => `
+                <div class="spot-card">
+                    ${spot.image_url ? `<img src="${spot.image_url}" alt="${spot.name_spot}">` : ''}
+                    <h3>${spot.name_spot}</h3>
+                    <p>${spot.body ?? ''}</p>
+                </div>
+            `).join('');
+        }
+
+        loadSpots();
+    </script>
+</body>
+</html>

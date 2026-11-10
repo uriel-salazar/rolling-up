@@ -1,32 +1,62 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-    <link rel="stylesheet" href="styles.css">
+    <title> Coffee Website </title>
+    <!-- Linking Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Metamorphous&family=Miniver&family=Poppins:ital,wght@0,400;0,500;0,700;1,300;1,400;1,600&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+    </style>
+
 </head>
 <body>
-    <section id="navbar-section">
-        <div class="nav-bar">
-            <div class="nav-one">
-            <h1> Skate Spots API </h1>
-            </div>
-            <div class="nav-list">
-                <ul>
-                    <li><a href="#">Logo</a></li>
-                    <li><a href="#">Feed</a></li>
-                    <li><a href="#">Profile</a></li>
-                </ul>
-            </div>
-        </div>
-    </section>
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <header>
+                <nav class ="navbar section-content">
+                    <h2 class = "logo-text" > Rolling Up</h2>
+                <ul class="nav-menu">
+                    <button id="menu-close-button" class="fas fa-times"> </button>
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link"> Buscar </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link"> Galeria  </a>
+                    </li>
+                      <li class="nav-item">
+                        <a href="#" class="nav-link"> Nosotros  </a>
+                    </li>
+                    
     
-    <section class="hero-section">
-    <div class="hero-image">
-        <div class="hero-text">
-            <h1> Search <span>for you favorite skate spots</span> </h1>
-        </div>
-    </div>
-</body>
+                </ul>
+
+                <button id='menu-open-button' class='fas fa-bars'></button>
+                </nav>
+            </header>
+            
+            <div class="section-content">
+            <div class="hero-details">
+                <h2 class="title"> The perfect cup!</h2>
+                 <h3 class="subtitle"> Make your day great with our special coffee!</h3>
+                 <p class="description">Welcome to our little coffee shop, where you will find a bunch 
+                    of really cool stuff and the tastiest coffees in the world!
+                 </p>
+
+                 <div class="buttons">
+                    <a href="#" class="button order-now"> Order Now</a>
+                    <a href="#" class="button contact-us"> Contact Us</a>
+
+                 </div>
+            </div>
+           
+        </section>
+
+
+    </main>
+    </body>
 </html>
