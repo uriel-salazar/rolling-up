@@ -10,7 +10,7 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
 from .serializers import UserSerializer,SpotSerializer,RatingSerializer
 from rest_framework.pagination import LimitOffsetPagination
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsOwnerOrReadOnly, IsSelfOrAdmin
 
 
 def home(request):
@@ -26,7 +26,7 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsSelfOrAdmin]
 
     
     @extend_schema(
@@ -49,11 +49,11 @@ class UserViewSet(ModelViewSet):
 
     def get_permissions(self):
         """ Anybody can create an user but you still have
-        to get authenticated to get acces to more https methods 
-        like put or delete. """
+        to get authenticated to get acces to more https methods
+        like put or delete. Only self or admin can edit/delete. """
         if self.action == 'create':
             return [AllowAny()]
-        return [IsAuthenticated()]
+        return [IsAuthenticated(), IsSelfOrAdmin()]
 
     def get_queryset(self):
         user = self.request.user
