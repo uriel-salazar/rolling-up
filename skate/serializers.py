@@ -11,6 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     """
     
+<<<<<<< HEAD
     password = serializers.CharField(write_only=True) 
 <<<<<<< HEAD
 =======
@@ -23,6 +24,16 @@ class UserSerializer(serializers.ModelSerializer):
     
     
     def validate_password(self, value):
+=======
+    password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(write_only=True)
+    # email and password are never exposed in responses
+    class Meta:
+        model = User
+        fields = ['id','username','email','password','created_at']
+
+    def validate_password(self, value):
+>>>>>>> develope
         """
         Add password validation from settings.py
         Password requirements : 
@@ -34,6 +45,11 @@ class UserSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        """ Create user and save their password
+        """
+>>>>>>> develope
 =======
         """ Create user and save their password
         """
@@ -57,8 +73,13 @@ class UserSerializer(serializers.ModelSerializer):
         Returns:
             username
         """
+<<<<<<< HEAD
         if len(username.split()) < 5:
             raise serializers.ValidationError(f"'{username}' must have at least 5 words.")
+=======
+        if len(username) < 5:
+            raise serializers.ValidationError(f"'{username}' must have at least 5 characters.")
+>>>>>>> develope
         return username
 class SpotSerializer(serializers.ModelSerializer):
     """ Serializer for spots.
@@ -94,6 +115,7 @@ class SpotSerializer(serializers.ModelSerializer):
         return value
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def _resize_image(self, instance):
         if not instance.image_url:
             return
@@ -119,6 +141,8 @@ class SpotSerializer(serializers.ModelSerializer):
         if 'image_url' in validated_data:
             self._resize_image(instance)
 =======
+=======
+>>>>>>> develope
     def _process_image(self, image):
         """ 
         Resize the uploaded image to 800x800 with quality 85 before it is
@@ -150,6 +174,9 @@ class SpotSerializer(serializers.ModelSerializer):
         if new_image and old_image_name and old_image_name != instance.image_url.name:
             instance.image_url.storage.delete(old_image_name)
 
+<<<<<<< HEAD
+>>>>>>> develope
+=======
 >>>>>>> develope
         return instance
 
@@ -159,6 +186,10 @@ class RatingSerializer(serializers.ModelSerializer):
         max_digits=4,
         decimal_places=2,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        # rating consists of 1 to 5 score
+>>>>>>> develope
 =======
         # rating consists of 1 to 5 score
 >>>>>>> develope
@@ -167,6 +198,10 @@ class RatingSerializer(serializers.ModelSerializer):
         coerce_to_string=False,
     )
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+    spot = serializers.PrimaryKeyRelatedField(queryset=Spots.objects.all())
+>>>>>>> develope
 =======
     spot = serializers.PrimaryKeyRelatedField(queryset=Spots.objects.all())
 >>>>>>> develope
@@ -175,7 +210,11 @@ class RatingSerializer(serializers.ModelSerializer):
         model = Rating
         fields = "__all__"
 <<<<<<< HEAD
+<<<<<<< HEAD
         read_only_fields = ['id','created_at','user','spot']
+=======
+        read_only_fields = ['id','created_at','user']
+>>>>>>> develope
 =======
         read_only_fields = ['id','created_at','user']
 >>>>>>> develope
