@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <section id="navbar-section">
+        <div class="nav-bar">
+            <div class="nav-one">
+                <h1> Skate Spots API </h1>
+            </div>
+            <div class="nav-list">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/feed/">Feed</a></li>
+                    <li><a href="/profile/">Profile</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="profile-section">
+        <h2>Profile</h2>
+        <p id="profile-info">Log in to see your profile.</p>
+        <form id="login-form">
+            <input type="text" id="username" placeholder="username" required>
+            <input type="password" id="password" placeholder="password" required>
+            <button type="submit">Log in</button>
+        </form>
+    </section>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        async function loadProfile() {
+            const token = localStorage.getItem('access');
+            if (!token) return;
+
+            const res = await fetch(`${API_URL}/api/users/?limit=1`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) { localStorage.removeItem('access'); return; }
+
+            const data = await res.json();
+            const user = data.results[0];
+            document.getElementById('profile-info').textContent =
+                `Logged in as ${user.username}`;
+            document.getElementById('login-form').style.display = 'none';
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch(`${API_URL}/api/token/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            });
+
+            if (res.ok) {
+                const { access, refresh } = await res.json();
+                localStorage.setItem('access', access);
+                localStorage.setItem('refresh', refresh);
+                await loadProfile();
+            } else {
+                alert('Wrong username or password');
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+</html>
