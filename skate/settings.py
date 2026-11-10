@@ -1,14 +1,7 @@
 from datetime import timedelta
 import os 
 from pathlib import Path
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 import dj_database_url
->>>>>>> develope
-=======
-import dj_database_url
->>>>>>> develope
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,14 +17,6 @@ SECRET_KEY=os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG") == "True"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-ADMIN_URL = os.getenv("ADMIN_URL", "admin/")
-
-ALLOWED_HOSTS = ["*"]
-=======
-=======
->>>>>>> develope
 USE_CLOUDINARY = os.environ.get("USE_CLOUDINARY", "False").lower() == "true"
 
 _cloudinary_cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
@@ -59,10 +44,6 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
-<<<<<<< HEAD
->>>>>>> develope
-=======
->>>>>>> develope
 
 
 # Application definition
@@ -80,30 +61,14 @@ INSTALLED_APPS = [
    # 'django.contrib.sites' #fix /admin endpoint 
 ]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 if USE_CLOUDINARY:
     INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
 
->>>>>>> develope
-=======
-if USE_CLOUDINARY:
-    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
-
->>>>>>> develope
 
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
     'whitenoise.middleware.WhiteNoiseMiddleware',
->>>>>>> develope
-=======
-    'whitenoise.middleware.WhiteNoiseMiddleware',
->>>>>>> develope
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -135,21 +100,6 @@ WSGI_APPLICATION = 'skate.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),   
-        'USER': os.environ.get("DB_USER"), 
-        'PASSWORD': os.environ.get("DB_PASSWORD"),
-        'HOST': os.environ.get("DB_HOST"),
-        'PORT': os.environ.get("DB_PORT")
-    }
-}
-=======
-=======
->>>>>>> develope
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL:
@@ -171,10 +121,6 @@ else:
             'PORT': os.environ.get("DB_PORT")
         }
     }
-<<<<<<< HEAD
->>>>>>> develope
-=======
->>>>>>> develope
 
 
 # Password validation
@@ -233,14 +179,7 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
 
     'SERVE_INCLUDE_SCHEMA': False,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
     'COMPONENT_SPLIT_REQUEST': True,
->>>>>>> develope
-=======
-    'COMPONENT_SPLIT_REQUEST': True,
->>>>>>> develope
 
     'SECURITY': [{
         'BearerAuth': [],
@@ -258,18 +197,8 @@ SPECTACULAR_SETTINGS = {
 }
 
 SIMPLE_JWT = {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),  
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),   
-=======
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
->>>>>>> develope
-=======
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
->>>>>>> develope
 }
 
 # Internationalization
@@ -290,11 +219,6 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> develope
 STORAGES = {
     "default": {
         "BACKEND": (
@@ -307,8 +231,3 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
-
-<<<<<<< HEAD
->>>>>>> develope
-=======
->>>>>>> develope

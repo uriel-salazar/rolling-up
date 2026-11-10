@@ -11,20 +11,6 @@ class UserSerializer(serializers.ModelSerializer):
     
     """
     
-<<<<<<< HEAD
-    password = serializers.CharField(write_only=True) 
-<<<<<<< HEAD
-=======
-    email = serializers.CharField(write_only=True)
->>>>>>> develope
-    #only user can see their password.
-    class Meta:
-        model = User
-        fields = ['id','username','email','password','created_at']
-    
-    
-    def validate_password(self, value):
-=======
     password = serializers.CharField(write_only=True)
     email = serializers.EmailField(write_only=True)
     # email and password are never exposed in responses
@@ -33,7 +19,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id','username','email','password','created_at']
 
     def validate_password(self, value):
->>>>>>> develope
         """
         Add password validation from settings.py
         Password requirements : 
@@ -44,22 +29,24 @@ class UserSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
         """ Create user and save their password
         """
->>>>>>> develope
-=======
-        """ Create user and save their password
-        """
->>>>>>> develope
         user = User(
             username=validated_data['username'],
             email=validated_data['email'],
         )
-        user.set_password(validated_data['password'])  
+        user.set_password(validated_data['password'])
         user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        """ Hash the password before updating the user
+        """
+        password = validated_data.pop('password', None)
+        user = super().update(instance, validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
         return user
     
     def validate_username(self, username):
@@ -73,13 +60,8 @@ class UserSerializer(serializers.ModelSerializer):
         Returns:
             username
         """
-<<<<<<< HEAD
-        if len(username.split()) < 5:
-            raise serializers.ValidationError(f"'{username}' must have at least 5 words.")
-=======
         if len(username) < 5:
             raise serializers.ValidationError(f"'{username}' must have at least 5 characters.")
->>>>>>> develope
         return username
 class SpotSerializer(serializers.ModelSerializer):
     """ Serializer for spots.
@@ -114,35 +96,6 @@ class SpotSerializer(serializers.ModelSerializer):
             )
         return value
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    def _resize_image(self, instance):
-        if not instance.image_url:
-            return
-
-        original_name = instance.image_url.name
-        #function that resizes image 
-        resized_image = image_logic.image_resize_800(instance.image_url)
-
-        instance.image_url.delete(save=False) # Deletes original image 
-        instance.image_url.save(
-            original_name,  # using original url name 
-            ContentFile(resized_image.getvalue()),
-            save=True
-        )
-
-    def create(self,validated_data):
-        instance = super().create(validated_data)
-        self._resize_image(instance)
-        return instance
-
-    def update(self, instance, validated_data):
-        instance = super().update(instance, validated_data)
-        if 'image_url' in validated_data:
-            self._resize_image(instance)
-=======
-=======
->>>>>>> develope
     def _process_image(self, image):
         """ 
         Resize the uploaded image to 800x800 with quality 85 before it is
@@ -174,10 +127,6 @@ class SpotSerializer(serializers.ModelSerializer):
         if new_image and old_image_name and old_image_name != instance.image_url.name:
             instance.image_url.storage.delete(old_image_name)
 
-<<<<<<< HEAD
->>>>>>> develope
-=======
->>>>>>> develope
         return instance
 
 
@@ -185,39 +134,17 @@ class RatingSerializer(serializers.ModelSerializer):
     score = serializers.DecimalField(
         max_digits=4,
         decimal_places=2,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
         # rating consists of 1 to 5 score
->>>>>>> develope
-=======
-        # rating consists of 1 to 5 score
->>>>>>> develope
         min_value=Decimal('1'),
         max_value=Decimal('5'),
         coerce_to_string=False,
     )
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
     spot = serializers.PrimaryKeyRelatedField(queryset=Spots.objects.all())
->>>>>>> develope
-=======
-    spot = serializers.PrimaryKeyRelatedField(queryset=Spots.objects.all())
->>>>>>> develope
 
     class Meta:
         model = Rating
         fields = "__all__"
-<<<<<<< HEAD
-<<<<<<< HEAD
-        read_only_fields = ['id','created_at','user','spot']
-=======
         read_only_fields = ['id','created_at','user']
->>>>>>> develope
-=======
-        read_only_fields = ['id','created_at','user']
->>>>>>> develope
     
         
         

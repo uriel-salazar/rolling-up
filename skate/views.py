@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -8,12 +9,18 @@ from rest_framework.generics import RetrieveUpdateAPIView
 >>>>>>> develope
 from django.shortcuts import render,get_object_or_404
 =======
+=======
+>>>>>>> develope
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.db import IntegrityError
 from django.shortcuts import render,get_object_or_404
 from rest_framework import status
+<<<<<<< HEAD
+>>>>>>> develope
+=======
+from rest_framework.response import Response
 >>>>>>> develope
 from .models import User,Spots,Rating
 from drf_spectacular.utils import extend_schema, OpenApiExample
@@ -22,11 +29,15 @@ from .serializers import UserSerializer,SpotSerializer,RatingSerializer
 from rest_framework.pagination import LimitOffsetPagination
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 from .permissions import IsOwnerOrReadOnly
 >>>>>>> develope
 =======
 from .permissions import IsOwnerOrReadOnly
+>>>>>>> develope
+=======
+from .permissions import IsOwnerOrReadOnly, IsSelfOrAdmin
 >>>>>>> develope
 
 
@@ -45,12 +56,17 @@ class UserViewSet(ModelViewSet):
     pagination_class = LimitOffsetPagination
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 >>>>>>> develope
 =======
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+>>>>>>> develope
+=======
+    permission_classes = [IsAuthenticatedOrReadOnly, IsSelfOrAdmin]
 
 >>>>>>> develope
     
@@ -74,6 +90,7 @@ class UserViewSet(ModelViewSet):
 
     def get_permissions(self):
         """ Anybody can create an user but you still have
+<<<<<<< HEAD
         to get authenticated to get acces to more https methods 
         like put or delete. """
 <<<<<<< HEAD
@@ -94,6 +111,13 @@ class SpotsViewSet(ModelViewSet):
         if self.action == 'create':
             return [AllowAny()]
         return [IsAuthenticated()]
+=======
+        to get authenticated to get acces to more https methods
+        like put or delete. Only self or admin can edit/delete. """
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated(), IsSelfOrAdmin()]
+>>>>>>> develope
 
     def get_queryset(self):
         user = self.request.user
@@ -109,6 +133,9 @@ class SpotsViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> develope
+=======
 >>>>>>> develope
 =======
 >>>>>>> develope
@@ -118,6 +145,7 @@ class SpotsViewSet(ModelViewSet):
     serializer_class= SpotSerializer
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     
 
     def perform_create(self, serializer):
@@ -126,10 +154,13 @@ class SpotsViewSet(ModelViewSet):
 =======
 =======
 >>>>>>> develope
+=======
+>>>>>>> develope
 
     def perform_create(self, serializer):
         """ Injects to current user before saving it."""
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> develope
         serializer.save(user=self.request.user)
@@ -156,6 +187,8 @@ class RatingViewSet(ModelViewSet):
 =======
     permission_classes = [IsAuthenticated,IsOwnerOrReadOnly]
 =======
+=======
+>>>>>>> develope
         serializer.save(user=self.request.user)
     
 class RatingViewSet(ModelViewSet):
@@ -173,6 +206,9 @@ class RatingViewSet(ModelViewSet):
                 {"detail": "You already rated this spot."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+<<<<<<< HEAD
+>>>>>>> develope
+=======
 >>>>>>> develope
     
     def perform_create(self, serializer):
@@ -184,6 +220,9 @@ class RatingViewSet(ModelViewSet):
 
         serializer.save(**extra)
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> develope
+=======
 >>>>>>> develope
 =======
 >>>>>>> develope
