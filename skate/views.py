@@ -24,7 +24,8 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
-    
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     
     @extend_schema(
         request=UserSerializer,
@@ -48,34 +49,31 @@ class UserViewSet(ModelViewSet):
         """ Anybody can create an user but you still have
         to get authenticated to get acces to more https methods 
         like put or delete. """
-        
-        def get_permissions(self):
-            if self.action == 'create':
-                return [AllowAny()]
-            return [IsAuthenticated()]
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
-        def get_queryset(self):
-            user = self.request.user
-            if not user.is_authenticated:
-                return User.objects.none()
-            if user.is_staff:
-                return User.objects.all()
-            return User.objects.filter(pk=user.pk)
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return User.objects.none()
+        if user.is_staff:
+            return User.objects.all()
+        return User.objects.filter(pk=user.pk)
     
     
 class SpotsViewSet(ModelViewSet):
-    
+
     permission_classes = [IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
-    
+
     queryset= Spots.objects.all()
     pagination_class = LimitOffsetPagination
     parser_classes = (MultiPartParser, FormParser)
     serializer_class= SpotSerializer
-    
 
     def perform_create(self, serializer):
         """ Injects to current user before saving it."""
-    
+
         serializer.save(user=self.request.user)
     
 class RatingViewSet(ModelViewSet):
@@ -87,14 +85,12 @@ class RatingViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated,IsOwnerOrReadOnly]
     
     def perform_create(self, serializer):
-        spot = get_object_or_404(
-                Spots,
-                pk=self.kwargs['spots_id']
-            )
+        spot_id = self.kwargs.get('spots_id')
 
-        serializer.save(
-                user=self.request.user,
-                spot=spot
-            )
+        extra = {'user': self.request.user}
+        if spot_id:
+            extra['spot'] = get_object_or_404(Spots, pk=spot_id)
+
+        serializer.save(**extra)
 
     

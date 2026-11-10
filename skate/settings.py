@@ -179,6 +179,7 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
 
     'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
 
     'SECURITY': [{
         'BearerAuth': [],
@@ -196,8 +197,8 @@ SPECTACULAR_SETTINGS = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),  
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),   
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 
 # Internationalization

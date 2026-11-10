@@ -12,6 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
     """
     
     password = serializers.CharField(write_only=True) 
+    email = serializers.CharField(write_only=True)
     #only user can see their password.
     class Meta:
         model = User
@@ -124,16 +125,17 @@ class RatingSerializer(serializers.ModelSerializer):
     score = serializers.DecimalField(
         max_digits=4,
         decimal_places=2,
-        # rating consists of 1 to 5 score 
-        min_value=Decimal('1'), 
+        # rating consists of 1 to 5 score
+        min_value=Decimal('1'),
         max_value=Decimal('5'),
         coerce_to_string=False,
     )
+    spot = serializers.PrimaryKeyRelatedField(queryset=Spots.objects.all())
 
     class Meta:
         model = Rating
         fields = "__all__"
-        read_only_fields = ['id','created_at','user','spot']
+        read_only_fields = ['id','created_at','user']
     
         
         
