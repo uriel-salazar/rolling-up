@@ -1,4 +1,9 @@
 asgiref==3.11.1
+<<<<<<< HEAD
+=======
+cloudinary==1.47.0
+django-cloudinary-storage==0.3.0
+>>>>>>> develope
 attrs==26.1.0
 dj-database-url==3.0.1
 Django==6.0.5

@@ -1,6 +1,10 @@
 from datetime import timedelta
 import os 
 from pathlib import Path
+<<<<<<< HEAD
+=======
+import dj_database_url
+>>>>>>> develope
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,9 +20,39 @@ SECRET_KEY=os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG") == "True"
 
+<<<<<<< HEAD
 ADMIN_URL = os.getenv("ADMIN_URL", "admin/")
 
 ALLOWED_HOSTS = ["*"]
+=======
+USE_CLOUDINARY = os.environ.get("USE_CLOUDINARY", "False").lower() == "true"
+
+_cloudinary_cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+_cloudinary_api_key = os.environ.get("CLOUDINARY_API_KEY")
+_cloudinary_api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+
+if _cloudinary_cloud_name and _cloudinary_api_key and _cloudinary_api_secret:
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": _cloudinary_cloud_name,
+        "API_KEY": _cloudinary_api_key,
+        "API_SECRET": _cloudinary_api_secret,
+        "SECURE": True,
+    }
+
+ADMIN_URL = os.getenv("ADMIN_URL", "admin/")
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+>>>>>>> develope
 
 
 # Application definition
@@ -36,10 +70,20 @@ INSTALLED_APPS = [
    # 'django.contrib.sites' #fix /admin endpoint 
 ]
 
+<<<<<<< HEAD
+=======
+if USE_CLOUDINARY:
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
+
+>>>>>>> develope
 
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+<<<<<<< HEAD
+=======
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+>>>>>>> develope
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -71,6 +115,7 @@ WSGI_APPLICATION = 'skate.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+<<<<<<< HEAD
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -81,6 +126,29 @@ DATABASES = {
         'PORT': os.environ.get("DB_PORT")
     }
 }
+=======
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get("DB_USER"),
+            'PASSWORD': os.environ.get("DB_PASSWORD"),
+            'HOST': os.environ.get("DB_HOST"),
+            'PORT': os.environ.get("DB_PORT")
+        }
+    }
+>>>>>>> develope
 
 
 # Password validation
@@ -139,6 +207,10 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
 
     'SERVE_INCLUDE_SCHEMA': False,
+<<<<<<< HEAD
+=======
+    'COMPONENT_SPLIT_REQUEST': True,
+>>>>>>> develope
 
     'SECURITY': [{
         'BearerAuth': [],
@@ -156,8 +228,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 SIMPLE_JWT = {
+<<<<<<< HEAD
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),  
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),   
+=======
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+>>>>>>> develope
 }
 
 # Internationalization
@@ -178,3 +255,19 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+<<<<<<< HEAD
+=======
+STORAGES = {
+    "default": {
+        "BACKEND": (
+            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            if USE_CLOUDINARY
+            else "django.core.files.storage.FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+
+>>>>>>> develope

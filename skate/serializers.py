@@ -12,6 +12,10 @@ class UserSerializer(serializers.ModelSerializer):
     """
     
     password = serializers.CharField(write_only=True) 
+<<<<<<< HEAD
+=======
+    email = serializers.CharField(write_only=True)
+>>>>>>> develope
     #only user can see their password.
     class Meta:
         model = User
@@ -29,6 +33,11 @@ class UserSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
+<<<<<<< HEAD
+=======
+        """ Create user and save their password
+        """
+>>>>>>> develope
         user = User(
             username=validated_data['username'],
             email=validated_data['email'],
@@ -84,6 +93,7 @@ class SpotSerializer(serializers.ModelSerializer):
             )
         return value
 
+<<<<<<< HEAD
     def _resize_image(self, instance):
         if not instance.image_url:
             return
@@ -108,6 +118,39 @@ class SpotSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
         if 'image_url' in validated_data:
             self._resize_image(instance)
+=======
+    def _process_image(self, image):
+        """ 
+        Resize the uploaded image to 800x800 with quality 85 before it is
+        stored, keeping the original file name.
+        """
+        try:
+            image.seek(0)
+            resized_image = image_logic.image_resize_800(image)
+        except Exception:
+            raise serializers.ValidationError(
+                {"image_url": "Could not process the uploaded image."}
+            )
+        return ContentFile(resized_image.getvalue(), name=image.name)
+
+    def create(self,validated_data):
+        if validated_data.get('image_url'):
+            validated_data['image_url'] = self._process_image(validated_data['image_url'])
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        old_image_name = instance.image_url.name if instance.image_url else None
+        new_image = validated_data.get('image_url')
+
+        if new_image:
+            validated_data['image_url'] = self._process_image(new_image)
+
+        instance = super().update(instance, validated_data)
+
+        if new_image and old_image_name and old_image_name != instance.image_url.name:
+            instance.image_url.storage.delete(old_image_name)
+
+>>>>>>> develope
         return instance
 
 
@@ -115,15 +158,27 @@ class RatingSerializer(serializers.ModelSerializer):
     score = serializers.DecimalField(
         max_digits=4,
         decimal_places=2,
+<<<<<<< HEAD
+=======
+        # rating consists of 1 to 5 score
+>>>>>>> develope
         min_value=Decimal('1'),
         max_value=Decimal('5'),
         coerce_to_string=False,
     )
+<<<<<<< HEAD
+=======
+    spot = serializers.PrimaryKeyRelatedField(queryset=Spots.objects.all())
+>>>>>>> develope
 
     class Meta:
         model = Rating
         fields = "__all__"
+<<<<<<< HEAD
         read_only_fields = ['id','created_at','user','spot']
+=======
+        read_only_fields = ['id','created_at','user']
+>>>>>>> develope
     
         
         
