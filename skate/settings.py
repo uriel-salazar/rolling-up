@@ -93,6 +93,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'skate.urls'
 
+# The project has its own login page, Django has to send the
+# unauthenticated visitors there instead of the default one.
+LOGIN_URL = "/profile/"
+LOGIN_REDIRECT_URL = "/profile/"
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -177,6 +182,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',  
         'user': '1000/day',  
+        'geocode': os.environ.get("GEOCODE_THROTTLE_RATE", "30/min"),
     },
 }
 
@@ -240,6 +246,24 @@ NOMINATIM_API_URL = os.environ.get(
     "NOMINATIM_API_URL", "https://nominatim.openstreetmap.org/search"
 )
 NOMINATIM_TIMEOUT = int(os.environ.get("NOMINATIM_TIMEOUT", "30"))
+NOMINATIM_USER_AGENT = os.environ.get(
+    "NOMINATIM_USER_AGENT",
+    os.environ.get(
+        "OVERPASS_USER_AGENT",
+        "RollingUp-SkateSpots/1.0 (https://rolling-up.onrender.com)",
+    ),
+)
+
+# Location search used by the spot form to find a place by name.
+#
+# The requests go through the backend (`/api/geocode/search/`) so the
+# application identifies itself properly, the answers are cached and the
+# number of requests can be throttled.
+GEOCODE_MIN_QUERY_LENGTH = int(os.environ.get("GEOCODE_MIN_QUERY_LENGTH", "3"))
+GEOCODE_MAX_RESULTS = int(os.environ.get("GEOCODE_MAX_RESULTS", "8"))
+GEOCODE_CACHE_SECONDS = int(os.environ.get("GEOCODE_CACHE_SECONDS", "86400"))
+GEOCODE_LANGUAGE = os.environ.get("GEOCODE_LANGUAGE", "es")
+GEOCODE_THROTTLE_RATE = os.environ.get("GEOCODE_THROTTLE_RATE", "30/min")
 
 # Username of the service account that owns OSM imported spots.
 OSM_SERVICE_USER = os.environ.get("OSM_SERVICE_USER", "osm_importer")

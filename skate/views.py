@@ -1,8 +1,9 @@
 
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.generics import RetrieveUpdateAPIView
 from django.shortcuts import render,get_object_or_404
+from django.core.exceptions import PermissionDenied
 from .models import User,Spots,Rating
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
@@ -13,6 +14,32 @@ from .permissions import IsOwnerOrReadOnly
 
 def home(request):
     return render(request,'basic_home.html')
+
+
+def spot_form(request, pk=None):
+    """ Render the form used to create or to edit a skate spot.
+
+        The page itself is public: the application logs the users in
+        with a JWT that the browser keeps in the local storage, so the
+        server can not tell who is visiting. The API is what protects
+        the spots, it refuses a write from somebody who is not
+        authenticated and a write on a spot of somebody else.
+
+        When the visitor does have a Django session the ownership is
+        checked right away.
+    """
+    spot = None
+    if pk is not None:
+        spot = get_object_or_404(Spots, pk=pk)
+
+    if (
+        spot is not None
+        and request.user.is_authenticated
+        and spot.user_id != request.user.id
+    ):
+        raise PermissionDenied("You can only edit your own spots.")
+
+    return render(request, 'spot_form.html', {'spot': spot, 'is_edit': pk is not None})
 
 
 class UserViewSet(ModelViewSet):
@@ -68,7 +95,10 @@ class SpotsViewSet(ModelViewSet):
 
     queryset= Spots.objects.all()
     pagination_class = LimitOffsetPagination
-    parser_classes = (MultiPartParser, FormParser)
+    # Multipart is kept for the image upload. JSON is accepted as well,
+    # so a client that does not upload a picture can send the
+    # coordinates with a null to remove the location of a spot.
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     serializer_class= SpotSerializer
 
     def perform_create(self, serializer):
