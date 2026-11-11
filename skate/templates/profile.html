@@ -38,7 +38,7 @@
         {% endif %}
     </header>
 
-    <main class="profile-main">
+    <main class="profile-main login-enter">
         {% if user.is_authenticated %}
         <h1 class="profile-title">Welcome, {{ user.username }}</h1>
         <p class="profile-info">You are logged in as <strong>{{ user.username }}</strong> ({{ user.email }}).</p>
@@ -49,7 +49,7 @@
         </p>
         {% else %}
         <h1 class="profile-title">Log in</h1>
-        <p id="profile-info" class="profile-info">Welcome back to Rolling Up.</p>
+        <p id="profile-info" class="profile-info form-status is-visible">Welcome back to Rolling Up.</p>
 
         <form id="login-form" class="profile-form">
             <div class="field password-field">
@@ -65,14 +65,17 @@
                     </button>
                 </div>
             </div>
-            <button type="submit" class="btn-primary" id="login-btn">Log in</button>
+            <button type="submit" class="btn-primary" id="login-btn">
+                Iniciar sesión
+                <span class="login-spinner" hidden></span>
+            </button>
         </form>
 
         <p class="profile-info" style="margin-top: 24px; font-size: 0.85rem; text-align: center;">
             Don't have an account? <a href="/register/" style="color: var(--white-color); text-decoration: underline;">Create account</a>
         </p>
         <p class="profile-info" style="font-size: 0.85rem; text-align: center;">
-            Or <a href="/auth/google/login/" style="color: var(--white-color); text-decoration: underline;">log in with Google</a>
+            Or {% include "google_button.html" with label="Iniciar sesión con Google" %}
         </p>
         {% endif %}
     </main>
@@ -160,60 +163,70 @@
             });
         });
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+// Muestra un mensaje de estado con fade + slide suave.
+function setStatus(element, message, color) {
+    element.classList.remove('is-visible');
+    element.textContent = message;
+    element.style.color = color;
+    requestAnimationFrame(() => {
+        element.classList.add('is-visible');
+    });
+}
 
-            const btn = document.getElementById('login-btn');
-            const info = document.getElementById('profile-info');
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+    const btn = document.getElementById('login-btn');
+    const spinner = btn.querySelector('.login-spinner');
+    const info = document.getElementById('profile-info');
 
-            // Loading state.
-            btn.disabled = true;
-            btn.textContent = 'Logging in...';
-            info.textContent = '';
-            info.style.color = '#f5f5f5';
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
 
-            try {
-                const res = await fetch(`${API_URL}/api/token/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
+    // Loading state: spinner dentro del botón, sin mover el layout.
+    btn.disabled = true;
+    spinner.hidden = false;
+    setStatus(info, '', '#f5f5f5');
 
-                if (res.ok) {
-                    const { access, refresh } = await res.json();
-                    localStorage.setItem('access', access);
-                    localStorage.setItem('refresh', refresh);
-
-                    info.textContent = 'Logged in.';
-                    info.style.color = '#8cc88c';
-
-                    await loadProfile();
-
-                    // Redirect to the page that required login, or the profile.
-                    const next = new URLSearchParams(window.location.search).get('next');
-                    setTimeout(() => {
-                        window.location.href = next || '/profile/';
-                    }, 800);
-                } else {
-                    let message = 'Wrong username or password.';
-                    try {
-                        const data = await res.json();
-                        if (data.detail) message = data.detail;
-                    } catch {}
-                    info.textContent = message;
-                    info.style.color = '#d98b7a';
-                }
-            } catch {
-                info.textContent = 'Could not reach the server. Try again.';
-                info.style.color = '#d98b7a';
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Log in';
-            }
+    try {
+        const res = await fetch(`${API_URL}/api/token/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
         });
+
+        if (res.ok) {
+            const { access, refresh } = await res.json();
+            localStorage.setItem('access', access);
+            localStorage.setItem('refresh', refresh);
+
+            setStatus(info, 'Logged in.', '#8cc88c');
+
+            await loadProfile();
+
+            // Fade suave hacia la página siguiente; el retraso coincide
+            // con la duración de la transición, no la excede.
+            document.querySelector('main').classList.add('fade-out');
+
+            const next = new URLSearchParams(window.location.search).get('next');
+            setTimeout(() => {
+                window.location.href = next || '/profile/';
+            }, 300);
+        } else {
+            let message = 'Wrong username or password.';
+            try {
+                const data = await res.json();
+                if (data.detail) message = data.detail;
+            } catch {}
+            setStatus(info, message, '#d98b7a');
+        }
+    } catch {
+        setStatus(info, 'Could not reach the server. Try again.', '#d98b7a');
+    } finally {
+        btn.disabled = false;
+        spinner.hidden = true;
+    }
+});
 
         loadProfile();
     </script>

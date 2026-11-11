@@ -893,6 +893,7 @@
             }
             // The registered spots stay usable when Overpass is down.
             console.warn('The live skateparks could not be loaded:', error);
+            showStatus('No se pudieron cargar los spots de OpenStreetMap.', 'error');
         }
     }
 
@@ -921,6 +922,11 @@
                     padding: [24, 24],
                     maxZoom: 16,
                 });
+                // A whole country/city bounding box is usually too large
+                // for Overpass: make sure we end up close enough to discover.
+                if (map.getZoom() < DISCOVERY_MIN_ZOOM) {
+                    map.setZoom(DISCOVERY_MIN_ZOOM);
+                }
                 scheduleDiscovery(0);
                 return;
             }

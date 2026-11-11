@@ -1,5 +1,6 @@
 asgiref==3.11.1
 cloudinary==1.47.0
+cryptography==46.0.7
 django-cloudinary-storage==0.3.0
 attrs==26.1.0
 dj-database-url==3.0.1

@@ -7,13 +7,14 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render,get_object_or_404
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Q, Case, When, IntegerField
 from django.utils.safestring import mark_safe
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.generics import RetrieveUpdateAPIView
+from . import google_auth
 from .models import User,Spots,Rating,SpotPhoto
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
@@ -144,113 +145,53 @@ def register_page(request):
 def google_login(request):
     """ Initiate the Google OAuth2 flow.
 
-        Redirects the browser to Google's consent screen. After the user
-        approves, Google calls back at /api/auth/google/callback/.
+        Redirects the browser to Google's consent screen. A random
+        ``state`` is stored in the session so the callback can reject a
+        forged or replayed request. After the user approves, Google
+        calls back at /auth/google/callback/.
     """
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    if not client_id:
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         return HttpResponseRedirect("/profile/?error=google_not_configured")
 
-    redirect_uri = os.environ.get(
-        "GOOGLE_REDIRECT_URI",
-        f"{settings.HOST.rstrip('/')}/api/auth/google/callback/",
-    )
-    auth_url = (
-        "https://accounts.google.com/o/oauth2/v2/auth?"
-        f"client_id={client_id}&"
-        f"redirect_uri={redirect_uri}&"
-        "scope=openid%20email%20profile&"
-        "response_type=code&"
-        "access_type=offline&"
-        "prompt=consent"
-    )
-    return HttpResponseRedirect(auth_url)
+    state = google_auth.generate_state()
+    request.session["google_oauth_state"] = state
+    request.session.modified = True
+    return HttpResponseRedirect(google_auth.build_authorization_url(state))
 
 
 def google_callback(request):
     """ Handle the Google OAuth2 callback.
 
-        Exchanges the authorization code for tokens, fetches the user
-        profile from Google, finds or creates a local user, and returns
-        JWT tokens so the browser can log in.
+        Validates the ``state``, verifies Google's ID token (signature,
+        audience, expiration and verified email), finds or creates the
+        local user by email and issues the same JWT the normal login
+        issues.
     """
-    code = request.GET.get("code")
     error = request.GET.get("error")
-
     if error:
         return HttpResponseRedirect(f"/profile/?error=google_{error}")
 
+    code = request.GET.get("code")
     if not code:
         return HttpResponseRedirect("/profile/?error=google_no_code")
 
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
-    if not client_id or not client_secret:
+    expected_state = request.session.pop("google_oauth_state", None)
+    if not google_auth.validate_state(request.GET.get("state"), expected_state):
+        logger.warning("Google login rejected: invalid state")
+        return HttpResponseRedirect("/profile/?error=google_state_invalid")
+
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         return HttpResponseRedirect("/profile/?error=google_not_configured")
 
-    redirect_uri = os.environ.get(
-        "GOOGLE_REDIRECT_URI",
-        f"{settings.HOST.rstrip('/')}/api/auth/google/callback/",
-    )
-
-    # Exchange the authorization code for an access token.
-    token_response = requests.post(
-        "https://oauth2.googleapis.com/token",
-        data={
-            "code": code,
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "redirect_uri": redirect_uri,
-            "grant_type": "authorization_code",
-        },
-        timeout=10,
-    )
-
-    if not token_response.ok:
-        logger.warning("Google token exchange failed: %s", token_response.text)
-        return HttpResponseRedirect("/profile/?error=google_token_failed")
-
-    tokens = token_response.json()
-    access_token = tokens.get("access_token")
-    if not access_token:
-        return HttpResponseRedirect("/profile/?error=google_no_access_token")
-
-    # Fetch the user profile from Google.
-    userinfo_response = requests.get(
-        "https://www.googleapis.com/oauth2/v2/userinfo",
-        headers={"Authorization": f"Bearer {access_token}"},
-        timeout=10,
-    )
-
-    if not userinfo_response.ok:
-        logger.warning("Google userinfo failed: %s", userinfo_response.text)
-        return HttpResponseRedirect("/profile/?error=google_userinfo_failed")
-
-    userinfo = userinfo_response.json()
-    email = userinfo.get("email")
-    if not email:
-        return HttpResponseRedirect("/profile/?error=google_no_email")
-
-    # Find or create a local user for this Google account.
     try:
-        user = User.objects.get(email=email)
-    except User.DoesNotExist:
-        base_username = email.split("@")[0]
-        username = base_username
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
+        user = google_auth.authenticate_with_google(code)
+    except google_auth.GoogleAuthError as error:
+        logger.warning("Google login failed: %s", error.code)
+        return HttpResponseRedirect(f"/profile/?error={error.code}")
+    except requests.RequestException:
+        logger.warning("Google login request failed", exc_info=True)
+        return HttpResponseRedirect("/profile/?error=google_network_error")
 
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=None,
-        )
-        logger.info("Created user %s from Google account %s", username, email)
-
-    # Issue JWT tokens and redirect to the profile page so the frontend
-    # can store them in local storage.
     refresh = RefreshToken.for_user(user)
     return HttpResponseRedirect(
         f"/profile/?access={str(refresh.access_token)}"
@@ -454,7 +395,14 @@ class SpotsViewSet(ModelViewSet):
         queryset = Spots.objects.annotate(
             average_rating=Avg('rating__score'),
             rating_count=Count('rating', distinct=True),
-        )
+            has_image=Case(
+                When(image_url__isnull=False, then=1),
+                When(google_metadata__has_key='photos', then=1),
+                When(osm_metadata__has_key='image', then=1),
+                default=0,
+                output_field=IntegerField(),
+            ),
+        ).order_by('-has_image', 'name_spot')
 
         params = self.request.query_params
 

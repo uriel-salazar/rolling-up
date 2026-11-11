@@ -387,6 +387,10 @@
     function showStatus(message, kind) {
         statusBox.textContent = message;
         statusBox.className = 'form-status' + (kind ? ' is-' + kind : '');
+        statusBox.classList.remove('is-visible');
+        requestAnimationFrame(() => {
+            statusBox.classList.add('is-visible');
+        });
     }
 
     /**

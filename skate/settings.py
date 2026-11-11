@@ -353,7 +353,7 @@ MAP_DEFAULT_CENTER = (
     float(os.environ.get("MAP_DEFAULT_LAT", "20.6767")),
     float(os.environ.get("MAP_DEFAULT_LON", "-103.3475")),
 )
-MAP_DEFAULT_ZOOM = int(os.environ.get("MAP_DEFAULT_ZOOM", "13"))
+MAP_DEFAULT_ZOOM = int(os.environ.get("MAP_DEFAULT_ZOOM", "9"))
 
 # A contact address published by the application. The tile and the
 # geocoding policies ask for a way to reach the operator.
@@ -363,6 +363,17 @@ OSM_CONTACT_EMAIL = os.environ.get(
 
 # Username of the service account that owns OSM imported spots.
 OSM_SERVICE_USER = os.environ.get("OSM_SERVICE_USER", "osm_importer")
+
+# Google OAuth 2.0 (sign in with Google)
+#
+# The browser is sent to Google and comes back to
+# /auth/google/callback/, which verifies the ID token and issues the
+# same JWT the normal login issues. The client secret never leaves the
+# server. GOOGLE_REDIRECT_URI has to be registered in Google Cloud
+# Console; when it is empty the callback URL is derived from HOST.
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "")
 
 # Google Places API (New)
 #
@@ -407,13 +418,13 @@ OVERPASS_DISCOVERY_MAX_RADIUS = int(
     os.environ.get("OVERPASS_DISCOVERY_MAX_RADIUS", "50000")
 )
 OVERPASS_DISCOVERY_MAX_RESULTS = int(
-    os.environ.get("OVERPASS_DISCOVERY_MAX_RESULTS", "250")
+    os.environ.get("OVERPASS_DISCOVERY_MAX_RESULTS", "200")
 )
 OVERPASS_DISCOVERY_MAX_VIEWPORT_SPAN = float(
-    os.environ.get("OVERPASS_DISCOVERY_MAX_VIEWPORT_SPAN", "2.0")
+    os.environ.get("OVERPASS_DISCOVERY_MAX_VIEWPORT_SPAN", "1.5")
 )
 OVERPASS_DISCOVERY_CACHE_SECONDS = int(
-    os.environ.get("OVERPASS_DISCOVERY_CACHE_SECONDS", "300")
+    os.environ.get("OVERPASS_DISCOVERY_CACHE_SECONDS", "86400")
 )
 OVERPASS_DISCOVERY_STALE_SECONDS = int(
     os.environ.get("OVERPASS_DISCOVERY_STALE_SECONDS", "86400")

@@ -27,10 +27,7 @@
                     <li class="nav-item">
                         <a href="/spots/new/" class="nav-link"> Añadir Spot </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="#galeria" class="nav-link"> Galeria  </a>
-                    </li>
-                      <li class="nav-item">
+                       <li class="nav-item">
                         <a href="#nosotros" class="nav-link"> Nosotros  </a>
                     </li>
                     
@@ -47,8 +44,8 @@
                         </div>
                     </li>
                     {% else %}
-                    <li class="nav-item"><a href="/profile/" class="nav-link">Log in</a></li>
-                    <li class="nav-item"><a href="/register/" class="nav-link">Sign up</a></li>
+                    <li class="nav-item"><a href="/profile/" class="nav-link"> Iniciar Sesion </a></li>
+                    <li class="nav-item"><a href="/register/" class="nav-link"> Registrarse </a></li>
                     {% endif %}
                     
                 </ul>
@@ -92,12 +89,6 @@
             </div>
         </section>
 
-        <section id="galeria" class="landing-section">
-            <div class="section-content">
-                <h2 class="section-title">Galería</h2>
-                <p>Próximamente</p>
-            </div>
-        </section>
 
         <section id="nosotros" class="landing-section">
             <div class="section-content">
@@ -121,6 +112,24 @@
         </section>
 
     </main>
+    <footer class="site-footer">
+        <div class="footer-content section-content">
+            <div class="footer-brand">
+                <h2 class="logo-text">Rolling Up</h2>
+                <p>Descubre y comparte skateparks, plazas y spots de calle.</p>
+            </div>
+            <div class="footer-links">
+                <a href="#mapa">Mapa</a>
+                <a href="#spots">Spots</a>
+                <a href="/spots/new/">Añadir Spot</a>
+                <a href="#nosotros">Nosotros</a>
+                <a href="/profile/">Perfil</a>
+            </div>
+            <div class="footer-copy">
+                <p>&copy; {% now "Y" %} Rolling Up. Hecho por riders, para riders.</p>
+            </div>
+        </div>
+    </footer>
     <script src="{% static 'landing_scroll.js' %}"></script>
     <script>
         // Logout from any page.
