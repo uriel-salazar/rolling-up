@@ -48,7 +48,11 @@ function makeElement(id, tag) {
             (this.listeners[name] = this.listeners[name] || []).push(fn);
         },
         dispatch(name, event) {
-            (this.listeners[name] || []).forEach((fn) => fn(event || {}));
+            const payload = event || {};
+            if (typeof payload.preventDefault !== 'function') {
+                payload.preventDefault = function () {};
+            }
+            (this.listeners[name] || []).forEach((fn) => fn(payload));
         },
         querySelector(sel) {
             if (sel === 'input[name="csrfmiddlewaretoken"]') {
@@ -63,14 +67,22 @@ function makeElement(id, tag) {
 
 const elements = {};
 const ids = [
-    'map', 'spot-form', 'location-search', 'search-results', 'latitude',
-    'longitude', 'latitude-manual', 'longitude-manual', 'coordinates-output',
-    'clear-location', 'map-error', 'form-status', 'submit-button',
-    'name_spot', 'body', 'image_url', 'login-notice',
+    'map', 'spot-form', 'location-search', 'search-button', 'search-results',
+    'latitude', 'longitude', 'latitude-manual', 'longitude-manual',
+    'coordinates-output', 'clear-location', 'map-error', 'form-status',
+    'submit-button', 'name_spot', 'body', 'image_url', 'login-notice',
 ];
 ids.forEach((id) => { elements[id] = makeElement(id); });
 
-elements.map.dataset = { latitude: '', longitude: '', spotId: '' };
+elements.map.dataset = {
+    latitude: '',
+    longitude: '',
+    spotId: '',
+    tileUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    tileMaxZoom: '19',
+    tileSubdomains: '',
+    tileAttribution: '&copy; OpenStreetMap contributors',
+};
 elements['spot-form']._csrf = makeElement('csrf', 'input');
 elements['spot-form']._csrf.value = 'csrf-token-123';
 
@@ -82,7 +94,7 @@ elements.body.value = 'Un skatepark grande';
 // Leaflet stub
 // ------------------------------------------------------------------
 
-const mapState = { center: null, zoom: null, layers: [], events: {} };
+const mapState = { center: null, zoom: null, layers: [], events: {}, tile: null };
 const markerState = { latlng: null, draggable: false, onDrag: null };
 
 const L = {
@@ -96,7 +108,8 @@ const L = {
             removeLayer(m) { mapState.layers = mapState.layers.filter((x) => x !== m); },
         };
     },
-    tileLayer: function () {
+    tileLayer: function (url, options) {
+        mapState.tile = { url: url, options: options };
         return { addTo() { return this; } };
     },
     marker: function (position, options) {
@@ -266,36 +279,66 @@ setTimeout(() => {
         check('the notice is shown when there is no token', noticeVisible);
         sandbox.localStorage.store.access = 'jwt-token';
 
-        console.log('\n== 10. The search is debounced ==');
+        console.log('\n== 10. The search is only sent when it is asked for ==');
         lastFetch = null;
         elements['location-search'].value = 'sk';
         elements['location-search'].dispatch('input');
         check('a short query does not hit the server', lastFetch === null);
         elements['location-search'].value = 'skatepark guadalajara';
         elements['location-search'].dispatch('input');
-        check('nothing is sent on the keystroke itself', lastFetch === null);
+        check('typing does not hit the server', lastFetch === null);
+        check(
+            'the Nominatim auto-complete is not used',
+            lastFetch === null,
+            'a request was sent while typing'
+        );
+
+        elements['location-search'].dispatch('keydown', { key: 'Enter' });
+        check('pressing Enter does hit the server', lastFetch !== null);
+        check('it goes to the geocode endpoint',
+            lastFetch.url === '/api/geocode/search/?q=skatepark%20guadalajara',
+            lastFetch.url);
+        check('the token is sent',
+            lastFetch.options.headers.Authorization === 'Bearer jwt-token');
+
+        console.log('\n== 11. The search button also works ==');
+        lastFetch = null;
+        elements['location-search'].value = 'parque de las americas';
+        elements['search-button'].dispatch('click');
+        check('the request is sent', lastFetch !== null);
+        check('with the right query',
+            lastFetch.url === '/api/geocode/search/?q=parque%20de%20las%20americas',
+            lastFetch.url);
+
+        console.log('\n== 12. The tile layer follows the usage policy ==');
+        check('the tile url is the one the policy asks for',
+            mapState.tile.url === 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            mapState.tile.url);
+        check('the url has no subdomain shortcut',
+            !mapState.tile.url.includes('{s}'), mapState.tile.url);
+        check('no subdomains are sent',
+            mapState.tile.options.subdomains === undefined,
+            String(mapState.tile.options.subdomains));
+        check('the attribution is passed on',
+            mapState.tile.options.attribution.includes('OpenStreetMap'),
+            mapState.tile.options.attribution);
+        check('the max zoom is passed on',
+            mapState.tile.options.maxZoom === 19,
+            String(mapState.tile.options.maxZoom));
+
+        console.log('\n== 13. Editing an existing spot ==');
+        elements.map.dataset.spotId = '42';
+        lastFetch = null;
+        elements['spot-form'].dispatch('submit', { preventDefault() {} });
         setTimeout(() => {
-            check('the request is sent after the delay', lastFetch !== null);
-            check('it goes to the geocode endpoint',
-                lastFetch.url === '/api/geocode/search/?q=skatepark%20guadalajara',
-                lastFetch.url);
-            check('the token is sent',
-                lastFetch.options.headers.Authorization === 'Bearer jwt-token');
+            check('it patches the right spot',
+                lastFetch.url === '/api/spots/42/', lastFetch.url);
+            check('the method is PATCH', lastFetch.options.method === 'PATCH');
 
-            console.log('\n== 11. Editing an existing spot ==');
-            elements.map.dataset.spotId = '42';
-            lastFetch = null;
-            elements['spot-form'].dispatch('submit', { preventDefault() {} });
-            setTimeout(() => {
-                check('it patches the right spot',
-                    lastFetch.url === '/api/spots/42/', lastFetch.url);
-                check('the method is PATCH', lastFetch.options.method === 'PATCH');
-
-                console.log('\n' + (failures === 0
-                    ? 'ALL CHECKS PASSED'
-                    : failures + ' CHECK(S) FAILED'));
-                process.exit(failures === 0 ? 0 : 1);
-            }, 10);
-        }, 500);
+            console.log('\n' + (failures === 0
+                ? 'ALL CHECKS PASSED'
+                : failures + ' CHECK(S) FAILED'));
+            process.exit(failures === 0 ? 0 : 1);
+        }, 10);
     }, 10);
 }, 10);

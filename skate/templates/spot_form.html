@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
-<body class="form-page">
+<body class="form-page tile-provider-{{ tile_config.provider }}">
     <main>
         <header class="form-header">
             <nav class="navbar section-content">
@@ -72,15 +72,29 @@
 
                     <div class="location-search">
                         <label class="visually-hidden" for="location-search">Buscar lugar</label>
-                        <input type="search" id="location-search" autocomplete="off"
-                               placeholder="Busca un skatepark, calle o colonia">
-                        <div id="search-results" class="search-results" hidden></div>
+                        <div class="location-search-field">
+                            <div class="location-search-row">
+                                <input type="search" id="location-search" autocomplete="off"
+                                       placeholder="Busca un skatepark, calle o colonia">
+                                <button type="button" id="search-button" class="btn-ghost">Buscar</button>
+                            </div>
+                            <div id="search-results" class="search-results" hidden></div>
+                        </div>
+                        <p class="search-attribution">
+                            Búsqueda por &copy;
+                            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+                            contributors
+                        </p>
                     </div>
 
                     <div id="map" class="map"
                          data-latitude="{{ spot.latitude|default_if_none:'' }}"
                          data-longitude="{{ spot.longitude|default_if_none:'' }}"
-                         data-spot-id="{{ spot.id|default_if_none:'' }}">
+                         data-spot-id="{{ spot.id|default_if_none:'' }}"
+                         data-tile-url="{{ tile_config.url }}"
+                         data-tile-max-zoom="{{ tile_config.max_zoom }}"
+                         data-tile-subdomains="{{ tile_config.subdomains }}"
+                         data-tile-attribution="{{ tile_config.attribution }}">
                         <noscript>El mapa necesita JavaScript para funcionar.</noscript>
                     </div>
                     <p id="map-error" class="map-error" hidden>

@@ -765,6 +765,43 @@ header .navbar{
     position: relative;
 }
 
+.location-search-field {
+    position: relative;
+}
+
+.location-search-row {
+    display: flex;
+    gap: 10px;
+}
+
+.location-search-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.location-search-row .btn-ghost {
+    padding: 11px 20px;
+    white-space: nowrap;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.search-attribution {
+    font-size: 0.68rem;
+    color: #7a7a7a;
+    margin-top: 8px;
+}
+
+.search-attribution a {
+    color: #9a9a9a;
+    text-decoration: underline;
+}
+
+.search-attribution a:hover {
+    color: #cfcfcf;
+}
+
 .search-results {
     position: absolute;
     top: calc(100% + 4px);
@@ -826,9 +863,15 @@ header .navbar{
     z-index: 1;
 }
 
-/* Muted tiles so the map sits inside the dark interface. */
+/* The standard OpenStreetMap tiles are bright. The filter turns them
+   into the dark look of the interface without touching the service. */
 .leaflet-tile-pane {
     filter: grayscale(0.85) brightness(0.82) contrast(1.05);
+}
+
+/* The CARTO basemaps are dark already, they need no filter. */
+.tile-provider-carto .leaflet-tile-pane {
+    filter: none;
 }
 
 .leaflet-container {
@@ -836,14 +879,24 @@ header .navbar{
     background: #1a1a1a;
 }
 
+/* The attribution of the map has to stay clearly visible, the tile
+   usage policy does not allow hiding it. It is styled to fit the dark
+   interface, but it keeps a readable size and contrast. */
 .leaflet-control-attribution {
-    background: rgba(10, 10, 10, 0.8) !important;
-    color: #8a8a8a !important;
-    font-size: 0.62rem !important;
+    background: rgba(10, 10, 10, 0.85) !important;
+    color: #d5d5d5 !important;
+    font-size: 0.72rem !important;
+    line-height: 1.5;
+    padding: 2px 6px;
 }
 
 .leaflet-control-attribution a {
-    color: #b5b5b5 !important;
+    color: #ffffff !important;
+    text-decoration: underline;
+}
+
+.leaflet-control-attribution a:hover {
+    color: #eaeaea !important;
 }
 
 .map-error {

@@ -45,6 +45,15 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+# The OpenStreetMap tile usage policy asks that the browser sends a
+# valid HTTP Referer to the tile servers. Django defaults to
+# "same-origin", which drops the Referer on every cross origin request.
+# "strict-origin-when-cross-origin" sends the origin of the page, so
+# the tile server can still identify the application.
+SECURE_REFERRER_POLICY = os.environ.get(
+    "SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin"
+)
+
 
 # Production security settings
 # Only active when DEBUG=False (set in .env), so local http dev still works
@@ -264,6 +273,50 @@ GEOCODE_MAX_RESULTS = int(os.environ.get("GEOCODE_MAX_RESULTS", "8"))
 GEOCODE_CACHE_SECONDS = int(os.environ.get("GEOCODE_CACHE_SECONDS", "86400"))
 GEOCODE_LANGUAGE = os.environ.get("GEOCODE_LANGUAGE", "es")
 GEOCODE_THROTTLE_RATE = os.environ.get("GEOCODE_THROTTLE_RATE", "30/min")
+
+# Maximum number of requests per second the whole application sends to
+# Nominatim. The Nominatim usage policy allows an absolute maximum of
+# one request per second for the whole site, not per user, so this
+# limit is applied globally in `skate.geocode.services`.
+NOMINATIM_MAX_REQUESTS_PER_SECOND = float(
+    os.environ.get("NOMINATIM_MAX_REQUESTS_PER_SECOND", "1")
+)
+
+# Map tiles.
+#
+# Two providers are supported and the choice is a setting, so it can be
+# changed without a new release.
+#
+#  * The standard OpenStreetMap tiles. They need no key and they are
+#    free, but their usage policy asks for a few things:
+#    https://operations.osmfoundation.org/policies/tiles/
+#    The dark look of the interface is done with a CSS filter.
+#
+#  * The CARTO dark basemaps. They look better for a dark interface,
+#    but CARTO asks for an API key since September 2026 and for the
+#    credit of both OpenStreetMap and CARTO:
+#    https://carto.com/basemaps/apikey/
+#    Without a key the server answers with a placeholder tile that says
+#    "API KEY REQUIRED" instead of the map.
+OSM_TILE_URL = os.environ.get(
+    "OSM_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+)
+OSM_TILE_MAX_ZOOM = int(os.environ.get("OSM_TILE_MAX_ZOOM", "19"))
+
+# Only needed by a provider that uses subdomains, such as CARTO. The
+# standard OpenStreetMap tiles do not use any and the usage policy asks
+# for exactly `https://tile.openstreetmap.org/{z}/{x}/{y}.png`.
+OSM_TILE_SUBDOMAINS = os.environ.get("OSM_TILE_SUBDOMAINS", "")
+
+# The key of the tile provider. CARTO requires one, the standard
+# OpenStreetMap tiles do not.
+OSM_TILE_API_KEY = os.environ.get("OSM_TILE_API_KEY", "")
+
+# A contact address published by the application. The tile and the
+# geocoding policies ask for a way to reach the operator.
+OSM_CONTACT_EMAIL = os.environ.get(
+    "OSM_CONTACT_EMAIL", "rollingup.app@gmail.com"
+)
 
 # Username of the service account that owns OSM imported spots.
 OSM_SERVICE_USER = os.environ.get("OSM_SERVICE_USER", "osm_importer")
