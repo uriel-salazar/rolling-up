@@ -82,6 +82,13 @@
      * @returns {string} The address, empty when there is none.
      */
     function addressOf(spot) {
+        // The API already resolves the address from Google Places or
+        // from the OpenStreetMap tags. The tags stay as a fallback for
+        // an older cached answer.
+        if (spot.address) {
+            return String(spot.address);
+        }
+
         const metadata = spot.osm_metadata || {};
         const tags = metadata.tags || {};
 

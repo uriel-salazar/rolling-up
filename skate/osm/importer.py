@@ -16,6 +16,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from django.conf import settings
 from django.db import transaction
 
+from ..dedupe import find_matching_spot as find_nearby_spot
 from ..models import Spots, User
 from .parser import ParsedSpot
 
@@ -140,7 +141,7 @@ def _plan_import(spots: List[ParsedSpot], summary: ImportSummary) -> ImportSumma
 
     for spot in spots:
         key = (spot.osm_type, spot.osm_id)
-        if key in existing:
+        if key in existing or _find_google_match(spot) is not None:
             summary.updated += 1
         else:
             summary.created += 1
@@ -169,6 +170,14 @@ def _save_spot(spot: ParsedSpot, service_user: User) -> str:
     ).first()
 
     if existing is None:
+        # A Google Places import may have created the same skatepark
+        # already. When the name and the position match, the OSM
+        # identifier is attached to that record instead of creating a
+        # second card for the same place.
+        google_match = _find_google_match(spot)
+        if google_match is not None:
+            return _merge_google_spot(google_match, spot, defaults)
+
         Spots.objects.create(
             osm_type=spot.osm_type,
             osm_id=spot.osm_id,
@@ -181,6 +190,53 @@ def _save_spot(spot: ParsedSpot, service_user: User) -> str:
         return "created"
 
     return _refresh_spot(existing, spot, defaults)
+
+
+def _find_google_match(spot: ParsedSpot) -> Optional[Spots]:
+    """Return a Google-only record for the same skatepark, if any."""
+    return find_nearby_spot(
+        spot.name,
+        spot.latitude,
+        spot.longitude,
+        float(settings.GOOGLE_PLACES_DEDUPE_RADIUS_METERS),
+        Spots.objects.filter(
+            source=Spots.SOURCE_GOOGLE,
+            google_place_id__isnull=False,
+            osm_id__isnull=True,
+        ),
+    )
+
+
+def _merge_google_spot(
+    existing: Spots,
+    spot: ParsedSpot,
+    defaults: Dict[str, Any],
+) -> str:
+    """Attach the OSM identity to a record discovered on Google."""
+    existing.osm_type = spot.osm_type
+    existing.osm_id = spot.osm_id
+    existing.osm_metadata = defaults["osm_metadata"]
+    existing.source = Spots.SOURCE_OSM
+
+    if not existing.name_spot and defaults["name_spot"]:
+        existing.name_spot = defaults["name_spot"]
+    if existing.body is None:
+        existing.body = defaults["body"]
+    if existing.latitude is None:
+        existing.latitude = defaults["latitude"]
+    if existing.longitude is None:
+        existing.longitude = defaults["longitude"]
+    if existing.category != Spots.CATEGORY_SKATEPARK:
+        existing.category = defaults["category"]
+
+    existing.save()
+    logger.info(
+        "Merged OSM %s %s into the Google spot %s.",
+        spot.osm_type,
+        spot.osm_id,
+        existing.pk,
+    )
+    return "updated"
 
 
 def _refresh_spot(

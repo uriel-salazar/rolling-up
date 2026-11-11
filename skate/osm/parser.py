@@ -10,27 +10,49 @@ from __future__ import annotations
 import logging
 import re
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote, urlparse
 
 from .exceptions import OverpassRequestError
 
 logger = logging.getLogger(__name__)
 
 # Tag filters sent to Overpass.
+#
+# Only objects that are explicitly tagged as a skatepark are requested.
+# A ``sport=skateboard`` object can be a single ramp, a plaza or a
+# sports centre, so it is not an actual skatepark and is intentionally
+# left out of the discovery query.
 SKATEPARK_TAG_FILTERS = [{"key": "leisure", "value": "skatepark"}]
-SKATEBOARD_TAG_FILTERS = [{"key": "sport", "value": "skateboard"}]
-ALL_TAG_FILTERS = SKATEPARK_TAG_FILTERS + SKATEBOARD_TAG_FILTERS
+ALL_TAG_FILTERS = list(SKATEPARK_TAG_FILTERS)
 
-# ``leisure`` values that describe a place where skateboarding may
-# happen. Used to decide whether a ``sport=skateboard`` object really is
-# a skatepark and not, say, a single half pipe inside a sports centre.
-SKATEPARK_FRIENDLY_LEISURE = frozenset(
-    {
-        "skatepark",
-        "sports_centre",
-        "sports_center",
-        "park",
-        "recreation_ground",
-    }
+# Keys used to find a photograph and the information that has to be
+# displayed next to it.
+IMAGE_TAG_KEYS = ("image", "image:0", "image:1", "image:2")
+WIKIMEDIA_TAG_KEYS = ("wikimedia_commons",)
+IMAGE_LICENSE_KEYS = (
+    "image:license",
+    "image:licence",
+    "license",
+    "licence",
+    "image:license:url",
+    "image:licence:url",
+    "license:url",
+    "licence:url",
+)
+IMAGE_LICENSE_URL_KEYS = (
+    "image:license:url",
+    "image:licence:url",
+    "license:url",
+    "licence:url",
+)
+IMAGE_ATTRIBUTION_KEYS = (
+    "image:attribution",
+    "image:attribution:url",
+    "attribution",
+    "artist",
+    "photographer",
+    "author",
+    "image:author",
 )
 
 # Keywords used to recognise a skatepark by name or description.
@@ -161,6 +183,7 @@ def parse_element(element: Dict[str, Any]) -> Tuple[Optional[ParsedSpot], str]:
     name = build_name(tags, osm_type, osm_id)
     description = extract_description(tags)
     category = detect_category(tags)
+    image = extract_image(tags)
 
     metadata = {
         "tags": dict(tags),
@@ -174,6 +197,11 @@ def parse_element(element: Dict[str, Any]) -> Tuple[Optional[ParsedSpot], str]:
         "attribution": OSM_ATTRIBUTION,
         "license": OSM_LICENSE,
     }
+
+    # The photograph is optional. It is kept in its own block so the
+    # resolver can use it without having to know the raw tag names.
+    if image is not None:
+        metadata["image"] = image
 
     return (
         ParsedSpot(
@@ -217,31 +245,13 @@ def detect_category(tags: Dict[str, Any]) -> str:
 def is_skatepark(tags: Dict[str, Any]) -> bool:
     """Decide whether the given OSM tags describe a skatepark.
 
-    Objects tagged ``leisure=skatepark`` are always accepted. Objects
-    tagged ``sport=skateboard`` are only accepted when they also look
-    like a skatepark, so that unrelated objects (a single ramp, a
-    playground, a basketball court) are not imported.
+    Only objects explicitly tagged ``leisure=skatepark`` are accepted.
+    A ``sport=skateboard`` tag is not enough: it can describe a single
+    ramp, a plaza, a shop or a sports centre, none of which is an
+    actual skatepark record.
     """
     leisure = (tags.get("leisure") or "").strip().lower()
-    sport = (tags.get("sport") or "").strip().lower()
-
-    if leisure == "skatepark":
-        return True
-
-    if sport != "skateboard":
-        return False
-
-    if leisure in SKATEPARK_FRIENDLY_LEISURE:
-        return True
-
-    # No ``leisure`` tag: fall back to the name and description so a
-    # genuinely named skatepark is not lost.
-    for key in ("name", "description", "note", "operator"):
-        value = tags.get(key)
-        if value and SKATEPARK_KEYWORDS.search(str(value)):
-            return True
-
-    return False
+    return leisure == "skatepark"
 
 
 def extract_coordinates(
@@ -313,6 +323,108 @@ def extract_website(tags: Dict[str, Any]) -> Optional[str]:
             if website:
                 return website
     return None
+
+
+def _first_tag(tags: Dict[str, Any], keys: Tuple[str, ...]) -> Optional[str]:
+    """Return the trimmed value of the first tag that has one."""
+    for key in keys:
+        value = tags.get(key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return None
+
+
+def _normalise_image_url(value: Optional[str]) -> Optional[str]:
+    """Return an http(s) image URL, or ``None`` when it is not usable."""
+    if not value:
+        return None
+
+    url = value.strip()
+    if not url:
+        return None
+
+    # Some mappers write several URLs in one tag. The first one is the
+    # photograph, the rest are usually categories or mirrors.
+    if ";" in url:
+        url = url.split(";", 1)[0].strip()
+
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return None
+
+    return url
+
+
+def _wikimedia_image_url(value: Optional[str]) -> Optional[str]:
+    """Turn a ``wikimedia_commons`` tag into a direct file URL."""
+    if not value:
+        return None
+
+    text = value.strip()
+    if not text:
+        return None
+
+    if text.lower().startswith(("http://", "https://")):
+        return _normalise_image_url(text)
+
+    # ``wikimedia_commons`` normally holds ``File:Name.jpg``. A
+    # category does not identify a single photograph, so it is ignored.
+    if text.lower().startswith("file:"):
+        file_name = text.split(":", 1)[1].strip()
+        if not file_name:
+            return None
+        return (
+            "https://commons.wikimedia.org/wiki/Special:FilePath/"
+            + quote(file_name, safe="")
+        )
+
+    return None
+
+
+def extract_image(tags: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Return the photograph of a skatepark described by OSM tags.
+
+    The function never guesses a picture: it only returns a URL that is
+    explicitly referenced by the object. The licence and the
+    attribution are kept when the mapper supplied them.
+    """
+    tag_value = _first_tag(tags, IMAGE_TAG_KEYS)
+    url = _normalise_image_url(tag_value)
+    from_wikimedia = False
+
+    if url is None:
+        url = _wikimedia_image_url(_first_tag(tags, WIKIMEDIA_TAG_KEYS))
+        from_wikimedia = url is not None
+
+    if url is None:
+        return None
+
+    license_name = _first_tag(tags, IMAGE_LICENSE_KEYS)
+    license_url = _first_tag(tags, IMAGE_LICENSE_URL_KEYS)
+    attribution = _first_tag(tags, IMAGE_ATTRIBUTION_KEYS)
+
+    if from_wikimedia:
+        if not license_name:
+            license_name = "See the Wikimedia Commons file page"
+        if not attribution:
+            attribution = "Wikimedia Commons"
+
+    # A photograph without any licence or credit is not used by the
+    # application, even when the URL looks valid. The raw tags are still
+    # available in the metadata block.
+    usable = bool(license_name or attribution or from_wikimedia)
+
+    return {
+        "url": url,
+        "attribution": attribution,
+        "license": license_name,
+        "license_url": license_url,
+        "source": "OpenStreetMap",
+        "usable": usable,
+    }
 
 
 def ensure_elements(payload: Dict[str, Any]) -> List[Dict[str, Any]]:

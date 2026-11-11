@@ -39,11 +39,20 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+_host = os.environ.get("HOST", "")
+if _host and _host.startswith("https://"):
+    _host = _host[8:]
+if _host:
+    ALLOWED_HOSTS.append(_host)
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+
+if _host:
+    CSRF_TRUSTED_ORIGINS.append("https://" + _host)
 
 # The OpenStreetMap tile usage policy asks that the browser sends a
 # valid HTTP Referer to the tile servers. Django defaults to
@@ -56,16 +65,15 @@ SECURE_REFERRER_POLICY = os.environ.get(
 
 
 # Production security settings
-# Only active when DEBUG=False (set in .env), so local http dev still works
-#
+# Active when DEBUG=False
 
-#if not DEBUG:
-  #  SECURE_SSL_REDIRECT = True
- #   SESSION_COOKIE_SECURE = True
- #   CSRF_COOKIE_SECURE = True
- #  SECURE_HSTS_SECONDS = 31536000  # 1 year
- #   SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-#
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 
@@ -338,6 +346,37 @@ OSM_CONTACT_EMAIL = os.environ.get(
 
 # Username of the service account that owns OSM imported spots.
 OSM_SERVICE_USER = os.environ.get("OSM_SERVICE_USER", "osm_importer")
+
+# Google Places API (New)
+#
+# Only the Nearby Search and the Place Photos endpoints are used. The
+# key is a credential and stays on the server: the browser reads the
+# photographs through the photo proxy of the application.
+GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")
+GOOGLE_PLACES_TIMEOUT = int(os.environ.get("GOOGLE_PLACES_TIMEOUT", "30"))
+GOOGLE_PLACES_SEARCH_RADIUS = int(
+    os.environ.get("GOOGLE_PLACES_SEARCH_RADIUS", "5000")
+)
+GOOGLE_PLACES_MAX_RESULTS = int(
+    os.environ.get("GOOGLE_PLACES_MAX_RESULTS", "20")
+)
+GOOGLE_PLACES_MAX_PAGES = int(os.environ.get("GOOGLE_PLACES_MAX_PAGES", "3"))
+GOOGLE_PLACES_PHOTO_MAX_WIDTH = int(
+    os.environ.get("GOOGLE_PLACES_PHOTO_MAX_WIDTH", "1200")
+)
+# Google allows place content to be cached for at most 30 days. The
+# importer stores a bounded copy and stamps it with this expiry.
+GOOGLE_PLACES_DATA_TTL_SECONDS = int(
+    os.environ.get("GOOGLE_PLACES_DATA_TTL_SECONDS", str(60 * 60 * 24 * 30))
+)
+# Photographs are proxied and may be cached by the browser for a day.
+# They are never written to the media storage of the application.
+GOOGLE_PLACES_PHOTO_CACHE_SECONDS = int(
+    os.environ.get("GOOGLE_PLACES_PHOTO_CACHE_SECONDS", str(60 * 60 * 24))
+)
+GOOGLE_PLACES_DEDUPE_RADIUS_METERS = float(
+    os.environ.get("GOOGLE_PLACES_DEDUPE_RADIUS_METERS", "120")
+)
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

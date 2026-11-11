@@ -31,9 +31,11 @@ class Spots(models.Model):
 
     SOURCE_COMMUNITY = 'community'
     SOURCE_OSM = 'osm'
+    SOURCE_GOOGLE = 'google'
     SOURCE_CHOICES = [
         (SOURCE_COMMUNITY, 'Community'),
         (SOURCE_OSM, 'OpenStreetMap'),
+        (SOURCE_GOOGLE, 'Google Places'),
     ]
 
     OSM_TYPE_NODE = 'node'
@@ -90,6 +92,12 @@ class Spots(models.Model):
     )
     osm_metadata = models.JSONField(null=True, blank=True)
 
+    # Google Places (New) keeps its own identifier and a bounded cache
+    # of the provider fields. The photographs themselves are never
+    # stored in the database, they are proxied from Google on demand.
+    google_place_id = models.CharField(max_length=255, null=True, blank=True)
+    google_metadata = models.JSONField(null=True, blank=True)
+
     class Meta:
         constraints = [
             # Partial unique index: only OSM records carry osm_id, so
@@ -98,6 +106,12 @@ class Spots(models.Model):
                 fields=['osm_type', 'osm_id'],
                 name='unique_osm_object',
                 condition=Q(osm_id__isnull=False),
+            ),
+            # The same Google place may never be stored twice.
+            models.UniqueConstraint(
+                fields=['google_place_id'],
+                name='unique_google_place',
+                condition=Q(google_place_id__isnull=False),
             ),
         ]
 

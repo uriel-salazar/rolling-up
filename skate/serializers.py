@@ -3,6 +3,11 @@ from .models import User,Spots,Rating
 from decimal import Decimal
 from django.contrib.auth.password_validation import validate_password
 from skate.media_api.images_skateparks import image_logic
+from skate.media_api.images_skateparks.resolver import (
+    google_data_is_fresh,
+    resolve_spot_address,
+    resolve_spot_image,
+)
 from django.core.files.base import ContentFile
 
 
@@ -104,13 +109,17 @@ class SpotSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name_spot', 'image_url', 'body', 'created_at',
             'latitude', 'longitude', 'source', 'osm_id', 'osm_type',
-            'osm_metadata', 'user', 'category', 'rating', 'rating_count',
+            'osm_metadata', 'google_place_id', 'google_metadata',
+            'user', 'category', 'rating', 'rating_count',
+            'image_attribution', 'image_license', 'image_license_url',
+            'image_source', 'address',
         ]
         # The provenance fields are managed by the importer, a user may
         # not set them through the API.
         read_only_fields = [
             'id', 'created_at', 'user', 'source',
-            'osm_id', 'osm_type', 'osm_metadata', 'rating', 'rating_count',
+            'osm_id', 'osm_type', 'osm_metadata',
+            'google_place_id', 'google_metadata', 'rating', 'rating_count',
         ]
 
     # The average of the ratings of the spot and how many there are.
@@ -118,6 +127,62 @@ class SpotSerializer(serializers.ModelSerializer):
     # there when the spots are read through the viewset.
     rating = serializers.SerializerMethodField()
     rating_count = serializers.SerializerMethodField()
+
+    # The photograph is resolved from the uploaded file, Google Places
+    # or the OpenStreetMap tags, without changing the ``image_url``
+    # field the existing clients already read.
+    image_attribution = serializers.SerializerMethodField()
+    image_license = serializers.SerializerMethodField()
+    image_license_url = serializers.SerializerMethodField()
+    image_source = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+    google_metadata = serializers.SerializerMethodField()
+
+    def _resolved_image(self, obj):
+        cache = getattr(self, '_image_cache', None)
+        if cache is None:
+            cache = {}
+            self._image_cache = cache
+
+        key = getattr(obj, 'pk', id(obj))
+        if key not in cache:
+            cache[key] = resolve_spot_image(obj, self.context.get('request'))
+        return cache[key]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        image = self._resolved_image(instance)
+        if image is None:
+            data['image_url'] = None
+        else:
+            data['image_url'] = image.get('url')
+        return data
+
+    def get_image_attribution(self, obj):
+        image = self._resolved_image(obj)
+        return image.get('attribution') if image else None
+
+    def get_image_license(self, obj):
+        image = self._resolved_image(obj)
+        return image.get('license') if image else None
+
+    def get_image_license_url(self, obj):
+        image = self._resolved_image(obj)
+        return image.get('license_url') if image else None
+
+    def get_image_source(self, obj):
+        image = self._resolved_image(obj)
+        return image.get('source') if image else None
+
+    def get_address(self, obj):
+        return resolve_spot_address(obj)
+
+    def get_google_metadata(self, obj):
+        """Do not expose provider content beyond its 30-day cache limit."""
+        metadata = obj.google_metadata
+        if not isinstance(metadata, dict):
+            return None
+        return metadata if google_data_is_fresh(metadata) else None
 
     def get_rating(self, obj):
         """Return the average score of the spot, or None."""

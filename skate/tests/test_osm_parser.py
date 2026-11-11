@@ -5,8 +5,10 @@ from __future__ import annotations
 from django.test import SimpleTestCase
 
 from skate.osm.parser import (
+    ALL_TAG_FILTERS,
     extract_coordinates,
     extract_description,
+    extract_image,
     extract_website,
     is_skatepark,
     parse_element,
@@ -124,6 +126,38 @@ class ParseElementTests(SimpleTestCase):
         )
         self.assertEqual(spot.metadata["website"], "https://example.org")
 
+    def test_only_skatepark_objects_are_requested(self):
+        self.assertEqual(
+            ALL_TAG_FILTERS, [{"key": "leisure", "value": "skatepark"}]
+        )
+
+    def test_a_licensed_image_is_normalised(self):
+        tags = {
+            "image": "https://example.org/park.jpg",
+            "image:license": "CC-BY-4.0",
+            "image:license:url": "https://creativecommons.org/licenses/by/4.0/",
+            "image:attribution": "A mapper",
+        }
+
+        image = extract_image(tags)
+
+        self.assertEqual(image["url"], "https://example.org/park.jpg")
+        self.assertEqual(image["license"], "CC-BY-4.0")
+        self.assertEqual(image["attribution"], "A mapper")
+        self.assertTrue(image["usable"])
+
+    def test_an_image_without_credit_is_not_marked_usable(self):
+        image = extract_image({"image": "https://example.org/park.jpg"})
+
+        self.assertFalse(image["usable"])
+
+    def test_a_wikimedia_commons_file_becomes_a_direct_url(self):
+        image = extract_image({"wikimedia_commons": "File:Skatepark.jpg"})
+
+        self.assertIn("commons.wikimedia.org", image["url"])
+        self.assertIn("Skatepark.jpg", image["url"])
+        self.assertTrue(image["usable"])
+
     def test_metadata_keeps_the_attribution_and_the_license(self):
         element = node_element(9, 20.0, -103.0, {"leisure": "skatepark"})
 
@@ -201,13 +235,13 @@ class SkateparkDetectionTests(SimpleTestCase):
     def test_sport_skateboard_alone_is_rejected(self):
         self.assertFalse(is_skatepark({"sport": "skateboard"}))
 
-    def test_sport_skateboard_inside_a_sports_centre_is_accepted(self):
-        self.assertTrue(
+    def test_sport_skateboard_inside_a_sports_centre_is_rejected(self):
+        self.assertFalse(
             is_skatepark({"sport": "skateboard", "leisure": "sports_centre"})
         )
 
-    def test_sport_skateboard_with_a_skatepark_name_is_accepted(self):
-        self.assertTrue(
+    def test_sport_skateboard_with_a_skatepark_name_is_rejected(self):
+        self.assertFalse(
             is_skatepark({"sport": "skateboard", "name": "Skatepark del Centro"})
         )
 

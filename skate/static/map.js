@@ -33,6 +33,10 @@
     const statusBox = document.getElementById('map-status');
     const listBox = document.getElementById('spot-list');
     const preview = document.getElementById('spot-preview');
+    const previewImage = document.getElementById('preview-image');
+    const previewImageAttribution = document.getElementById(
+        'preview-image-attribution'
+    );
     const previewName = document.getElementById('preview-name');
     const previewCategory = document.getElementById('preview-category');
     const previewRating = document.getElementById('preview-rating');
@@ -75,7 +79,17 @@
 
     const SOURCE_LABELS = {
         osm: 'OpenStreetMap',
+        google: 'Google',
         community: 'Comunidad',
+    };
+
+    // The source filter keeps its two existing controls. The Google
+    // results are part of the same external discovery as OSM, so they
+    // follow the OpenStreetMap control without adding a new one.
+    const SOURCE_GROUPS = {
+        osm: ['osm', 'google'],
+        community: ['community'],
+        google: ['google'],
     };
 
     // -----------------------------------------------------------------
@@ -139,8 +153,8 @@
         if (categories.length && categories.length < 3) {
             params.category = categories[0];
         }
-        if (sources.length === 1) {
-            params.source = sources[0];
+        if (sources.length === 1 && sources[0] === 'community') {
+            params.source = 'community';
         }
 
         params._categories = categories;
@@ -560,8 +574,53 @@
         fillPreview(spot);
     }
 
+    /** Fill the picture of the selected spot, when it has one. */
+    function fillPreviewImage(spot) {
+        if (!previewImage) {
+            return;
+        }
+
+        previewImage.onerror = null;
+        previewImage.removeAttribute('src');
+        previewImage.removeAttribute('title');
+        previewImage.alt = '';
+        previewImage.hidden = true;
+
+        if (previewImageAttribution) {
+            previewImageAttribution.textContent = '';
+        }
+
+        const url = spot.image_url;
+        if (!url) {
+            return;
+        }
+
+        const attribution = spot.image_attribution
+            ? String(spot.image_attribution)
+            : '';
+
+        // A broken photograph must not break the panel: it simply
+        // disappears and the existing layout of the spot stays.
+        previewImage.onerror = function () {
+            previewImage.hidden = true;
+            previewImage.removeAttribute('src');
+            if (previewImageAttribution) {
+                previewImageAttribution.textContent = '';
+            }
+        };
+        previewImage.src = url;
+        previewImage.alt = spot.name_spot || 'Skatepark';
+        previewImage.title = attribution;
+        previewImage.hidden = false;
+
+        if (previewImageAttribution) {
+            previewImageAttribution.textContent = attribution;
+        }
+    }
+
     /** Fill the panel with the information of a spot. */
     function fillPreview(spot) {
+        fillPreviewImage(spot);
         previewName.textContent = spot.name_spot;
 
         previewCategory.textContent =
@@ -638,8 +697,11 @@
                 // here.
                 const filtered = spots.filter(function (spot) {
                     const category = spot.category || 'street';
-                    return categories.indexOf(category) !== -1
-                        && sources.indexOf(spot.source) !== -1;
+                    const matchesSource = sources.some(function (source) {
+                        const group = SOURCE_GROUPS[source] || [source];
+                        return group.indexOf(spot.source) !== -1;
+                    });
+                    return categories.indexOf(category) !== -1 && matchesSource;
                 });
 
                 render(filtered);

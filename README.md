@@ -12,13 +12,16 @@ OpenStreetMap.
 ### How the integration works
 
 The importer talks to the **official Overpass API**
-(`https://overpass-api.de/api/interpreter`) and pulls every object that
-is tagged as a skatepark:
+(`https://overpass-api.de/api/interpreter`) and pulls only the objects
+that are explicitly tagged as a skatepark:
 
-| Tag                | Meaning                                                  |
-| ------------------ | -------------------------------------------------------- |
-| `leisure=skatepark` | A skatepark, always imported.                           |
-| `sport=skateboard`  | Skateboarding somewhere. Only imported when the object also looks like a skatepark (a `leisure` value of `skatepark`, `sports_centre`, `sports_center`, `park` or `recreation_ground`, or a name / description that mentions a skatepark). This avoids importing a single ramp or a basketball court that merely mentions skateboarding. |
+| Tag                 | Meaning                    |
+| ------------------- | -------------------------- |
+| `leisure=skatepark` | An actual skatepark.       |
+
+A generic `sport=skateboard` tag is intentionally ignored: it can
+describe a single ramp, a plaza, a shop or a sports centre, none of
+which is an actual skatepark record.
 
 Nodes, ways and relations are all supported:
 
@@ -34,7 +37,6 @@ not hammered:
 {{geocodeArea:Guadalajara, Jalisco, Mexico}}->.searchArea;
 (
   nwr["leisure"="skatepark"](area.searchArea);
-  nwr["sport"="skateboard"](area.searchArea);
 );
 out center tags;
 ```
@@ -155,6 +157,53 @@ is however required by its usage policy.
 | `NOMINATIM_API_URL`      | `https://nominatim.openstreetmap.org/search`              | Geocoding service.                   |
 | `NOMINATIM_TIMEOUT`      | `30`                                                       | Timeout of the geocoding request, seconds. |
 | `OSM_SERVICE_USER`       | `osm_importer`                                             | Username of the service account that owns the imported spots. |
+
+---
+
+## Google Places API (New)
+
+Skateparks can also be discovered with the **Google Places API (New)**.
+The integration uses Nearby Search restricted to
+`includedTypes: ["skateboard_park"]`, so plazas, generic parks and
+courts are not imported. It retrieves the place id, name, coordinates,
+address, rating and photographs through explicit field masks.
+
+```bash
+python manage.py import_google_skateparks --location "Guadalajara, Jalisco, Mexico"
+python manage.py import_google_skateparks --lat 20.67 --lng -103.34 --radius 5000
+python manage.py import_google_skateparks --dry-run
+```
+
+The importer merges a Google place with an existing OpenStreetMap or
+community spot when the name and the position match, so the same
+skatepark is never shown twice. Both provider identifiers are kept.
+
+Google content is cached for at most 30 days
+(`GOOGLE_PLACES_DATA_TTL_SECONDS`) and is hidden from the API once it
+expires. Run `python manage.py purge_google_places_cache` periodically
+to delete the expired records as well. Photographs are **not** stored
+in the media storage of the application: the browser reads them through
+`/api/places/photo/...`, which fetches them on demand and keeps the API
+key on the server.
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `GOOGLE_PLACES_API_KEY` | *(empty)* | Required for Google discovery and photos. |
+| `GOOGLE_PLACES_SEARCH_RADIUS` | `5000` | Default radius in metres. |
+| `GOOGLE_PLACES_MAX_RESULTS` | `20` | Results per page (maximum 20). |
+| `GOOGLE_PLACES_MAX_PAGES` | `3` | Pages followed per import. |
+| `GOOGLE_PLACES_DATA_TTL_SECONDS` | 30 days | Maximum age of cached provider fields. |
+| `GOOGLE_PLACES_PHOTO_CACHE_SECONDS` | 1 day | Browser cache for proxied photos. |
+| `GOOGLE_PLACES_DEDUPE_RADIUS_METERS` | `120` | Radius used to merge the same skatepark. |
+
+### Photographs in the existing interface
+
+The API keeps the existing `image_url` field. The resolver fills it, in
+order, from a user upload, the first Google Places photograph, or an
+image explicitly tagged on OpenStreetMap with a licence or credit. A
+spot without a usable picture keeps the existing placeholder. The feed
+and the map preview use the same field, so no layout, typography,
+colour or control was changed.
 
 ---
 

@@ -47,6 +47,16 @@
             image.src = spot.image_url;
             image.alt = spot.name_spot;
             image.loading = 'lazy';
+            // The attribution travels with the picture. It is exposed
+            // as a tooltip and as metadata so the licence stays with
+            // the image without changing the composition of the card.
+            if (spot.image_attribution) {
+                image.title = String(spot.image_attribution);
+                image.dataset.attribution = String(spot.image_attribution);
+            }
+            if (spot.image_license) {
+                image.dataset.license = String(spot.image_license);
+            }
             // A picture that does not load leaves the same plate that
             // a spot without a picture gets.
             image.addEventListener('error', function () {

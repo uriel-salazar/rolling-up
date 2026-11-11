@@ -6,6 +6,7 @@ from .routers import router
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 from .views import home,RatingViewSet,spot_form,skate_map,feed_page,profile_page
 from .geocode.views import GeocodeSearchView
+from .google_places.views import GooglePlacePhotoView
 from .tiles import tile
 from drf_spectacular.views import  SpectacularAPIView,SpectacularSwaggerView
 
@@ -33,6 +34,17 @@ urlpatterns = [
     path('profile/', profile_page, name='profile'),
     # the tiles of the map, served by the application
     path('tiles/<path:path>', tile, name='map_tile'),
+    # photographs of the Google Places skateparks, served without the key
+    path(
+        'api/places/photo/<path:photo_name>',
+        GooglePlacePhotoView.as_view(),
+        name='google_place_photo',
+    ),
+    path(
+        'api/places/photo/',
+        GooglePlacePhotoView.as_view(),
+        name='google_place_photo_query',
+    ),
     # html pages to create and to edit a spot
     path('spots/new/', spot_form, name='spot_create'),
     path('spots/<int:pk>/edit/', spot_form, name='spot_edit'),

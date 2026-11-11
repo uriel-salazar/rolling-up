@@ -509,6 +509,23 @@
     margin-bottom: 12px;
 }
 
+/* The photograph of the selected spot. It only takes space when a
+   usable picture exists, so the panel keeps its current proportions
+   for every spot without one. */
+.preview-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 2px;
+    margin-bottom: 12px;
+    background: #141414;
+}
+
+.preview-image[hidden] {
+    display: none;
+}
+
 .preview-link {
     display: inline-block;
     font-size: 0.74rem;
