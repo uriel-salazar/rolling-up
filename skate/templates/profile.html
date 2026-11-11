@@ -15,9 +15,8 @@
         <nav class="app-nav" aria-label="Principal">
             <a href="/map/">Mapa</a>
             <a href="/feed/">Spots</a>
-            {% if user.is_authenticated %}
-            <a href="/profile/" class="app-nav-profile" aria-current="page">Perfil</a>
-            <div class="auth-dropdown">
+            <a href="/profile/" class="app-nav-profile" aria-current="page" data-session="in" hidden>Perfil</a>
+            <div class="auth-dropdown" data-session="in" hidden>
                 <button type="button" class="app-nav-profile" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-user"></i>
                 </button>
@@ -26,70 +25,70 @@
                     <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
                 </ul>
             </div>
-            {% else %}
-            <a href="/profile/" class="nav-login">Iniciar sesión</a>
-            <a href="/register/" class="nav-signup">Crear cuenta</a>
-            {% endif %}
+            <a href="/profile/" class="nav-login" data-session="out">Iniciar sesión</a>
+            <a href="/register/" class="nav-signup" data-session="out">Crear cuenta</a>
         </nav>
 
         <span class="app-topbar-spacer"></span>
 
-        {% if user.is_authenticated %}
-        <a href="/spots/new/" class="app-add">Añadir spot</a>
-        {% else %}
-        <a href="/profile/" class="app-add nav-login-btn">Iniciar sesión</a>
-        {% endif %}
+        <a href="/spots/new/" class="app-add" data-session="in" hidden>Añadir spot</a>
+        <a href="/profile/" class="app-add nav-login-btn" data-session="out">Iniciar sesión</a>
     </header>
 
     <main class="profile-main login-enter">
-        {% if user.is_authenticated %}
-        <h1 class="profile-title">Bienvenido, {{ user.username }}</h1>
-        <p class="profile-info">Has iniciado sesión como <strong>{{ user.username }}</strong> ({{ user.email }}).</p>
-        <p class="profile-info">Miembro desde {{ user.created_at|date:"F j, Y" }}.</p>
-        <p class="profile-actions">
-            <a href="/profile/" class="btn-primary">Mi perfil</a>
-            <button type="button" id="logout-btn" class="btn-ghost">Cerrar sesión</button>
-        </p>
-        {% else %}
-        <h1 class="profile-title">Iniciar sesión</h1>
-        <p id="profile-info" class="profile-info form-status is-visible">Bienvenido de nuevo a Rolling Up.</p>
+        <div data-session="in" hidden>
+            <h1 class="profile-title">Bienvenido, <span id="profile-username">{{ user.username }}</span></h1>
+            <p class="profile-info" id="profile-details">Has iniciado sesión.</p>
+            <p class="profile-actions">
+                <a href="/profile/" class="btn-primary">Mi perfil</a>
+                <button type="button" id="logout-btn-profile" class="btn-ghost">Cerrar sesión</button>
+            </p>
+        </div>
 
-        <form id="login-form" class="profile-form">
-            <div class="field password-field">
-                <label for="username">Usuario o correo</label>
-                <input type="text" id="username" name="username" autocomplete="username" required>
-            </div>
-            <div class="field password-field">
-                <label for="password">Contraseña</label>
-                <div class="password-input">
-                    <input type="password" id="password" name="password" autocomplete="current-password" required>
-                    <button type="button" class="password-toggle" aria-label="Mostrar contraseña" aria-pressed="false">
-                        <i class="fas fa-eye"></i>
-                    </button>
+        <div data-session="out">
+            <h1 class="profile-title">Iniciar sesión</h1>
+            <p id="profile-info" class="profile-info form-status is-visible">Bienvenido de nuevo a Rolling Up.</p>
+
+            <form id="login-form" class="profile-form">
+                <div class="field password-field">
+                    <label for="username">Usuario o correo</label>
+                    <input type="text" id="username" name="username" autocomplete="username" required>
                 </div>
-            </div>
-            <button type="submit" class="btn-primary" id="login-btn">
-                Iniciar sesión
-                <span class="login-spinner" hidden></span>
-            </button>
-        </form>
+                <div class="field password-field">
+                    <label for="password">Contraseña</label>
+                    <div class="password-input">
+                        <input type="password" id="password" name="password" autocomplete="current-password" required>
+                        <button type="button" class="password-toggle" aria-label="Mostrar contraseña" aria-pressed="false">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" id="login-btn">
+                    Iniciar sesión
+                    <span class="login-spinner" hidden></span>
+                </button>
+            </form>
 
-        <p class="profile-info" style="margin-top: 24px; font-size: 0.85rem; text-align: center;">
-            ¿No tienes cuenta? <a href="/register/" style="color: var(--white-color); text-decoration: underline;">Crear cuenta</a>
-        </p>
-        <p class="profile-info" style="font-size: 0.85rem; text-align: center;">
-            O {% include "google_button.html" with label="Iniciar sesión con Google" %}
-        </p>
-        {% endif %}
+            <p class="profile-info" style="margin-top: 24px; font-size: 0.85rem; text-align: center;">
+                ¿No tienes cuenta? <a href="/register/" style="color: var(--white-color); text-decoration: underline;">Crear cuenta</a>
+            </p>
+            <p class="profile-info" style="font-size: 0.85rem; text-align: center;">
+                O {% include "google_button.html" with label="Iniciar sesión con Google" %}
+            </p>
+        </div>
     </main>
 
+    <script src="{% static 'session.js' %}"></script>
     <script>
         // The API is on the same host as the page.
         const API_URL = '';
 
-        // When Google OAuth redirects here with tokens in the URL,
-        // store them in local storage and clean up the address bar.
-        const params = new URLSearchParams(window.location.search);
+        // When Google OAuth redirects here with the tokens in the
+        // fragment of the url, store them in local storage and clean up
+        // the address bar. The fragment is used because the browser
+        // never sends it to the server.
+        const hash = window.location.hash.replace(/^#/, '');
+        const params = new URLSearchParams(hash || window.location.search);
         const access = params.get('access');
         const refresh = params.get('refresh');
         if (access && refresh) {
@@ -115,22 +114,15 @@
             const user = data.results[0];
             if (!user) return;
 
-            const info = document.getElementById('profile-info');
-            if (info) {
-                info.textContent = `Sesión iniciada como ${user.username}`;
-                info.style.color = '#f5f5f5';
+            const username = document.getElementById('profile-username');
+            if (username) {
+                username.textContent = user.username;
             }
 
-            const form = document.getElementById('login-form');
-            if (form) form.style.display = 'none';
-
-            // Show authenticated state on any page (topbar).
-            document.querySelectorAll('.app-nav-profile').forEach(el => {
-                el.style.display = 'flex';
-            });
-            document.querySelectorAll('.nav-login, .nav-signup, .nav-login-btn').forEach(el => {
-                el.style.display = 'none';
-            });
+            const details = document.getElementById('profile-details');
+            if (details) {
+                details.textContent = `Has iniciado sesión como ${user.username}.`;
+            }
         }
 
         // Toggle password visibility.
@@ -157,7 +149,7 @@
         }
 
         // Logout handler (works from any page).
-        const logoutBtns = document.querySelectorAll('#logout-btn');
+        const logoutBtns = document.querySelectorAll('#logout-btn, #logout-btn-profile');
         logoutBtns.forEach(btn => {
             btn.addEventListener('click', async function () {
                 localStorage.removeItem('access');

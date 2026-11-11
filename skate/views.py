@@ -7,6 +7,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render,get_object_or_404
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, Q, Case, When, IntegerField
 from django.utils.safestring import mark_safe
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -87,9 +88,16 @@ def spot_detail_page(request, pk):
     tile_config = build_tile_config()
 
     # Resolve the main image through the same pipeline the API uses.
-    from skate.media_api.images_skateparks.resolver import resolve_spot_image
+    from skate.media_api.images_skateparks.resolver import (
+        resolve_spot_address,
+        resolve_spot_image,
+    )
     resolved = resolve_spot_image(spot, request)
     main_image = resolved.get('url') if resolved else None
+
+    # The address comes from the same resolver the API uses, so the
+    # page and the API always show the same place.
+    address = resolve_spot_address(spot)
 
     # Additional photos uploaded by users.
     photos = SpotPhoto.objects.filter(spot=spot).select_related('uploaded_by')
@@ -98,6 +106,7 @@ def spot_detail_page(request, pk):
             'id': photo.id,
             'image_url': photo.image.url if photo.image else None,
             'caption': photo.caption,
+            'uploaded_by': photo.uploaded_by_id,
             'uploaded_by_username': photo.uploaded_by.username,
         }
         for photo in photos
@@ -126,6 +135,7 @@ def spot_detail_page(request, pk):
             'spot': spot,
             'main_image': main_image,
             'additional_photos': additional_photos,
+            'address': address,
             'average_rating': average_rating,
             'rating_count': rating_count,
             'user_rating': user_rating,
@@ -193,8 +203,13 @@ def google_callback(request):
         return HttpResponseRedirect("/profile/?error=google_network_error")
 
     refresh = RefreshToken.for_user(user)
+
+    # The tokens travel in the fragment of the url and not in the query
+    # string: the fragment is never sent to the server, so the tokens do
+    # not end up in the logs of the server, in the history of the
+    # browser or in the header of the next request.
     return HttpResponseRedirect(
-        f"/profile/?access={str(refresh.access_token)}"
+        f"/profile/#access={str(refresh.access_token)}"
         f"&refresh={str(refresh)}&google=1"
     )
 
@@ -464,8 +479,28 @@ class RatingViewSet(ModelViewSet):
             The rider rates a spot only once, so the answer is ``201``
             when the rating is created and ``200`` when the rating
             that already existed is updated.
+
+            The spot of the rating comes from the url of the endpoint.
+            The router also exposes the collection on its own, where
+            the spot is sent in the body; when neither is there the
+            answer is a ``400`` and not an error of the server.
         """
-        spot = get_object_or_404(Spots, pk=self.kwargs['spots_id'])
+        spot_id = self.kwargs.get('spots_id') or self.kwargs.get('spot_id')
+        if not spot_id:
+            spot_id = request.data.get('spot')
+
+        if not spot_id:
+            return Response(
+                {
+                    'detail': (
+                        'The spot of the rating is required.'
+                    ),
+                    'spot': ['This field is required.'],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        spot = get_object_or_404(Spots, pk=spot_id)
         existing = Rating.objects.filter(
             user=request.user, spot=spot
         ).first()
@@ -479,7 +514,19 @@ class RatingViewSet(ModelViewSet):
             serializer.save(user=request.user, spot=spot)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        serializer.save(user=request.user, spot=spot)
+        try:
+            with transaction.atomic():
+                serializer.save(user=request.user, spot=spot)
+        except IntegrityError:
+            # Two requests of the same rider arrived at the same time
+            # and the second one found the rating of the first one
+            # already saved. The rating is updated instead.
+            existing = Rating.objects.get(user=request.user, spot=spot)
+            serializer = self.get_serializer(existing, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=request.user, spot=spot)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 

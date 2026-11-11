@@ -138,6 +138,17 @@ const sandbox = {
         getElementById: (id) => elements[id] || null,
         createElement: (tag) => makeElement('', tag),
         addEventListener: () => {},
+        querySelectorAll: () => [],
+        // The form script looks at the body to know whether the page is
+        // embedded in an iframe.
+        body: {
+            classList: {
+                _set: new Set(),
+                add() {},
+                remove() {},
+                contains() { return false; },
+            },
+        },
     },
     localStorage: {
         store: { access: 'jwt-token' },
@@ -156,6 +167,7 @@ const sandbox = {
         this.signal = {};
         this.abort = function () {};
     },
+    requestAnimationFrame: (fn) => setTimeout(fn, 0),
     URLSearchParams: URLSearchParams,
     atob: (s) => Buffer.from(s, 'base64').toString('binary'),
     L: L,

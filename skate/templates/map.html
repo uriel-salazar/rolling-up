@@ -20,9 +20,8 @@
             <nav class="map-nav">
                 <a href="/feed/" class="map-nav-link">Lista</a>
                 <a href="/spots/new/" class="map-nav-link">Añadir Spot</a>
-                {% if user.is_authenticated %}
-                <a href="/profile/" class="map-nav-link">Perfil</a>
-                <div class="auth-dropdown map-auth-dropdown">
+                <a href="/profile/" class="map-nav-link" data-session="in" hidden>Perfil</a>
+                <div class="auth-dropdown map-auth-dropdown" data-session="in" hidden>
                     <button type="button" class="map-nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-user"></i>
                     </button>
@@ -31,10 +30,8 @@
                         <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
                     </ul>
                 </div>
-                {% else %}
-                <a href="/profile/" class="map-nav-link">Iniciar sesión</a>
-                <a href="/register/" class="map-nav-link">Crear cuenta</a>
-                {% endif %}
+                <a href="/profile/" class="map-nav-link" data-session="out">Iniciar sesión</a>
+                <a href="/register/" class="map-nav-link" data-session="out">Crear cuenta</a>
             </nav>
 
             <div class="map-search">
@@ -151,6 +148,7 @@
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" referrerpolicy="no-referrer"></script>
+    <script src="{% static 'session.js' %}"></script>
     <script src="{% static 'location_search.js' %}"></script>
     <script src="{% static 'map.js' %}"></script>
     <script>

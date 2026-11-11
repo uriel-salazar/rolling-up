@@ -101,8 +101,12 @@ class CallbackTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         location = response["Location"]
-        self.assertIn("/profile/?access=", location)
+        # The tokens travel in the fragment of the url: the fragment is
+        # never sent to the server, so the tokens do not end up in the
+        # logs of the server nor in the history of the browser.
+        self.assertIn("/profile/#access=", location)
         self.assertIn("&refresh=", location)
+        self.assertNotIn("?access=", location)
         mock_authenticate.assert_called_once_with("the-code")
 
     @override_settings(**GOOGLE_SETTINGS)

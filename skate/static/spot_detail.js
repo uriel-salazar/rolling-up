@@ -11,12 +11,57 @@
     const spotId = document.body.dataset.spotId;
     const token = localStorage.getItem('access');
 
+    /**
+     * The id of the rider of the session of the browser.
+     *
+     * The token of the session is a JWT, so the id of the user is read
+     * from its payload. The answer is null when there is no session or
+     * when the token can not be read.
+     */
+    function sessionUserId() {
+        const access = localStorage.getItem('access');
+        if (!access) {
+            return null;
+        }
+        try {
+            const payload = access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+            const claims = JSON.parse(atob(payload));
+            return claims.user_id ? String(claims.user_id) : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    /**
+     * Show the delete button only on the photographs the visitor
+     * uploaded. The API refuses the deletion of the photographs of
+     * somebody else anyway, this only keeps the page honest.
+     */
+    function refreshDeleteButtons() {
+        const id = sessionUserId();
+        document.querySelectorAll('.photo-delete').forEach(function (button) {
+            const owner = button.getAttribute('data-uploaded-by');
+            button.hidden = !id || !owner || String(owner) !== id;
+        });
+    }
+
     // ------------------------------------------------------------------
     // Photo upload
     // ------------------------------------------------------------------
 
     const photoForm = document.getElementById('photo-upload-form');
     const photoStatus = document.getElementById('photo-status');
+    const photoLoginNote = document.getElementById('photo-login-note');
+
+    // The session lives in the browser, so the server does not know who
+    // is reading the page. The form is shown to the visitors that have
+    // a token and the note is shown to the ones that do not.
+    if (photoForm) {
+        photoForm.hidden = !token;
+    }
+    if (photoLoginNote) {
+        photoLoginNote.hidden = !!token;
+    }
 
     if (photoForm) {
         photoForm.addEventListener('submit', function (event) {
@@ -95,14 +140,16 @@
                     const item = document.createElement('div');
                     item.className = 'spot-photo-item';
                     item.innerHTML =
-                        '<img src="' + result.data.image_url + '" alt="' +
+                        '<img src="' + result.data.image + '" alt="' +
                         (result.data.caption || 'Photo') + '">' +
                         (result.data.caption
                             ? '<span class="photo-caption">' + result.data.caption + '</span>'
                             : '') +
                         '<button type="button" class="photo-delete" data-photo-id="' +
-                        result.data.id + '" title="Delete">&times;</button>';
+                        result.data.id + '" data-uploaded-by="' +
+                        (result.data.uploaded_by || '') + '" title="Delete">&times;</button>';
                     grid.insertBefore(item, grid.firstChild);
+                    refreshDeleteButtons();
 
                     submitButton.disabled = false;
                     submitButton.textContent = 'Upload';
@@ -140,13 +187,24 @@
             headers: {
                 'Authorization': 'Bearer ' + token,
                 'Accept': 'application/json',
-            },
+            }
         })
             .then(function (response) {
                 if (response.ok) {
                     button.closest('.spot-photo-item').remove();
+                    return;
+                }
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('access');
+                    localStorage.removeItem('refresh');
+                    window.location.href = '/profile/';
                 }
             });
+    });
+
+    // The delete buttons are shown only to the uploader of the photo.
+    refreshDeleteButtons();
+
     });
 
     // ------------------------------------------------------------------
@@ -310,20 +368,6 @@
         }
 
         /** The id of the rider of the session of the browser. */
-        function sessionUserId() {
-            const access = localStorage.getItem('access');
-            if (!access) {
-                return null;
-            }
-            try {
-                const payload = access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-                const claims = JSON.parse(atob(payload));
-                return claims.user_id ? String(claims.user_id) : null;
-            } catch (error) {
-                return null;
-            }
-        }
-
         function isMine(rating) {
             const id = sessionUserId();
             if (!id) {

@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from .routers import router
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 from .views import home,RatingViewSet,spot_form,skate_map,feed_page,profile_page,register_page,google_login,google_callback,SpotPhotoViewSet,spot_detail_page
+from .serializers import EmailOrUsernameTokenObtainPairSerializer
 from .geocode.views import GeocodeSearchView
 from .discovery.views import NearbySkateparksView, ViewportSkateparksView
 from .google_places.views import GooglePlacePhotoView
@@ -16,8 +17,14 @@ from drf_spectacular.views import  SpectacularAPIView,SpectacularSwaggerView
 urlpatterns = [
     path('',home), # html of home
     path(settings.ADMIN_URL, admin.site.urls),
-    # get token 
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # get token
+    path(
+        'api/token/',
+        TokenObtainPairView.as_view(
+            serializer_class=EmailOrUsernameTokenObtainPairSerializer
+        ),
+        name='token_obtain_pair',
+    ),
     #refresh token url 
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
  

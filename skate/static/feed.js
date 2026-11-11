@@ -24,7 +24,9 @@
 
     // The live results of a selected place. They are never saved.
     const DISCOVERY_LIMIT = 250;
-    const DISCOVERY_MAX_SPAN = 2;
+    // The biggest box the discovery endpoint accepts. It has to be the
+    // same value the server uses, otherwise the answer is refused.
+    const DISCOVERY_MAX_SPAN = 1.5;
     const DISCOVERY_RADIUS = 50000;
 
     let selectedLocation = null;

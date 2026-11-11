@@ -31,8 +31,7 @@
                         <a href="#nosotros" class="nav-link"> Nosotros  </a>
                     </li>
                     
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
+                    <li class="nav-item" data-session="in" hidden>
                         <div class="auth-dropdown">
                             <button type="button" class="nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-user"></i>
@@ -43,10 +42,12 @@
                                 </ul>
                         </div>
                     </li>
-                    {% else %}
-                    <li class="nav-item"><a href="/profile/" class="nav-link"> Iniciar Sesion </a></li>
-                    <li class="nav-item"><a href="/register/" class="nav-link"> Registrarse </a></li>
-                    {% endif %}
+                    <li class="nav-item" data-session="out">
+                        <a href="/profile/" class="nav-link"> Iniciar Sesion </a>
+                    </li>
+                    <li class="nav-item" data-session="out">
+                        <a href="/register/" class="nav-link"> Registrarse </a>
+                    </li>
                     
                 </ul>
 
@@ -130,6 +131,7 @@
             </div>
         </div>
     </footer>
+    <script src="{% static 'session.js' %}"></script>
     <script src="{% static 'landing_scroll.js' %}"></script>
     <script>
         // Logout from any page.

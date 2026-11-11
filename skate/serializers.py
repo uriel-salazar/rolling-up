@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.validators import UniqueValidator
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User,Spots,Rating,SpotPhoto
 from decimal import Decimal
 from django.contrib.auth.password_validation import validate_password
@@ -9,6 +12,31 @@ from skate.media_api.images_skateparks.resolver import (
     resolve_spot_image,
 )
 from django.core.files.base import ContentFile
+
+
+class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Sign in with the username or with the email address.
+
+        The login form asks for "usuario o correo", so the two are
+        accepted. When the text is an email address it is translated
+        into the username of the account before the credentials are
+        checked.
+    """
+
+    def validate(self, attrs):
+        identifier = attrs.get(self.username_field, '') or ''
+        identifier = identifier.strip()
+
+        if '@' in identifier:
+            user = User.objects.filter(email__iexact=identifier).first()
+            if user is None:
+                raise AuthenticationFailed(
+                    self.error_messages['no_active_account'],
+                    'no_active_account',
+                )
+            attrs[self.username_field] = user.username
+
+        return super().validate(attrs)
 
 
 class CoordinateField(serializers.DecimalField):
@@ -39,9 +67,16 @@ class UserSerializer(serializers.ModelSerializer):
         and validation of username. 
     
     """
-    
+
     password = serializers.CharField(write_only=True)
-    email = serializers.EmailField(write_only=True)
+    # The email is unique in the database. Declaring the field by hand
+    # drops the validator that the model serializer builds, so it is
+    # added here: a duplicate address is answered with a 400 and not
+    # with an IntegrityError of the database.
+    email = serializers.EmailField(
+        write_only=True,
+        validators=[UniqueValidator(queryset=User.objects.all())],
+    )
     # email and password are never exposed in responses
     class Meta:
         model = User
@@ -280,6 +315,12 @@ class SpotPhotoSerializer(serializers.ModelSerializer):
         The uploader is read-only and is filled from the request user.
     """
     uploaded_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    # The spot of the photograph comes from the url of the endpoint,
+    # so the client does not send it and can not put a photograph in
+    # a spot it did not ask for.
+    spot = serializers.PrimaryKeyRelatedField(read_only=True)
+    # A photograph without a file is not a photograph.
+    image = serializers.ImageField(required=True)
 
     class Meta:
         model = SpotPhoto
@@ -332,10 +373,10 @@ class RatingSerializer(serializers.ModelSerializer):
         allow_blank=True,
         default='',
     )
-    spot = serializers.PrimaryKeyRelatedField(
-        queryset=Spots.objects.all(),
-        required=False,
-    )
+    # The spot of a rating is fixed: a rating belongs to the spot it
+    # was written for and it can not be moved to another one. The
+    # endpoint of the spot fills the field.
+    spot = serializers.PrimaryKeyRelatedField(read_only=True)
     user_username = serializers.SerializerMethodField()
 
     class Meta:

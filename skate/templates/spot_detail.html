@@ -15,9 +15,8 @@
         <nav class="app-nav" aria-label="Principal">
             <a href="/map/">Mapa</a>
             <a href="/feed/">Spots</a>
-            {% if user.is_authenticated %}
-            <a href="/profile/" class="app-nav-profile">Perfil</a>
-            <div class="auth-dropdown">
+            <a href="/profile/" class="app-nav-profile" data-session="in" hidden>Perfil</a>
+            <div class="auth-dropdown" data-session="in" hidden>
                 <button type="button" class="app-nav-profile" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-user"></i>
                 </button>
@@ -26,10 +25,8 @@
                     <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
                 </ul>
             </div>
-            {% else %}
-            <a href="/profile/" class="nav-login">Iniciar sesión</a>
-            <a href="/register/" class="nav-signup">Crear cuenta</a>
-            {% endif %}
+            <a href="/profile/" class="nav-login" data-session="out">Iniciar sesión</a>
+            <a href="/register/" class="nav-signup" data-session="out">Crear cuenta</a>
         </nav>
 
         <span class="app-topbar-spacer"></span>
@@ -42,11 +39,11 @@
             <div class="spot-badge">{{ spot.get_source_display }}</div>
             <h1 class="spot-title">{{ spot.name_spot }}</h1>
             <p class="spot-category">{{ spot.get_category_display }}</p>
-            {% if spot.address %}
-            <p class="spot-address">{{ spot.address }}</p>
+            {% if address %}
+            <p class="spot-address">{{ address }}</p>
             {% endif %}
-            {% if spot.description %}
-            <p class="spot-description">{{ spot.description }}</p>
+            {% if spot.body %}
+            <p class="spot-description">{{ spot.body }}</p>
             {% endif %}
         </section>
 
@@ -55,35 +52,35 @@
             <h2 class="spot-section-title">Fotos</h2>
 
             <div class="spot-photo-grid">
-                {% if spot.main_image %}
+                {% if main_image %}
                 <div class="spot-photo-main">
-                    <img src="{{ spot.main_image }}" alt="{{ spot.name_spot }}">
+                    <img src="{{ main_image }}" alt="{{ spot.name_spot }}">
                     <span class="photo-badge">Portada</span>
                 </div>
                 {% endif %}
 
-                {% for photo in spot.additional_photos %}
+                {% for photo in additional_photos %}
                 <div class="spot-photo-item">
                     <img src="{{ photo.image_url }}" alt="{{ photo.caption }}">
                     {% if photo.caption %}
                     <span class="photo-caption">{{ photo.caption }}</span>
                     {% endif %}
-                    {% if photo.uploaded_by_username == user.username %}
-                    <button type="button" class="photo-delete" data-photo-id="{{ photo.id }}" title="Delete">
+                    <button type="button" class="photo-delete" data-photo-id="{{ photo.id }}"
+                            data-uploaded-by="{{ photo.uploaded_by }}" title="Delete">
                         &times;
                     </button>
-                    {% endif %}
                 </div>
                 {% empty %}
-                {% if not spot.main_image %}
+                {% if not main_image %}
                 <p class="spot-no-photos">Sin fotos todavía.</p>
                 {% endif %}
                 {% endfor %}
             </div>
 
-            <!-- Photo upload form (logged in only) -->
-            {% if user.is_authenticated %}
-            <form id="photo-upload-form" class="spot-photo-upload" enctype="multipart/form-data">
+            <!-- Photo upload form. The session lives in the browser, so
+                 the form is always in the page and the JavaScript shows
+                 it only to the visitors that are logged in. -->
+            <form id="photo-upload-form" class="spot-photo-upload" enctype="multipart/form-data" hidden>
                 <div class="field">
                     <label for="photo-image">Añadir una foto</label>
                     <input type="file" id="photo-image" name="image"
@@ -94,16 +91,16 @@
                     <input type="text" id="photo-caption" name="caption"
                            placeholder="¿Qué muestra esta foto?">
                 </div>
-                <button type="submit" class="btn-primary" id="photo-submit">Subir</button>
+                <button type="submit" class="btn-primary" id="photo-submit">
+                    Subir
+                </button>
             </form>
             <p id="photo-status" class="spot-form-status"></p>
-            {% else %}
-            <p class="spot-login-note">
-                Inicia sesión para añadir fotos a este spot.
+            <p class="spot-login-note" id="photo-login-note" hidden>
                 <a href="/profile/">Inicia sesión</a> o
-                <a href="/register/">crear una cuenta</a>.
+                <a href="/register/">crear una cuenta</a> para añadir fotos
+                a este spot.
             </p>
-            {% endif %}
         </section>
 
         <!-- Rating --------------------------------------------------------- -->
@@ -183,6 +180,7 @@
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" referrerpolicy="no-referrer"></script>
+    <script src="{% static 'session.js' %}"></script>
     <script src="{% static 'rating.js' %}"></script>
     <script src="{% static 'spot_detail.js' %}"></script>
     <script>

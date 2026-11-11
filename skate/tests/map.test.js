@@ -429,6 +429,18 @@ function wait(ms) {
         lastCall().includes('category=diy'), lastCall());
     filterBoxes.category.forEach((box) => { box.checked = true; });
 
+    console.log('\n== 9b. Two categories keep both of them ==');
+    fetchCalls = [];
+    filterBoxes.category.forEach((box) => {
+        box.checked = box.value === 'diy' || box.value === 'street';
+    });
+    elements['map-filters'].dispatch('change');
+    await wait(20);
+    check('the request was sent', fetchCalls.length === 1, String(fetchCalls.length));
+    check('it does not narrow the answer to one category',
+        !lastCall().includes('category='), lastCall());
+    filterBoxes.category.forEach((box) => { box.checked = true; });
+
     console.log('\n== 10. The location of the visitor ==');
     const locationCalls = [];
     sandbox.navigator.geolocation = {

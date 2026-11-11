@@ -157,9 +157,11 @@
         const categories = readChecked('category');
         const sources = readChecked('source');
 
-        // The API only takes one value for each filter, so the spots
-        // are asked for every combination that is selected.
-        if (categories.length && categories.length < 3) {
+        // The API takes a single value for each filter, so the filter is
+        // only sent when exactly one option is selected. When more than
+        // one is selected the answer is filtered in the browser, which
+        // keeps the spots of every selected option.
+        if (categories.length === 1) {
             params.category = categories[0];
         }
         if (sources.length === 1 && sources[0] === 'community') {

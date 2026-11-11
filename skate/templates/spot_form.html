@@ -21,11 +21,10 @@
                     <li class="nav-item">
                         <a href="/feed/" class="nav-link"> Spots </a>
                     </li>
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
+                    <li class="nav-item" data-session="in" hidden>
                         <a href="/profile/" class="nav-link"> Perfil </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" data-session="in" hidden>
                         <div class="auth-dropdown">
                             <button type="button" class="nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-user"></i>
@@ -36,10 +35,12 @@
                             </ul>
                         </div>
                     </li>
-                    {% else %}
-                    <li class="nav-item"><a href="/profile/" class="nav-link">Iniciar sesión</a></li>
-                    <li class="nav-item"><a href="/register/" class="nav-link">Crear cuenta</a></li>
-                    {% endif %}
+                    <li class="nav-item" data-session="out">
+                        <a href="/profile/" class="nav-link">Iniciar sesión</a>
+                    </li>
+                    <li class="nav-item" data-session="out">
+                        <a href="/register/" class="nav-link">Crear cuenta</a>
+                    </li>
                 </ul>
                 <button id='menu-open-button' class='fas fa-bars'></button>
             </nav>
@@ -193,6 +194,7 @@
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" referrerpolicy="no-referrer"></script>
+    <script src="{% static 'session.js' %}"></script>
     <script src="{% static 'script.js' %}"></script>
     <script src="{% static 'spot_form.js' %}"></script>
     <script>
