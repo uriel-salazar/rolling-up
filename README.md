@@ -736,6 +736,39 @@ Full details: <https://www.openstreetmap.org/copyright> and
 
 ---
 
+## Running the development server
+
+The usual command serves plain HTTP only:
+
+```bash
+python manage.py runserver
+```
+
+Django's `runserver` does not speak HTTPS, so any client that opens an
+`https://` connection to it (a browser that upgrades the scheme, a mobile
+app, a service worker) gets a `Bad request syntax` error with the message
+*"You're accessing the development server over HTTPS, but it only supports
+HTTP."*.
+
+For those cases there is a `runsslserver` command that runs the same
+development server (auto-reloader, debug pages, static files) behind TLS:
+
+```bash
+python manage.py runsslserver            # https://127.0.0.1:8000/
+python manage.py runsslserver 0.0.0.0:8443   # reachable from a phone
+```
+
+The first run generates a self-signed certificate in `skate/certs/`
+(`dev.crt` and `dev.key`, both ignored by git). The browser shows a
+certificate warning that has to be accepted once. The paths can be changed
+with `--certfile` and `--keyfile`, or with the `SSL_CERTFILE` and
+`SSL_KEYFILE` environment variables.
+
+Use `http://` when the client does not need a secure origin, it is always
+the simpler option.
+
+---
+
 ## Tests
 
 The whole suite mocks the external services, it never depends on a live

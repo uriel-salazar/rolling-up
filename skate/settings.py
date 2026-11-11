@@ -55,6 +55,21 @@ CSRF_TRUSTED_ORIGINS = [
 if _host:
     CSRF_TRUSTED_ORIGINS.append("https://" + _host)
 
+if DEBUG:
+    # The local development server can be reached over plain HTTP or over
+    # HTTPS (see the "runsslserver" management command). Both origins have to
+    # be trusted for POST/PUT/DELETE requests to pass the CSRF check.
+    CSRF_TRUSTED_ORIGINS += [
+        "http://localhost:8000",
+        "https://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://127.0.0.1:8000",
+        "http://localhost:8443",
+        "https://localhost:8443",
+        "http://127.0.0.1:8443",
+        "https://127.0.0.1:8443",
+    ]
+
 # The OpenStreetMap tile usage policy asks that the browser sends a
 # valid HTTP Referer to the tile servers. Django defaults to
 # "same-origin", which drops the Referer on every cross origin request.
