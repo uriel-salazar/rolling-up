@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> {% if is_edit %}Editar Spot{% else %}Añadir Spot{% endif %} &mdash; Rolling Up </title>
+    <!-- Linking Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body class="form-page">
+    <main>
+        <header class="form-header">
+            <nav class="navbar section-content">
+                <a href="/" class="logo-text">Rolling Up</a>
+                <ul class="nav-menu">
+                    <button id="menu-close-button" class="fas fa-times"> </button>
+                    <li class="nav-item">
+                        <a href="/feed/" class="nav-link"> Spots </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/profile/" class="nav-link"> Profile </a>
+                    </li>
+                </ul>
+                <button id='menu-open-button' class='fas fa-bars'></button>
+            </nav>
+        </header>
+
+        <section class="form-section section-content">
+            <h1 class="form-title">{% if is_edit %}Editar Spot{% else %}Añadir Spot{% endif %}</h1>
+
+            <form id="spot-form" class="spot-form" novalidate>
+                {% csrf_token %}
+
+                <div id="login-notice" class="login-notice" hidden>
+                    <p>Necesitas iniciar sesión para publicar un spot.</p>
+                    <a href="/profile/" class="btn-ghost">Iniciar sesión</a>
+                </div>
+
+                <div class="field">
+                    <label for="name_spot">Nombre del spot</label>
+                    <input type="text" id="name_spot" name="name_spot" maxlength="200"
+                           value="{{ spot.name_spot|default_if_none:'' }}"
+                           placeholder="Parque de las Américas" required>
+                </div>
+
+                <div class="field">
+                    <label for="body">Descripción</label>
+                    <textarea id="body" name="body" maxlength="1000" rows="4"
+                              placeholder="¿Qué tiene este spot?">{{ spot.body|default_if_none:'' }}</textarea>
+                </div>
+
+                <div class="field">
+                    <label for="image_url">Foto</label>
+                    {% if spot and spot.image_url %}
+                        <div class="current-image">
+                            <img src="{{ spot.image_url.url }}" alt="Foto actual del spot">
+                            <span class="field-hint">Tu foto actual. Sube otra para reemplazarla.</span>
+                        </div>
+                    {% endif %}
+                    <input type="file" id="image_url" name="image_url"
+                           accept="image/jpeg,image/png,image/webp">
+                    <small class="field-hint">JPEG, PNG o WebP. Máximo 5 MB.</small>
+                </div>
+
+                <!-- Location -->
+                <fieldset class="location-block">
+                    <legend class="location-legend">Ubicación</legend>
+
+                    <div class="location-search">
+                        <label class="visually-hidden" for="location-search">Buscar lugar</label>
+                        <input type="search" id="location-search" autocomplete="off"
+                               placeholder="Busca un skatepark, calle o colonia">
+                        <div id="search-results" class="search-results" hidden></div>
+                    </div>
+
+                    <div id="map" class="map"
+                         data-latitude="{{ spot.latitude|default_if_none:'' }}"
+                         data-longitude="{{ spot.longitude|default_if_none:'' }}"
+                         data-spot-id="{{ spot.id|default_if_none:'' }}">
+                        <noscript>El mapa necesita JavaScript para funcionar.</noscript>
+                    </div>
+                    <p id="map-error" class="map-error" hidden>
+                        No se pudo cargar el mapa. Puedes escribir las coordenadas manualmente.
+                    </p>
+
+                    <div class="location-meta">
+                        <div class="coordinates">
+                            <span class="coordinates-label">Coordenadas</span>
+                            <output id="coordinates-output" class="coordinates-value">Ubicación no seleccionada</output>
+                        </div>
+                        <input type="hidden" id="latitude" name="latitude">
+                        <input type="hidden" id="longitude" name="longitude">
+                        <button type="button" id="clear-location" class="btn-ghost" hidden>
+                            Limpiar ubicación
+                        </button>
+                    </div>
+
+                    <details class="manual-coordinates">
+                        <summary>Escribir las coordenadas a mano</summary>
+                        <div class="manual-row">
+                            <div class="field">
+                                <label for="latitude-manual">Latitud</label>
+                                <input type="number" id="latitude-manual" step="0.000001"
+                                       min="-90" max="90" placeholder="20.676700">
+                            </div>
+                            <div class="field">
+                                <label for="longitude-manual">Longitud</label>
+                                <input type="number" id="longitude-manual" step="0.000001"
+                                       min="-180" max="180" placeholder="-103.347500">
+                            </div>
+                        </div>
+                    </details>
+                </fieldset>
+
+                <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+
+                <div class="form-actions">
+                    <button type="submit" id="submit-button" class="btn-primary">
+                        {% if is_edit %}Guardar cambios{% else %}Publicar spot{% endif %}
+                    </button>
+                    <a href="/feed/" class="btn-ghost">Cancelar</a>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" referrerpolicy="no-referrer"></script>
+    <script src="{% static 'script.js' %}"></script>
+    <script src="{% static 'spot_form.js' %}"></script>
+</body>
+</html>

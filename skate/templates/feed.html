@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,6 +18,7 @@
                     <li><a href="/">Home</a></li>
                     <li><a href="/feed/">Feed</a></li>
                     <li><a href="/profile/">Profile</a></li>
+                    <li><a href="/spots/new/">Añadir Spot</a></li>
                 </ul>
             </div>
         </div>
@@ -29,6 +30,20 @@
     </section>
 
     <script>
+        /** Read the id of the logged in user out of the access token. */
+        function getCurrentUserId() {
+            const token = localStorage.getItem('access');
+            if (!token) {
+                return null;
+            }
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.user_id || null;
+            } catch (error) {
+                return null;
+            }
+        }
+
         async function loadSpots() {
             const res = await fetch('/api/spots/?limit=20');
             const data = await res.json();
@@ -39,13 +54,27 @@
                 return;
             }
 
-            list.innerHTML = data.results.map(spot => `
-                <div class="spot-card">
-                    ${spot.image_url ? `<img src="${spot.image_url}" alt="${spot.name_spot}">` : ''}
-                    <h3>${spot.name_spot}</h3>
-                    <p>${spot.body ?? ''}</p>
-                </div>
-            `).join('');
+            const currentUserId = getCurrentUserId();
+
+            list.innerHTML = data.results.map(spot => {
+                const isOwner = currentUserId !== null && spot.user === currentUserId;
+                const editLink = isOwner
+                    ? `<a class="spot-edit" href="/spots/${spot.id}/edit/">Edit</a>`
+                    : '';
+                const coordinates = (spot.latitude && spot.longitude)
+                    ? `<p class="spot-coordinates">${spot.latitude}, ${spot.longitude}</p>`
+                    : '';
+
+                return `
+            <div class="spot-card">
+                ${spot.image_url ? `<img src="${spot.image_url}" alt="${spot.name_spot}">` : ''}
+                <h3>${spot.name_spot}</h3>
+                <p>${spot.body ?? ''}</p>
+                ${coordinates}
+                ${editLink}
+            </div>
+        `;
+            }).join('');
         }
 
         loadSpots();

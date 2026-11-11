@@ -158,6 +158,122 @@ is however required by its usage policy.
 
 ---
 
+## Interactive location selection
+
+Users publish their spots through a form with a map, so they never have
+to type a latitude and a longitude by hand.
+
+### The pages
+
+| URL                     | What it does                                             |
+| ----------------------- | -------------------------------------------------------- |
+| `/spots/new/`           | The form to publish a new spot.                          |
+| `/spots/<id>/edit/`     | The form to edit one of your spots.                      |
+
+The pages are public, because the application logs the users in with a
+JWT that the browser keeps in the local storage: the server can not
+tell who is visiting. The API is what protects the spots, it refuses a
+write from an unauthenticated user and a write on a spot of somebody
+else. When the visitor does have a Django session the ownership is
+checked on the page as well.
+
+### The map
+
+The map is drawn with **Leaflet** and uses the tiles of
+**OpenStreetMap**. The visitor can
+
+* click anywhere on the map to drop a marker,
+* drag the marker to move it,
+* search a skatepark, a street, an address or a neighbourhood,
+* clear the selection.
+
+The selected coordinates are shown under the map and are also sent
+automatically with the form. The tiles are desaturated a little so the
+map fits inside the dark interface.
+
+The map is centred on **Guadalajara, Mexico** (`20.6767, -103.3475`,
+zoom 13) and it opens on the coordinates of the spot when it is being
+edited.
+
+### The location search
+
+The browser never talks to Nominatim directly. Every search goes
+through the backend:
+
+```
+GET /api/geocode/search/?q=skatepark guadalajara
+```
+
+```json
+{
+  "query": "skatepark guadalajara",
+  "count": 2,
+  "results": [
+    {
+      "label": "Skatepark San Jacinto, Guadalajara, Jalisco, Mexico",
+      "short_label": "Skatepark San Jacinto",
+      "latitude": 20.6626053,
+      "longitude": -103.2972632,
+      "category": "leisure",
+      "type": "skatepark",
+      "osm_id": 256129315,
+      "osm_type": "way"
+    }
+  ]
+}
+```
+
+The proxy exists to respect the [Nominatim usage
+policy](https://operations.osmfoundation.org/policies/nominatim/):
+
+* the request carries a proper `User-Agent` that identifies the
+  application,
+* the answers are cached for 24 hours, so a popular search is not
+  requested again,
+* the endpoint is throttled to `30/min` per user,
+* a search needs at least three characters,
+* the browser waits 400 ms after the last keystroke before it asks,
+  and cancels the request that is still running when a new one starts.
+
+Not every skatepark exists in OpenStreetMap. The search is a helper,
+never a requirement: a spot can always be placed by clicking on the
+map, and a spot can be published without any location at all.
+
+### Coordinates in the API
+
+`latitude` and `longitude` are **optional**:
+
+| Situation                             | Result                                        |
+| ------------------------------------- | --------------------------------------------- |
+| neither is sent                       | the spot is created without a location       |
+| both are sent                         | the location is stored                        |
+| both are sent as `null`               | the location is removed                       |
+| both are sent as an empty string      | the location is removed                       |
+| only one of them is sent              | `400`, "Latitude and longitude must be sent together" |
+| a value outside of the valid range    | `400`, "Ensure this value is less than or equal to 90" |
+
+The coordinates are stored as decimals with six decimal places, which
+is about eleven centimetres. `0` is never used as a default: a spot
+without a location keeps `NULL`.
+
+> **Note for API clients:** the spot endpoint accepts `multipart/form-data`
+> and `application/x-www-form-urlencoded` (needed for the image upload)
+> and, since now, `application/json` as well. Over multipart, an empty
+> value is how a location is removed.
+
+### Configuration
+
+| Variable                    | Default        | Purpose                                     |
+| --------------------------- | -------------- | ------------------------------------------- |
+| `GEOCODE_MIN_QUERY_LENGTH`  | `3`            | Shortest accepted search.                   |
+| `GEOCODE_MAX_RESULTS`       | `8`            | Number of results returned per search.      |
+| `GEOCODE_CACHE_SECONDS`     | `86400`        | How long a search is cached, seconds.       |
+| `GEOCODE_LANGUAGE`          | `es`           | Language of the results.                    |
+| `GEOCODE_THROTTLE_RATE`     | `30/min`       | Searches allowed per user and minute.       |
+| `NOMINATIM_USER_AGENT`      | `RollingUp-SkateSpots/1.0 (...)` | User-Agent sent to Nominatim.      |
+
+---
+
 ## Attribution and licence (ODbL)
 
 The data retrieved from OpenStreetMap is licensed under the
@@ -196,8 +312,18 @@ Overpass connection.
 python manage.py test skate
 ```
 
+The location picker is plain JavaScript, so it has its own test that
+runs against a small DOM stub instead of a real browser. Node runs it
+without any dependency:
+
+```bash
+node skate/tests/spot_form.test.js
+```
+
 | Test module                 | Covers                                                       |
 | --------------------------- | ------------------------------------------------------------ |
 | `skate/tests/test_osm_parser.py`  | Nodes, ways, relations, missing names, missing tags, invalid coordinates, skatepark detection. |
 | `skate/tests/test_osm_client.py`  | Successful responses, rejected queries, connection failures, retries, rate limiting, invalid payloads. |
 | `skate/tests/test_osm_import.py`  | Creation, duplicate prevention, repeated imports, dry run, community protection, the management command. |
+| `skate/tests/test_location_picker.py` | Coordinate validation, creating and editing a spot with or without a location, image upload, the location search and the form pages. |
+| `skate/tests/spot_form.test.js`    | The map, the marker, the manual coordinates, the debounced search and the payload that is sent. |

@@ -68,6 +68,11 @@
                 localStorage.setItem('access', access);
                 localStorage.setItem('refresh', refresh);
                 await loadProfile();
+
+                // Send the user back to the page they asked for, the
+                // spot form redirects here when the session is missing.
+                const next = new URLSearchParams(window.location.search).get('next');
+                window.location.href = next || '/profile/';
             } else {
                 alert('Wrong username or password');
             }

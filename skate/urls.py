@@ -4,7 +4,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .routers import router
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
-from .views import home,RatingViewSet
+from .views import home,RatingViewSet,spot_form
+from .geocode.views import GeocodeSearchView
 from drf_spectacular.views import  SpectacularAPIView,SpectacularSwaggerView
 
 
@@ -21,12 +22,17 @@ urlpatterns = [
     path('api/',include(router.urls)),
     #path to get rating from id of spot 
     path('api/spots/<int:spots_id>/rating/',RatingViewSet.as_view({"post":"create"})),
+    # location search used by the spot form
+    path('api/geocode/search/', GeocodeSearchView.as_view(), name='geocode_search'),
+    # html pages to create and to edit a spot
+    path('spots/new/', spot_form, name='spot_create'),
+    path('spots/<int:pk>/edit/', spot_form, name='spot_edit'),
     # donwload schema
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     # swagger ui to check endpoints 
     path('api/docs/',SpectacularSwaggerView.as_view(url_name='schema'),
     name='swagger-ui')
-     
+ 
 ]
 
 if settings.DEBUG:

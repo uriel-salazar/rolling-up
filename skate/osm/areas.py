@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import requests
 from django.conf import settings
@@ -78,7 +77,7 @@ def geocode_area(client, location: str) -> Area:
         "format": "json",
         "limit": 1,
     }
-    headers = {"User-Agent": settings.OVERPASS_USER_AGENT}
+    headers = {"User-Agent": settings.NOMINATIM_USER_AGENT}
 
     try:
         response = client.get(
