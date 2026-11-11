@@ -292,25 +292,43 @@ NOMINATIM_MAX_REQUESTS_PER_SECOND = float(
 #    https://operations.osmfoundation.org/policies/tiles/
 #    The dark look of the interface is done with a CSS filter.
 #
-#  * The CARTO dark basemaps. They look better for a dark interface,
-#    but CARTO asks for an API key since September 2026 and for the
-#    credit of both OpenStreetMap and CARTO:
+#  * The CARTO basemaps. They have their own styles and they look good
+#    for an interface, but CARTO asks for an API key since September
+#    2026 and for the credit of both OpenStreetMap and CARTO:
 #    https://carto.com/basemaps/apikey/
 #    Without a key the server answers with a placeholder tile that says
 #    "API KEY REQUIRED" instead of the map.
+#    The raster tiles of CARTO only go up to zoom 18, a bigger value
+#    makes the server answer "Forbidden".
 OSM_TILE_URL = os.environ.get(
-    "OSM_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    "OSM_TILE_URL",
+    "https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png",
 )
-OSM_TILE_MAX_ZOOM = int(os.environ.get("OSM_TILE_MAX_ZOOM", "19"))
+OSM_TILE_MAX_ZOOM = int(os.environ.get("OSM_TILE_MAX_ZOOM", "18"))
 
 # Only needed by a provider that uses subdomains, such as CARTO. The
 # standard OpenStreetMap tiles do not use any and the usage policy asks
 # for exactly `https://tile.openstreetmap.org/{z}/{x}/{y}.png`.
-OSM_TILE_SUBDOMAINS = os.environ.get("OSM_TILE_SUBDOMAINS", "")
+OSM_TILE_SUBDOMAINS = os.environ.get("OSM_TILE_SUBDOMAINS", "abcd")
 
 # The key of the tile provider. CARTO requires one, the standard
 # OpenStreetMap tiles do not.
 OSM_TILE_API_KEY = os.environ.get("OSM_TILE_API_KEY", "")
+
+# Where the tiles are served from. The tiles of a provider that needs
+# a key go through the application, so the key never reaches the
+# browser.
+TILE_PROXY_PATH = os.environ.get(
+    "TILE_PROXY_PATH", "/tiles/{z}/{x}/{y}{r}.png"
+)
+
+# Where the map opens when nothing else is known. It is the centre of
+# the spots that are in the database.
+MAP_DEFAULT_CENTER = (
+    float(os.environ.get("MAP_DEFAULT_LAT", "20.6767")),
+    float(os.environ.get("MAP_DEFAULT_LON", "-103.3475")),
+)
+MAP_DEFAULT_ZOOM = int(os.environ.get("MAP_DEFAULT_ZOOM", "13"))
 
 # A contact address published by the application. The tile and the
 # geocoding policies ask for a way to reach the operator.

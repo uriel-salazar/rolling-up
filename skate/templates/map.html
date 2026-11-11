@@ -1,0 +1,125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spots &mdash; Rolling Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'map.css' %}">
+</head>
+<body class="map-page">
+    <main class="map-layout">
+
+        <!-- Top bar -->
+        <header class="map-topbar">
+            <a href="/" class="map-brand">Rolling Up</a>
+
+            <nav class="map-nav">
+                <a href="/feed/" class="map-nav-link">Lista</a>
+                <a href="/spots/new/" class="map-nav-link">Añadir Spot</a>
+                <a href="/profile/" class="map-nav-link">Profile</a>
+            </nav>
+
+            <div class="map-search">
+                <label class="visually-hidden" for="spot-search">Buscar spots</label>
+                <span class="map-search-icon" aria-hidden="true">&#9906;</span>
+                <input type="search" id="spot-search" autocomplete="off"
+                       placeholder="Busca un spot por nombre o descripción">
+                <button type="button" id="clear-search" class="map-search-clear"
+                        aria-label="Limpiar la búsqueda" hidden>&times;</button>
+            </div>
+        </header>
+
+        <!-- Filters -->
+        <div class="map-filters" id="map-filters">
+            <div class="filter-group" role="group" aria-label="Filtrar por tipo de spot">
+                <span class="filter-legend">Tipo</span>
+                <label class="filter-chip">
+                    <input type="checkbox" name="category" value="skatepark" checked>
+                    <span>Skateparks</span>
+                </label>
+                <label class="filter-chip">
+                    <input type="checkbox" name="category" value="street" checked>
+                    <span>Street</span>
+                </label>
+                <label class="filter-chip">
+                    <input type="checkbox" name="category" value="diy" checked>
+                    <span>DIY</span>
+                </label>
+            </div>
+
+            <div class="filter-group" role="group" aria-label="Filtrar por origen del spot">
+                <span class="filter-legend">Origen</span>
+                <label class="filter-chip">
+                    <input type="checkbox" name="source" value="osm" checked>
+                    <span>OpenStreetMap</span>
+                </label>
+                <label class="filter-chip">
+                    <input type="checkbox" name="source" value="community" checked>
+                    <span>Comunidad</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- The map and the list -->
+        <div class="map-body">
+            <div id="map" class="map-canvas"
+                 data-tile-url="{{ tile_config.url }}"
+                 data-tile-max-zoom="{{ tile_config.max_zoom }}"
+                 data-tile-subdomains="{{ tile_config.subdomains }}"
+                 data-tile-attribution="{{ tile_config.attribution }}"
+                 data-default-lat="{{ default_center.0 }}"
+                 data-default-lon="{{ default_center.1 }}"
+                 data-default-zoom="{{ default_zoom }}"
+                 role="application"
+                 aria-label="Mapa de los spots de skate"></div>
+
+            <!-- Sidebar with the results -->
+            <aside class="map-sidebar" id="map-sidebar">
+                <div class="sidebar-head">
+                    <h1 class="sidebar-title">Spots</h1>
+                    <button type="button" id="sidebar-toggle" class="sidebar-toggle"
+                            aria-expanded="false" aria-controls="map-sidebar">
+                        <span class="visually-hidden">Mostrar u ocultar la lista</span>
+                        <span aria-hidden="true">&#9776;</span>
+                    </button>
+                </div>
+
+                <p id="map-status" class="sidebar-status" role="status" aria-live="polite">
+                    Cargando spots...
+                </p>
+
+                <ul id="spot-list" class="spot-list"></ul>
+
+                <div id="spot-preview" class="spot-preview" hidden>
+                    <button type="button" id="preview-close" class="preview-close"
+                            aria-label="Cerrar">&times;</button>
+                    <h2 class="preview-name" id="preview-name"></h2>
+                    <p class="preview-meta">
+                        <span class="preview-category" id="preview-category"></span>
+                        <span class="preview-rating" id="preview-rating"></span>
+                        <span class="preview-source" id="preview-source"></span>
+                    </p>
+                    <p class="preview-body" id="preview-body"></p>
+                    <div class="preview-actions">
+                        <a class="preview-link" id="preview-link" href="#">Ver detalle</a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Mobile control that opens the list -->
+        <button type="button" id="sheet-handle" class="sheet-handle"
+                aria-expanded="false" aria-controls="map-sidebar">
+            <span id="sheet-handle-text">Spots</span>
+            <span aria-hidden="true" class="sheet-handle-arrow">&#9650;</span>
+        </button>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" referrerpolicy="no-referrer"></script>
+    <script src="{% static 'map.js' %}"></script>
+</body>
+</html>

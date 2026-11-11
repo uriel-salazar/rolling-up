@@ -282,8 +282,8 @@ without a location keeps `NULL`.
 | `GEOCODE_THROTTLE_RATE`     | `30/min`       | Searches allowed per user and minute.       |
 | `NOMINATIM_MAX_REQUESTS_PER_SECOND` | `1`    | Requests per second for the whole site.     |
 | `NOMINATIM_USER_AGENT`      | `RollingUp-SkateSpots/1.0 (...)` | User-Agent sent to Nominatim.      |
-| `OSM_TILE_URL`              | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | Tile URL of the map.      |
-| `OSM_TILE_MAX_ZOOM`         | `19`           | Highest zoom level of the map.              |
+| `OSM_TILE_URL`              | `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png` | Tile URL of the map.      |
+| `OSM_TILE_MAX_ZOOM`         | `18`           | Highest zoom level of the map. CARTO stops at 18. |
 | `OSM_TILE_SUBDOMAINS`       | *(empty)*      | Only for a provider that uses subdomains.   |
 | `OSM_TILE_API_KEY`          | *(empty)*      | Key of the tile provider, CARTO needs one.  |
 | `OSM_CONTACT_EMAIL`         | `rollingup.app@gmail.com` | Contact address shown on the map. |
@@ -304,12 +304,13 @@ new release, which is what the policy asks for.
 
 | Provider | Key | Notes |
 | -------- | --- | ----- |
-| The standard OpenStreetMap tiles (default) | not needed | Free, no account. The dark look is done with a CSS filter. |
-| The CARTO dark basemaps | **required** | Looks better for a dark interface, but CARTO asks for an API key since September 2026. |
+| The CARTO Voyager basemaps (default) | **required** | The style that fits the interface. |
+| The CARTO dark basemaps | **required** | `dark_all` instead of `voyager`. |
+| The standard OpenStreetMap tiles | not needed | Free, no account. The dark look is done with a CSS filter. |
 
 | Requirement | How it is met |
 | ----------- | ------------- |
-| Use exactly `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | The default `OSM_TILE_URL` is that url and it has no `{s}` subdomain shortcut, the `a.` / `b.` / `c.` hosts are **not** used. |
+| Use exactly `https://tile.openstreetmap.org/{z}/{x}/{y}.png` when the standard tiles are used | `OSM_TILE_URL` is a setting. The default is CARTO, and the standard url has no `{s}` subdomain shortcut. |
 | Show a clear attribution | The attribution is rendered by Leaflet in the corner of the map and keeps a readable size and contrast. It is never hidden behind a toggle or off screen. |
 | Offer a way to report a map problem | The attribution links to `https://www.openstreetmap.org/fixthemap`. |
 | Publish a contact address | The attribution links to `OSM_CONTACT_EMAIL`. |
@@ -319,6 +320,12 @@ new release, which is what the policy asks for.
 | Honour the caching headers | The browser caches the tiles with the headers the server sends. |
 | Credit both projects on CARTO | The attribution adds the credit of CARTO when that provider is used, as their terms ask. |
 
+> **The raster tiles of CARTO only go up to zoom 18.** A bigger
+> `OSM_TILE_MAX_ZOOM` makes the server answer *"Forbidden: raster tiles
+> are available up to zoom 18"*, so the map shows empty tiles instead
+> of the streets. The application lowers the value automatically and
+> logs a warning.
+>
 > **Without a CARTO key the map does not work.** Since September 2026
 > CARTO answers every request without a key with the same placeholder
 > tile that says *API KEY REQUIRED*, whatever the location is. Get a
@@ -326,10 +333,19 @@ new release, which is what the policy asks for.
 > `OSM_TILE_API_KEY`.
 >
 > ```bash
-> OSM_TILE_URL="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+> # The Voyager style, the default
+> OSM_TILE_URL="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
 > OSM_TILE_SUBDOMAINS="abcd"
-> OSM_TILE_MAX_ZOOM="20"
+> OSM_TILE_MAX_ZOOM="18"
 > OSM_TILE_API_KEY="your_key_here"
+>
+> # The dark style
+> OSM_TILE_URL="https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png"
+>
+> # The standard OpenStreetMap tiles, no key needed
+> OSM_TILE_URL="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+> OSM_TILE_SUBDOMAINS=""
+> OSM_TILE_MAX_ZOOM="19"
 > ```
 
 ### The geocoder &mdash; [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/)
@@ -353,6 +369,100 @@ The importer sends one query per run, with the same identifying
 > When the application runs with more than one worker, each worker
 > keeps its own counter. Use a shared cache or a single worker if the
 > traffic grows.
+
+---
+
+## The map of the spots
+
+The map is the central piece of the application. It lives at **`/map/`**
+and reads the spots from the public API, so it works without an
+account.
+
+### The layout
+
+**On a desktop** the map takes the space on the left and the list of
+the spots is a column of 340 pixels on the right. Above both there is a
+bar with the search and a row with the filters.
+
+**On a phone** the map takes the whole screen, the search floats above
+it and the list becomes a sheet that comes up from the bottom. The head
+of the sheet is its handle.
+
+### The markers
+
+Every spot gets its own marker and the shape tells the kind of the
+spot, so the markers can be told apart without relying on the colour
+only:
+
+| Shape  | Kind of spot |
+| ------ | ------------ |
+| square | `skatepark`  |
+| circle | `street`     |
+| triangle | `diy`       |
+
+The fill tells where the spot comes from: the spots imported from
+OpenStreetMap are solid and the ones of the community are hollow.
+
+### The API the map reads
+
+The map uses the endpoint that already existed, with three optional
+parameters. Without them the answer is the same as before.
+
+```
+GET /api/spots/?search=oasis&category=skatepark&source=osm
+```
+
+| Parameter  | What it does |
+| ---------- | ------------ |
+| `search`   | Looks for the text in the name and in the description. |
+| `category` | `skatepark`, `street` or `diy`. |
+| `source`   | `osm` or `community`. |
+
+A wrong value is ignored, the map never ends up empty because of a
+typo. The answer is paginated and the map follows the pages until the
+spots are exhausted, up to 500 of them.
+
+Every spot carries its `id`, `name_spot`, `body`, `latitude`,
+`longitude`, `category`, `source`, `image_url`, `rating` and
+`rating_count`. The `rating` is the average of the scores and it is
+read only, a client can not send it.
+
+### The type of a spot
+
+The model had no kind of spot, so one was added:
+
+| Value | Meaning |
+| ----- | ------- |
+| `skatepark` | A built skatepark. |
+| `street` | A spot in the street. |
+| `diy` | A homemade spot. |
+
+The importer fills it from the OpenStreetMap tags: a place tagged
+`leisure=skatepark`, or a place that calls itself a skatepark in its
+name, is a `skatepark`. The users pick it when they publish a spot.
+
+### The tiles go through the application
+
+The tiles are served by `/tiles/{z}/{x}/{y}.png` instead of by the
+browser directly. Two reasons:
+
+* the key of the tile provider is a credential and it must not reach
+  the browser,
+* the request can carry a `User-Agent` that identifies the
+  application and the caching headers of the provider are passed on,
+  which the usage policies ask for.
+
+The proxy only fetches the tiles that the browser is showing, there is
+no prefetching and no offline mode.
+
+### Configuration
+
+| Variable              | Default | Purpose                                   |
+| --------------------- | ------- | ----------------------------------------- |
+| `MAP_DEFAULT_LAT`     | `20.6767` | Latitude the map opens at.              |
+| `MAP_DEFAULT_LON`     | `-103.3475` | Longitude the map opens at.            |
+| `MAP_DEFAULT_ZOOM`    | `13`    | Zoom the map opens at.                     |
+| `TILE_PROXY_PATH`     | `/tiles/{z}/{x}/{y}{r}.png` | Where the tiles are served from. |
 
 ---
 
@@ -408,4 +518,6 @@ node skate/tests/spot_form.test.js
 | `skate/tests/test_osm_client.py`  | Successful responses, rejected queries, connection failures, retries, rate limiting, invalid payloads. |
 | `skate/tests/test_osm_import.py`  | Creation, duplicate prevention, repeated imports, dry run, community protection, the management command. |
 | `skate/tests/test_location_picker.py` | Coordinate validation, creating and editing a spot with or without a location, image upload, the location search and the form pages. |
+| `skate/tests/test_map.py` | The endpoint the map reads, the search and the filters, the ratings, the page of the map and the proxy of the tiles. |
 | `skate/tests/spot_form.test.js`    | The map, the marker, the manual coordinates, the debounced search and the payload that is sent. |
+| `skate/tests/map.test.js`           | The map, the markers, the list, the selection, the search, the filters, the location and the pagination. |

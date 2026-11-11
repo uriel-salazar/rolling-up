@@ -53,6 +53,25 @@
                               placeholder="¿Qué tiene este spot?">{{ spot.body|default_if_none:'' }}</textarea>
                 </div>
 
+                <fieldset class="field category-field">
+                    <legend class="field-legend">Tipo de spot</legend>
+                    <label class="category-option">
+                        <input type="radio" name="category" value="skatepark"
+                               {% if spot.category == 'skatepark' %}checked{% endif %}>
+                        <span>Skatepark</span>
+                    </label>
+                    <label class="category-option">
+                        <input type="radio" name="category" value="street"
+                               {% if not spot or spot.category == 'street' %}checked{% endif %}>
+                        <span>Street spot</span>
+                    </label>
+                    <label class="category-option">
+                        <input type="radio" name="category" value="diy"
+                               {% if spot.category == 'diy' %}checked{% endif %}>
+                        <span>DIY</span>
+                    </label>
+                </fieldset>
+
                 <div class="field">
                     <label for="image_url">Foto</label>
                     {% if spot and spot.image_url %}
@@ -97,6 +116,15 @@
                          data-tile-attribution="{{ tile_config.attribution }}">
                         <noscript>El mapa necesita JavaScript para funcionar.</noscript>
                     </div>
+                    {% if tile_config.key_missing %}
+                        <p class="map-error">
+                            El mapa necesita una API key de CARTO para mostrar el mapa.
+                            Consíguela gratis en
+                            <a href="https://carto.com/basemaps/apikey/" target="_blank" rel="noopener">carto.com/basemaps/apikey</a>
+                            y pongala en <code>OSM_TILE_API_KEY</code>.
+                            Mientras tanto puedes escribir las coordenadas a mano.
+                        </p>
+                    {% endif %}
                     <p id="map-error" class="map-error" hidden>
                         No se pudo cargar el mapa. Puedes escribir las coordenadas manualmente.
                     </p>
@@ -139,6 +167,11 @@
                     <a href="/feed/" class="btn-ghost">Cancelar</a>
                 </div>
             </form>
+        </section>
+
+        <section>
+            <img src='static/images/pexels-tima-miroshnichenko-7946230.jpg'>
+        
         </section>
     </main>
 

@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import requests
-from django.conf import settings
 
 from .areas import Area, build_geocode_area_filter, geocode_area
 from .client import OverpassClient, build_overpass_query

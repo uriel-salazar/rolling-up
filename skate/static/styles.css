@@ -903,6 +903,20 @@ header .navbar{
     color: #d9a066;
     font-size: 0.8rem;
     margin: 0;
+    line-height: 1.6;
+}
+
+.map-error a {
+    color: #e8b57f;
+    text-decoration: underline;
+}
+
+.map-error code {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.75rem;
 }
 
 /* Selected coordinates */
@@ -1094,4 +1108,59 @@ header .navbar{
     object-fit: cover;
     border-radius: var(--border-radius-s);
     border: 1px solid #2f2f2f;
+}
+
+/* The type of the spot in the spot form */
+
+.category-field {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.field-legend {
+    width: 100%;
+    padding: 0;
+    margin: 0 0 4px 0;
+    font-size: 0.8rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #9a9a9a;
+}
+
+.category-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    background: var(--secondary-color);
+    border: 1px solid #333;
+    border-radius: var(--border-radius-s);
+    font-size: 0.85rem;
+    color: #9a9a9a;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.category-option:hover {
+    border-color: #4a4a4a;
+    color: #cfcfcf;
+}
+
+.category-option:has(input:checked) {
+    border-color: #6a6a6a;
+    color: var(--white-color);
+}
+
+.category-option input {
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    accent-color: #eaeaea;
+    cursor: pointer;
 }

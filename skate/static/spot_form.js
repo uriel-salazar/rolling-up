@@ -415,6 +415,11 @@
         data.append('name_spot', name);
         data.append('body', document.getElementById('body').value.trim());
 
+        const category = form.querySelector('input[name="category"]:checked');
+        if (category) {
+            data.append('category', category.value);
+        }
+
         const fileInput = document.getElementById('image_url');
         if (fileInput.files.length) {
             data.append('image_url', fileInput.files[0]);

@@ -159,6 +159,7 @@ def _save_spot(spot: ParsedSpot, service_user: User) -> str:
         "body": spot.description,
         "latitude": to_decimal(spot.latitude),
         "longitude": to_decimal(spot.longitude),
+        "category": spot.category,
         "osm_metadata": spot.metadata,
         "source": Spots.SOURCE_OSM,
     }
@@ -210,6 +211,10 @@ def _refresh_spot(
     if existing.longitude != defaults["longitude"]:
         existing.longitude = defaults["longitude"]
         changed_fields.append("longitude")
+
+    if existing.category != defaults["category"]:
+        existing.category = defaults["category"]
+        changed_fields.append("category")
 
     if existing.osm_metadata != defaults["osm_metadata"]:
         existing.osm_metadata = defaults["osm_metadata"]

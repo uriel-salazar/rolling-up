@@ -4,8 +4,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .routers import router
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
-from .views import home,RatingViewSet,spot_form
+from .views import home,RatingViewSet,spot_form,skate_map
 from .geocode.views import GeocodeSearchView
+from .tiles import tile
 from drf_spectacular.views import  SpectacularAPIView,SpectacularSwaggerView
 
 
@@ -24,6 +25,10 @@ urlpatterns = [
     path('api/spots/<int:spots_id>/rating/',RatingViewSet.as_view({"post":"create"})),
     # location search used by the spot form
     path('api/geocode/search/', GeocodeSearchView.as_view(), name='geocode_search'),
+    # the map of the skate spots
+    path('map/', skate_map, name='skate_map'),
+    # the tiles of the map, served by the application
+    path('tiles/<path:path>', tile, name='map_tile'),
     # html pages to create and to edit a spot
     path('spots/new/', spot_form, name='spot_create'),
     path('spots/<int:pk>/edit/', spot_form, name='spot_edit'),
