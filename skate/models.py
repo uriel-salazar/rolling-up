@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 class User(AbstractUser):
@@ -14,12 +15,72 @@ class User(AbstractUser):
     
 
 class Spots(models.Model):
+    """ A skate spot.
+
+        Spots come from two origins:
+
+        * ``community`` -- submitted by a registered user through the API.
+        * ``osm``       -- imported from OpenStreetMap by the
+          ``import_osm_skateparks`` management command.
+
+        The ``osm_type`` / ``osm_id`` pair identifies the original OSM
+        object and is unique, so running the importer twice never creates
+        duplicates.
+    """
+
+    SOURCE_COMMUNITY = 'community'
+    SOURCE_OSM = 'osm'
+    SOURCE_CHOICES = [
+        (SOURCE_COMMUNITY, 'Community'),
+        (SOURCE_OSM, 'OpenStreetMap'),
+    ]
+
+    OSM_TYPE_NODE = 'node'
+    OSM_TYPE_WAY = 'way'
+    OSM_TYPE_RELATION = 'relation'
+    OSM_TYPE_CHOICES = [
+        (OSM_TYPE_NODE, 'Node'),
+        (OSM_TYPE_WAY, 'Way'),
+        (OSM_TYPE_RELATION, 'Relation'),
+    ]
+
     name_spot = models.CharField(max_length = 200)
     body = models.TextField( null= True,max_length=1000)
     image_url=models.ImageField(null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete = models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
+    # Geographic coordinates. Plain decimals are used on purpose: the
+    # project runs on PostgreSQL without PostGIS, and Phase 1 only needs
+    # to persist the position of an imported skatepark.
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        max_digits=10, decimal_places=6, null=True, blank=True
+    )
+
+    # Provenance of the record.
+    source = models.CharField(
+        max_length=16, choices=SOURCE_CHOICES, default=SOURCE_COMMUNITY
+    )
+    osm_id = models.BigIntegerField(null=True, blank=True)
+    osm_type = models.CharField(
+        max_length=16, choices=OSM_TYPE_CHOICES, null=True, blank=True
+    )
+    osm_metadata = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            # Partial unique index: only OSM records carry osm_id, so
+            # community spots (NULL) are never affected.
+            models.UniqueConstraint(
+                fields=['osm_type', 'osm_id'],
+                name='unique_osm_object',
+                condition=Q(osm_id__isnull=False),
+            ),
+        ]
+
     def __str__(self):
         return self.name_spot
     
