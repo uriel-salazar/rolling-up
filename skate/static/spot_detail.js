@@ -153,101 +153,388 @@
     // Rating
     // ------------------------------------------------------------------
 
-    const stars = document.querySelectorAll('.spot-rating-input .star');
+    const ratingSection = document.getElementById('rating-section');
+    const ratingAverage = document.getElementById('rating-average');
+    const ratingForm = document.getElementById('rating-form');
+    const ratingLoginNote = document.getElementById('rating-login-note');
+    const ratingStarsBox = document.getElementById('rating-stars');
+    const ratingComment = document.getElementById('rating-comment');
+    const ratingSubmit = document.getElementById('rating-submit');
+    const ratingDelete = document.getElementById('rating-delete');
     const ratingStatus = document.getElementById('rating-status');
+    const ratingScore = document.getElementById('rating-score');
+    const ratingCurrent = document.getElementById('rating-current');
+    const ratingList = document.getElementById('rating-list');
 
-    if (stars.length && ratingStatus) {
-        let selectedScore = null;
+    if (ratingSection && window.RollingUpRating) {
+        const spot = {
+            id: ratingSection.dataset.spotId,
+            average: ratingSection.dataset.average || '',
+            count: Number(ratingSection.dataset.count || 0),
+            userScore: ratingSection.dataset.userScore || '',
+            userComment: ratingSection.dataset.userComment || '',
+        };
 
-        stars.forEach(function (star) {
-            star.addEventListener('mouseenter', function () {
-                const score = Number(star.getAttribute('data-score'));
-                stars.forEach(function (s) {
-                    if (Number(s.getAttribute('data-score')) <= score) {
-                        s.classList.add('star-hover');
-                    } else {
-                        s.classList.remove('star-hover');
+        let score = Number(spot.userScore) || 0;
+        let myRatingId = null;
+
+        // ------------------------------------------------------------------
+        // The average of the spot
+        // ------------------------------------------------------------------
+
+        function paintAverage() {
+            ratingAverage.innerHTML = '';
+            ratingAverage.appendChild(
+                window.RollingUpRating.createReadOnly(spot.average, spot.count)
+            );
+        }
+
+        // ------------------------------------------------------------------
+        // The stars of the visitor
+        // ------------------------------------------------------------------
+
+        const stars = window.RollingUpRating.createInteractive({
+            value: score,
+            label: 'Califica este spot',
+            onSelect: function (value) {
+                score = value;
+            },
+        });
+        ratingStarsBox.appendChild(stars);
+
+        ratingComment.value = spot.userComment || '';
+        ratingCurrent.hidden = !score;
+
+        function paintCurrent() {
+            ratingScore.textContent = score ? score : '';
+            ratingCurrent.hidden = !score;
+            ratingDelete.hidden = !score;
+        }
+
+        paintCurrent();
+
+        // ------------------------------------------------------------------
+        // The list of the ratings
+        // ------------------------------------------------------------------
+
+        function paintList(ratings) {
+            ratingList.innerHTML = '';
+
+            if (!ratings.length) {
+                const empty = document.createElement('p');
+                empty.className = 'spot-no-photos';
+                empty.textContent = 'Todavía no hay calificaciones.';
+                ratingList.appendChild(empty);
+                return;
+            }
+
+            ratings.forEach(function (rating) {
+                const item = document.createElement('article');
+                item.className = 'spot-rating-item';
+
+                const head = document.createElement('div');
+                head.className = 'spot-rating-item-head';
+
+                const user = document.createElement('span');
+                user.className = 'spot-rating-item-user';
+                user.textContent = rating.user_username || 'Rider';
+                head.appendChild(user);
+
+                const value = document.createElement('span');
+                value.className = 'spot-rating-item-score';
+                value.textContent = window.RollingUpRating.formatScore(rating.score);
+                head.appendChild(value);
+
+                const date = document.createElement('span');
+                date.className = 'spot-rating-item-date';
+                date.textContent = formatDate(rating.created_at);
+                head.appendChild(date);
+
+                item.appendChild(head);
+
+                if (rating.comment) {
+                    const comment = document.createElement('p');
+                    comment.className = 'spot-rating-item-comment';
+                    comment.textContent = rating.comment;
+                    item.appendChild(comment);
+                }
+
+                ratingList.appendChild(item);
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return '';
+            }
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return '';
+            }
+            return date.toLocaleDateString('es-MX', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+            });
+        }
+
+        function loadRatings() {
+            return fetch('/api/spots/' + spot.id + '/ratings/?limit=50', {
+                headers: { 'Accept': 'application/json' },
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
                     }
-                });
-            });
+                    return response.json();
+                })
+                .then(function (data) {
+                    const ratings = Array.isArray(data.results) ? data.results : [];
+                    const mine = ratings.filter(isMine);
 
-            star.addEventListener('mouseleave', function () {
-                stars.forEach(function (s) {
-                    s.classList.remove('star-hover');
-                });
-            });
+                    if (mine.length) {
+                        myRatingId = mine[0].id;
+                        score = Number(mine[0].score) || 0;
+                        spot.userScore = score;
+                        spot.userComment = mine[0].comment || '';
+                        ratingComment.value = spot.userComment;
+                        stars.setScore(score);
+                        paintCurrent();
+                    }
 
-            star.addEventListener('click', function () {
+                    paintList(ratings);
+                })
+                .catch(function () {
+                    // The list is extra, the page works without it.
+                });
+        }
+
+        /** The id of the rider of the session of the browser. */
+        function sessionUserId() {
+            const access = localStorage.getItem('access');
+            if (!access) {
+                return null;
+            }
+            try {
+                const payload = access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+                const claims = JSON.parse(atob(payload));
+                return claims.user_id ? String(claims.user_id) : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function isMine(rating) {
+            const id = sessionUserId();
+            if (!id) {
+                return false;
+            }
+            return rating.user !== undefined && String(rating.user) === id;
+        }
+
+        // ------------------------------------------------------------------
+        // The session of the visitor
+        // ------------------------------------------------------------------
+
+        if (token) {
+            ratingForm.hidden = false;
+            ratingLoginNote.hidden = true;
+        } else {
+            ratingForm.hidden = true;
+            ratingLoginNote.hidden = false;
+        }
+
+        // ------------------------------------------------------------------
+        // Saving the rating
+        // ------------------------------------------------------------------
+
+        function setStatus(message, kind) {
+            ratingStatus.textContent = message;
+            ratingStatus.className = 'spot-form-status' + (kind ? ' is-' + kind : '');
+        }
+
+        function setLoading(loading) {
+            ratingSubmit.disabled = loading;
+            ratingSubmit.textContent = loading ? 'Guardando...' : 'Guardar calificación';
+        }
+
+        if (ratingSubmit) {
+            ratingSubmit.addEventListener('click', function () {
                 if (!token) {
-                    ratingStatus.textContent = 'Log in to rate this spot.';
-                    ratingStatus.className = 'spot-form-status is-error';
+                    window.location.href = '/profile/';
                     return;
                 }
 
-                selectedScore = Number(star.getAttribute('data-score'));
+                if (!score) {
+                    setStatus('Elige cuántas estrellas le pones.', 'error');
+                    return;
+                }
 
-                stars.forEach(function (s) {
-                    if (Number(s.getAttribute('data-score')) <= selectedScore) {
-                        s.classList.add('star-selected');
-                    } else {
-                        s.classList.remove('star-selected');
-                    }
-                });
+                const comment = (ratingComment.value || '').trim();
+                const previousScore = Number(spot.userScore) || 0;
 
-                submitRating(selectedScore);
+                // The update is done first and it is corrected if the
+                // answer of the server is not the one that was asked for.
+                spot.userScore = score;
+                spot.userComment = comment;
+                paintCurrent();
+                setStatus('');
+                setLoading(true);
+
+                fetch('/api/spots/' + spot.id + '/rate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ score: score, comment: comment }),
+                })
+                    .then(function (response) {
+                        if (response.status === 401 || response.status === 403) {
+                            localStorage.removeItem('access');
+                            localStorage.removeItem('refresh');
+                            window.location.href = '/profile/';
+                            return null;
+                        }
+                        if (response.status === 400) {
+                            return response.json().then(function (data) {
+                                return { error: readError(data) };
+                            });
+                        }
+                        if (!response.ok) {
+                            return { error: 'No se pudo guardar la calificación.' };
+                        }
+                        return response.json().then(function (data) {
+                            return { data: data };
+                        });
+                    })
+                    .then(function (result) {
+                        if (!result) {
+                            return;
+                        }
+                        setLoading(false);
+
+                        if (result.error) {
+                            spot.userScore = previousScore;
+                            paintCurrent();
+                            setStatus(result.error, 'error');
+                            return;
+                        }
+
+                        myRatingId = result.data && result.data.id ? result.data.id : myRatingId;
+                        setStatus('Calificación guardada.', 'success');
+                        refreshAverage();
+                        loadRatings();
+                    })
+                    .catch(function () {
+                        setLoading(false);
+                        spot.userScore = previousScore;
+                        paintCurrent();
+                        setStatus('No se pudo guardar la calificación. Inténtalo de nuevo.', 'error');
+                    });
             });
-        });
+        }
 
-        function submitRating(score) {
-            const submitButton = document.querySelector('.spot-rating-input');
-            ratingStatus.textContent = 'Saving...';
-            ratingStatus.className = 'spot-form-status';
+        function readError(data) {
+            if (!data) {
+                return 'La calificación no es válida.';
+            }
+            if (data.detail) {
+                return String(data.detail);
+            }
+            if (data.score) {
+                return Array.isArray(data.score)
+                    ? data.score[0]
+                    : String(data.score);
+            }
+            if (data.comment) {
+                return Array.isArray(data.comment)
+                    ? data.comment[0]
+                    : String(data.comment);
+            }
+            return 'La calificación no es válida.';
+        }
 
-            fetch('/api/spots/' + spotId + '/rating/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ score: score }),
+        // ------------------------------------------------------------------
+        // The average, without loading the page again
+        // ------------------------------------------------------------------
+
+        function refreshAverage() {
+            fetch('/api/spots/' + spot.id + '/', {
+                headers: { 'Accept': 'application/json' },
             })
                 .then(function (response) {
-                    if (response.status === 401 || response.status === 403) {
-                        ratingStatus.textContent = 'Log in to rate this spot.';
-                        ratingStatus.className = 'spot-form-status is-error';
-                        return null;
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
                     }
-                    return response.json().then(function (data) {
-                        return { ok: response.ok, data: data };
-                    });
+                    return response.json();
                 })
-                .then(function (result) {
-                    if (!result) {
-                        return;
-                    }
-                    if (!result.ok) {
-                        ratingStatus.textContent = 'Could not save the rating.';
-                        ratingStatus.className = 'spot-form-status is-error';
-                        return;
-                    }
-
-                    ratingStatus.textContent = 'Rating saved.';
-                    ratingStatus.className = 'spot-form-status is-success';
-
-                    // Move the rating display to the "current" section.
-                    const currentSection = document.querySelector('.spot-rating-current');
-                    const inputSection = document.querySelector('.spot-rating-input');
-                    if (currentSection && inputSection) {
-                        inputSection.hidden = true;
-                        currentSection.hidden = false;
-                    }
+                .then(function (data) {
+                    spot.average = data.rating === null ? '' : data.rating;
+                    spot.count = data.rating_count || 0;
+                    paintAverage();
                 })
                 .catch(function () {
-                    ratingStatus.textContent = 'Could not save the rating. Try again.';
-                    ratingStatus.className = 'spot-form-status is-error';
+                    // The average stays as it was.
                 });
         }
+
+        // ------------------------------------------------------------------
+        // Deleting the rating of the visitor
+        // ------------------------------------------------------------------
+
+        if (ratingDelete) {
+            ratingDelete.addEventListener('click', function () {
+                if (!token || !myRatingId) {
+                    return;
+                }
+
+                ratingDelete.disabled = true;
+                setStatus('Borrando...');
+
+                fetch('/api/rating/' + myRatingId + '/', {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json',
+                    },
+                })
+                    .then(function (response) {
+                        ratingDelete.disabled = false;
+
+                        if (response.status === 401 || response.status === 403) {
+                            localStorage.removeItem('access');
+                            localStorage.removeItem('refresh');
+                            window.location.href = '/profile/';
+                            return;
+                        }
+
+                        if (!response.ok && response.status !== 404) {
+                            setStatus('No se pudo borrar la calificación.', 'error');
+                            return;
+                        }
+
+                        myRatingId = null;
+                        spot.userScore = '';
+                        spot.userComment = '';
+                        ratingComment.value = '';
+                        score = 0;
+                        stars.setScore(0);
+                        paintCurrent();
+                        setStatus('Calificación borrada.', 'success');
+                        refreshAverage();
+                        loadRatings();
+                    })
+                    .catch(function () {
+                        ratingDelete.disabled = false;
+                        setStatus('No se pudo borrar la calificación.', 'error');
+                    });
+            });
+        }
+
+        paintAverage();
+        loadRatings();
     }
 
     // ------------------------------------------------------------------

@@ -78,6 +78,12 @@
                 }
             });
             media.appendChild(image);
+
+            // Tap the picture to open the detail modal.
+            image.style.cursor = 'pointer';
+            image.addEventListener('click', function () {
+                openSpotModal(spot);
+            });
         } else {
             media.appendChild(buildPlate(spot));
         }
@@ -134,7 +140,7 @@
             link.href = directions;
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            link.textContent = 'Get directions';
+            link.textContent = 'Ver en Google Maps';
             info.appendChild(link);
         }
 
@@ -202,6 +208,16 @@
 
         const item = document.createElement('span');
         item.className = 'spot-meta-item spot-rating';
+
+        // The stars with the average, filled in part when the average
+        // is not a whole number.
+        if (window.RollingUpRating) {
+            item.appendChild(
+                window.RollingUpRating.createReadOnly(score, count, { size: 'small' })
+            );
+            return item;
+        }
+
         item.appendChild(iconStar());
 
         const label = document.createElement('span');
@@ -212,7 +228,6 @@
 
         return item;
     }
-
     /** The icon of the place. */
     function iconPin() {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -531,6 +546,19 @@
                     || body.indexOf(query.toLowerCase()) !== -1;
             });
 
+            // The spots with a picture come first, the order of the
+            // rest is the order of the answer of the API.
+            const withImage = [];
+            const withoutImage = [];
+            results.forEach(function (spot) {
+                if (spot.image_url) {
+                    withImage.push(spot);
+                } else {
+                    withoutImage.push(spot);
+                }
+            });
+            const ordered = withImage.concat(withoutImage);
+
             grid.setAttribute('aria-busy', 'false');
 
             if (!results.length) {
@@ -557,7 +585,7 @@
                 : results.length + ' spots';
 
             grid.innerHTML = '';
-            results.forEach(function (spot) {
+            ordered.forEach(function (spot) {
                 grid.appendChild(buildCard(spot));
             });
         } catch (error) {
@@ -624,6 +652,62 @@
             },
         });
     }
+
+    // ------------------------------------------------------------------
+    // Spot detail modal
+    // ------------------------------------------------------------------
+
+    const modal = document.getElementById('spot-modal');
+    const modalClose = document.getElementById('spot-modal-close');
+    const modalImage = document.getElementById('spot-modal-image');
+    const modalName = document.getElementById('spot-modal-name');
+    const modalCategory = document.getElementById('spot-modal-category');
+    const modalAddress = document.getElementById('spot-modal-address');
+    const modalDirections = document.getElementById('spot-modal-directions');
+    const modalBody = document.getElementById('spot-modal-body');
+
+    /** Open the detail modal of a spot. */
+    function openSpotModal(spot) {
+        const address = window.RollingUpApi.addressOf(spot);
+
+        modalImage.src = spot.image_url || '';
+        modalImage.alt = spot.name_spot || 'Spot';
+        modalImage.hidden = !spot.image_url;
+
+        modalName.textContent = spot.name_spot || 'Spot';
+        modalCategory.textContent = CATEGORY_LABELS[spot.category] || 'Spot';
+        modalAddress.textContent = address || 'Sin dirección';
+
+        const directions = window.RollingUpApi.directionsUrl(spot);
+        if (directions) {
+            modalDirections.href = directions;
+            modalDirections.hidden = false;
+        } else {
+            modalDirections.hidden = true;
+        }
+
+        modalBody.textContent = spot.body ? String(spot.body) : '';
+        modalBody.hidden = !spot.body;
+
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    /** Close the detail modal. */
+    function closeSpotModal() {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    modalClose.addEventListener('click', closeSpotModal);
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !modal.hidden) {
+            closeSpotModal();
+        }
+    });
 
     // ------------------------------------------------------------------
 

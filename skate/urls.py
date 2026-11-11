@@ -36,6 +36,10 @@ urlpatterns = [
     path('api/',include(router.urls)),
     #path to get rating from id of spot 
     path('api/spots/<int:spots_id>/rating/',RatingViewSet.as_view({"post":"create"})),
+    # the ratings of one spot, read by everybody
+    path('api/spots/<int:spot_id>/ratings/', RatingViewSet.as_view({"get":"list"}), name='spot_ratings'),
+    # the same endpoint, with the name used by the interface
+    path('api/spots/<int:spots_id>/rate/', RatingViewSet.as_view({"post":"create"}), name='spot_rate'),
     # additional photographs for a spot (OSM or community) — no duplicates, just more photos
     path('api/spots/<int:spot_id>/photos/', SpotPhotoViewSet.as_view({'get':'list','post':'create'}), name='spot_photos'),
     path('api/spots/<int:spot_id>/photos/<int:pk>/', SpotPhotoViewSet.as_view({'get':'retrieve','put':'update','patch':'partial_update','delete':'destroy'}), name='spot_photo_detail'),

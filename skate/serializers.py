@@ -326,12 +326,35 @@ class RatingSerializer(serializers.ModelSerializer):
         max_value=Decimal('5'),
         coerce_to_string=False,
     )
-    spot = serializers.PrimaryKeyRelatedField(queryset=Spots.objects.all())
+    comment = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+        default='',
+    )
+    spot = serializers.PrimaryKeyRelatedField(
+        queryset=Spots.objects.all(),
+        required=False,
+    )
+    user_username = serializers.SerializerMethodField()
 
     class Meta:
         model = Rating
         fields = "__all__"
         read_only_fields = ['id','created_at','user']
+
+    def get_user_username(self, obj):
+        """The name of the rider, so the list can be drawn without
+        asking for the accounts one by one."""
+        return obj.user.username if obj.user_id else ''
+
+    def validate_score(self, value):
+        """The stars are whole numbers, from one to five."""
+        if value != value.to_integral_value():
+            raise serializers.ValidationError(
+                'The score has to be a whole number, from 1 to 5.'
+            )
+        return value
     
         
         

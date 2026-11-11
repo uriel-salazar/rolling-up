@@ -396,9 +396,12 @@ class SpotsViewSet(ModelViewSet):
             average_rating=Avg('rating__score'),
             rating_count=Count('rating', distinct=True),
             has_image=Case(
-                When(image_url__isnull=False, then=1),
-                When(google_metadata__has_key='photos', then=1),
-                When(osm_metadata__has_key='image', then=1),
+                When(
+                    Q(image_url__isnull=False) & ~Q(image_url=''),
+                    then=1,
+                ),
+                When(google_metadata__photos__0__name__isnull=False, then=1),
+                When(osm_metadata__image__url__isnull=False, then=1),
                 default=0,
                 output_field=IntegerField(),
             ),
@@ -428,23 +431,56 @@ class SpotsViewSet(ModelViewSet):
         serializer.save(user=self.request.user)
     
 class RatingViewSet(ModelViewSet):
-    
+    """ The stars of a spot.
+
+        A rider rates every spot only once, so the ``POST`` of the
+        spot endpoint creates the rating when it does not exist yet and
+        updates it when the rider already rated that spot.
+    """
+
     serializer_class = RatingSerializer
     mini_serializer_class= RatingSerializer
-    queryset = Rating.objects.all()
+    queryset = Rating.objects.all().select_related('user', 'spot')
     pagination_class = LimitOffsetPagination
-    permission_classes = [IsAuthenticated,IsOwnerOrReadOnly]
-    
-    def perform_create(self, serializer):
-        spot = get_object_or_404(
-                Spots,
-                pk=self.kwargs['spots_id']
-            )
 
-        serializer.save(
-                user=self.request.user,
-                spot=spot
-            )
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated()]
+        if self.action in ('update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsOwnerOrReadOnly()]
+        return [AllowAny()]
+
+    def get_queryset(self):
+        """Only the ratings of the spot of the request, when it has one."""
+        queryset = super().get_queryset()
+        spot_id = self.kwargs.get('spot_id') or self.kwargs.get('spots_id')
+        if spot_id:
+            queryset = queryset.filter(spot_id=spot_id)
+        return queryset.order_by('-created_at')
+
+    def create(self, request, *args, **kwargs):
+        """Save the rating of the rider.
+
+            The rider rates a spot only once, so the answer is ``201``
+            when the rating is created and ``200`` when the rating
+            that already existed is updated.
+        """
+        spot = get_object_or_404(Spots, pk=self.kwargs['spots_id'])
+        existing = Rating.objects.filter(
+            user=request.user, spot=spot
+        ).first()
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if existing is not None:
+            serializer = self.get_serializer(existing, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=request.user, spot=spot)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        serializer.save(user=request.user, spot=spot)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SpotPhotoViewSet(viewsets.ModelViewSet):

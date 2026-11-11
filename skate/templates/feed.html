@@ -1,11 +1,11 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spots &mdash; Rolling Up - Feed </title>
-    <meta name="description" content="The skate spots of Rolling Up: skateparks, street spots and DIY spots.">
+    <meta name="description" content="Los spots de skate de Rolling Up: skateparks, spots callejeros y spots DIY.">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <link rel="stylesheet" href="{% static 'feed.css' %}">
 </head>
@@ -13,60 +13,60 @@
     <header class="app-topbar">
         <a href="/" class="app-brand">Rolling Up</a>
 
-        <nav class="app-nav" aria-label="Main">
-            <a href="/map/">Map</a>
+        <nav class="app-nav" aria-label="Principal">
+            <a href="/map/">Mapa</a>
             <a href="/feed/" aria-current="page">Spots</a>
             {% if user.is_authenticated %}
-            <a href="/profile/" class="app-nav-profile">Profile</a>
+            <a href="/profile/" class="app-nav-profile">Perfil</a>
             <div class="auth-dropdown">
                 <button type="button" class="app-nav-profile" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-user"></i>
                 </button>
                 <ul class="auth-dropdown-menu" role="menu">
-                    <li role="menuitem"><a href="/profile/">My Profile</a></li>
-                    <li role="menuitem"><button type="button" id="logout-btn">Log Out</button></li>
+                    <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
+                    <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
                 </ul>
             </div>
             {% else %}
-            <a href="/profile/" class="nav-login">Log in</a>
-            <a href="/register/" class="nav-signup">Sign up</a>
+            <a href="/profile/" class="nav-login">Iniciar sesión</a>
+            <a href="/register/" class="nav-signup">Crear cuenta</a>
             {% endif %}
         </nav>
 
         <span class="app-topbar-spacer"></span>
 
         {% if user.is_authenticated %}
-        <a href="/spots/new/" class="app-add">Add spot</a>
+        <a href="/spots/new/" class="app-add">Añadir spot</a>
         {% else %}
-        <a href="/profile/" class="app-add nav-login-btn">Log in</a>
+        <a href="/profile/" class="app-add nav-login-btn">Iniciar sesión</a>
         {% endif %}
     </header>
 
     <main class="feed-main">
         <section class="feed-intro">
             <div class="feed-intro-text">
-                <h1 class="feed-title">Explore spots</h1>
+                <h1 class="feed-title">Explora los spots</h1>
                 <p class="feed-subtitle">
-                    Skateparks, street spots and DIY spots. The places that
-                    make the city roll.
+                    Skateparks, spots callejeros y spots DIY. Los lugares que
+                    hacen rodar la ciudad.
                 </p>
             </div>
 
             <div class="feed-search-group">
                 <div class="feed-search">
-                    <label class="visually-hidden" for="feed-search">Search the spots</label>
+                    <label class="visually-hidden" for="feed-search">Buscar los spots</label>
                     <input type="search" id="feed-search" autocomplete="off"
-                           placeholder="Search by name or description">
+                           placeholder="Buscar por nombre o descripción">
                     <button type="button" id="feed-search-clear" class="feed-search-clear"
-                            aria-label="Clear the search" hidden>&times;</button>
+                            aria-label="Limpiar la búsqueda" hidden>&times;</button>
                 </div>
 
                 <div class="feed-search feed-location-search">
-                    <label class="visually-hidden" for="feed-location-search">Search a city, region or country</label>
+                    <label class="visually-hidden" for="feed-location-search">Buscar una ciudad, región o país</label>
                     <input type="search" id="feed-location-search" autocomplete="off"
-                           placeholder="City, region or country">
+                           placeholder="Ciudad, región o país">
                     <button type="button" id="feed-location-clear" class="feed-search-clear"
-                            aria-label="Clear the location" hidden>&times;</button>
+                            aria-label="Limpiar la ubicación" hidden>&times;</button>
                     <div id="feed-location-results" class="search-results" hidden></div>
                 </div>
             </div>
@@ -74,11 +74,12 @@
 
         <p class="feed-count" id="feed-count"></p>
 
-        <section class="feed-grid" id="feed-grid" aria-label="Skate spots"
+        <section class="feed-grid" id="feed-grid" aria-label="Spots de skate"
                  aria-busy="true"></section>
     </main>
 
     <script src="{% static 'api.js' %}"></script>
+    <script src="{% static 'rating.js' %}"></script>
     <script src="{% static 'location_search.js' %}"></script>
     <script src="{% static 'feed.js' %}"></script>
     <script>
@@ -91,5 +92,20 @@
             });
         });
     </script>
+
+    <!-- Modal de detalle del spot -->
+    <div id="spot-modal" class="spot-modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+        <button type="button" id="spot-modal-close" class="spot-modal-close" aria-label="Cerrar">&times;</button>
+        <div class="spot-modal-content">
+            <img id="spot-modal-image" class="spot-modal-image" alt="">
+            <div class="spot-modal-info">
+                <h2 id="spot-modal-name" class="spot-modal-name"></h2>
+                <p id="spot-modal-category" class="spot-modal-category"></p>
+                <p id="spot-modal-address" class="spot-modal-address"></p>
+                <a id="spot-modal-directions" class="spot-modal-directions" href="#" target="_blank" rel="noopener">Ver en Google Maps</a>
+                <p id="spot-modal-body" class="spot-modal-body"></p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

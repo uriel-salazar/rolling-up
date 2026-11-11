@@ -124,6 +124,9 @@ class Spots(models.Model):
 
 class Rating(models.Model):
     score = models.DecimalField(max_digits=4,decimal_places=2)
+
+    # An optional comment of the rider, shown under the stars.
+    comment = models.TextField(max_length=500, blank=True, default='')
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     spot = models.ForeignKey(Spots, on_delete=models.CASCADE)
@@ -137,7 +140,7 @@ class Rating(models.Model):
             )
         ]
         
-
+    
     def __str__(self):
         return f"{self.user} rated {self.spot} - {self.score}"
     

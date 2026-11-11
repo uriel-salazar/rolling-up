@@ -266,6 +266,15 @@ SIMPLE_JWT = {
 OVERPASS_API_URL = os.environ.get(
     "OVERPASS_API_URL", "https://overpass-api.de/api/interpreter"
 )
+# The other public instances of the service. They are used when the
+# main one can not be reached, for example when the network of the
+# server blocks it. The list is read from the environment, separated by
+# commas.
+OVERPASS_MIRRORS = [
+    url.strip()
+    for url in os.environ.get("OVERPASS_MIRRORS", "").split(",")
+    if url.strip()
+]
 OVERPASS_TIMEOUT = int(os.environ.get("OVERPASS_TIMEOUT", "120"))
 OVERPASS_MAX_RETRIES = int(os.environ.get("OVERPASS_MAX_RETRIES", "3"))
 OVERPASS_RETRY_BACKOFF = float(os.environ.get("OVERPASS_RETRY_BACKOFF", "3"))

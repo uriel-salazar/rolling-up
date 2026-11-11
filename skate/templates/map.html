@@ -21,19 +21,19 @@
                 <a href="/feed/" class="map-nav-link">Lista</a>
                 <a href="/spots/new/" class="map-nav-link">Añadir Spot</a>
                 {% if user.is_authenticated %}
-                <a href="/profile/" class="map-nav-link">Profile</a>
+                <a href="/profile/" class="map-nav-link">Perfil</a>
                 <div class="auth-dropdown map-auth-dropdown">
                     <button type="button" class="map-nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-user"></i>
                     </button>
                     <ul class="auth-dropdown-menu" role="menu">
-                        <li role="menuitem"><a href="/profile/">My Profile</a></li>
-                        <li role="menuitem"><button type="button" id="logout-btn">Log Out</button></li>
+                        <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
+                        <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
                     </ul>
                 </div>
                 {% else %}
-                <a href="/profile/" class="map-nav-link">Log in</a>
-                <a href="/register/" class="map-nav-link">Sign up</a>
+                <a href="/profile/" class="map-nav-link">Iniciar sesión</a>
+                <a href="/register/" class="map-nav-link">Crear cuenta</a>
                 {% endif %}
             </nav>
 
@@ -51,18 +51,18 @@
         <div class="map-filters" id="map-filters">
             <div class="filter-group" role="group" aria-label="Filtrar por tipo de spot">
                 <span class="filter-legend">Tipo</span>
-                <label class="filter-chip">
-                    <input type="checkbox" name="category" value="skatepark" checked>
-                    <span>Skateparks</span>
-                </label>
-                <label class="filter-chip">
-                    <input type="checkbox" name="category" value="street" checked>
-                    <span>Street</span>
-                </label>
-                <label class="filter-chip">
-                    <input type="checkbox" name="category" value="diy" checked>
-                    <span>DIY</span>
-                </label>
+                    <label class="filter-chip">
+                        <input type="checkbox" name="category" value="skatepark" checked>
+                        <span>Skateparks</span>
+                    </label>
+                    <label class="filter-chip">
+                        <input type="checkbox" name="category" value="street" checked>
+                        <span>Calle</span>
+                    </label>
+                    <label class="filter-chip">
+                        <input type="checkbox" name="category" value="diy" checked>
+                        <span>DIY</span>
+                    </label>
             </div>
 
             <div class="filter-group" role="group" aria-label="Filtrar por origen del spot">
@@ -136,7 +136,7 @@
                 <div class="preview-actions">
                     <a class="preview-link" id="preview-link" href="#">Ver detalle</a>
                     <a class="preview-link" id="preview-directions" href="#"
-                       target="_blank" rel="noopener" hidden>Get directions</a>
+                       target="_blank" rel="noopener" hidden>Obtener indicaciones</a>
                 </div>
                 </div>
             </aside>

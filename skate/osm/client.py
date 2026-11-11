@@ -45,6 +45,7 @@ class OverpassClient:
         backoff: Optional[float] = None,
         user_agent: Optional[str] = None,
         session: Optional[requests.Session] = None,
+        mirrors: Optional[Iterable[str]] = None,
     ) -> None:
         self.endpoint = endpoint or settings.OVERPASS_API_URL
         self.timeout = timeout if timeout is not None else settings.OVERPASS_TIMEOUT
@@ -56,6 +57,15 @@ class OverpassClient:
         )
         self.user_agent = user_agent or settings.OVERPASS_USER_AGENT
         self.session = session or requests.Session()
+
+        # The mirrors are the other public instances of the service. They
+        # are used when the main one can not be reached, so a network
+        # that blocks one of them still gets the answer.
+        if mirrors is None:
+            self.mirrors = list(settings.OVERPASS_MIRRORS)
+        else:
+            self.mirrors = list(mirrors)
+        self.mirrors = [url for url in self.mirrors if url != self.endpoint]
 
     # ------------------------------------------------------------------
     # Public API
@@ -86,27 +96,79 @@ class OverpassClient:
     def _post(self, query: str) -> Dict[str, Any]:
         """POST the query to Overpass, retrying temporary failures."""
         headers = {"User-Agent": self.user_agent}
+
+        # The instances are tried one after the other: the main one
+        # first, then the mirrors, because the answer of any of them is
+        # the same. A mirror is only used when the main instance can
+        # not be reached at all, so a network that blocks it still gets
+        # the answer.
+        endpoints = [self.endpoint] + list(self.mirrors)
+        last_error: Optional[Exception] = None
+
+        for index, endpoint in enumerate(endpoints):
+            is_last = index == len(endpoints) - 1
+            try:
+                return self._post_to(endpoint, query, headers, is_last)
+            except OverpassQueryError:
+                # The query itself is wrong: no endpoint can answer it.
+                raise
+            except OverpassRequestError as exc:
+                last_error = exc
+
+                if getattr(exc, "reachable", True):
+                    # The instance answered, it is only busy. Another
+                    # instance would answer the same way.
+                    raise
+
+                if not is_last:
+                    logger.warning(
+                        "The Overpass API at %s could not be reached (%s). "
+                        "Trying the next instance.",
+                        endpoint,
+                        exc,
+                    )
+                    continue
+                raise
+
+        raise last_error  # pragma: no cover - the loop always raises
+
+    def _post_to(
+        self,
+        endpoint: str,
+        query: str,
+        headers: Dict[str, str],
+        is_last: bool = True,
+    ) -> Dict[str, Any]:
+        """POST the query to one instance, retrying temporary failures.
+
+            When another instance is waiting, a connection that does not
+            open is not retried: the next instance is tried at once.
+        """
         attempt = 0
 
         while True:
             attempt += 1
             try:
                 response = self.session.post(
-                    self.endpoint,
+                    endpoint,
                     data={"data": query},
                     headers=headers,
                     timeout=self.timeout,
                 )
             except requests.RequestException as exc:
-                if attempt > self.max_retries:
+                if not is_last or attempt > self.max_retries:
                     logger.error(
                         "Overpass request failed after %s attempt(s): %s",
                         attempt,
                         exc,
                     )
-                    raise OverpassRequestError(
-                        f"Could not reach the Overpass API at {self.endpoint}: {exc}"
-                    ) from exc
+                    error = OverpassRequestError(
+                        f"Could not reach the Overpass API at {endpoint}: {exc}"
+                    )
+                    # The instance can not be reached at all, so another
+                    # one may answer.
+                    error.reachable = False
+                    raise error from exc
 
                 delay = self.backoff * (2 ** (attempt - 1))
                 logger.warning(

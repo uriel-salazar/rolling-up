@@ -37,10 +37,10 @@
                             <button type="button" class="nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-user"></i>
                             </button>
-                            <ul class="auth-dropdown-menu" role="menu">
-                                <li role="menuitem"><a href="/profile/">My Profile</a></li>
-                                <li role="menuitem"><button type="button" id="logout-btn">Log Out</button></li>
-                            </ul>
+                                <ul class="auth-dropdown-menu" role="menu">
+                                    <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
+                                    <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
+                                </ul>
                         </div>
                     </li>
                     {% else %}
@@ -140,6 +140,18 @@
                 window.location.href = '/profile/';
             });
         });
+
+        // Mobile menu toggle for the landing navbar.
+        const menuOpen = document.getElementById('menu-open-button');
+        const menuClose = document.getElementById('menu-close-button');
+        if (menuOpen && menuClose) {
+            menuOpen.addEventListener('click', function () {
+                document.body.classList.add('show-mobile-menu');
+            });
+            menuClose.addEventListener('click', function () {
+                document.body.classList.remove('show-mobile-menu');
+            });
+        }
     </script>
     </body>
 </html>

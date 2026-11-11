@@ -106,6 +106,52 @@ main {
     color: #b5b5b5;
 }
 
+/* Nosotros: the section uses the photograph as its background and a
+   dark layer over it, so the text stays readable. */
+#nosotros {
+    position: relative;
+    background-color: #0a0a0a;
+    background-image: url("images/stocksnap-skateboarding-2562281_1920.jpg");
+    background-size: cover;
+    background-position: center 60%;
+    background-repeat: no-repeat;
+    padding: 110px 0 120px;
+}
+
+#nosotros::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(10, 10, 10, 0.72) 0%,
+        rgba(10, 10, 10, 0.62) 45%,
+        rgba(10, 10, 10, 0.86) 100%
+    );
+}
+
+#nosotros .section-content {
+    position: relative;
+    z-index: 1;
+}
+
+#nosotros .landing-about-text {
+    max-width: 820px;
+    padding: 0 0 0;
+    color: #eaeaea;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75);
+}
+
+#nosotros .landing-about-text p {
+    background: rgba(10, 10, 10, 0.55);
+    border-left: 2px solid var(--secondary-color);
+    border-radius: 0 var(--border-radius-s) var(--border-radius-s) 0;
+    padding: 22px 26px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
 :root{
 
     
@@ -237,14 +283,15 @@ header .navbar{
     font-size: var(--font-size-m);
     color: var(--white-color);
     border-radius: var(--border-radius-m);
-    transition: 0.3s ease;
+    transition: color 180ms ease-out, background-color 180ms ease-out, transform 180ms ease-out;
 }
-
 
 .navbar .nav-menu .nav-link:hover,
 .navbar .nav-menu .nav-link.is-active {
-    color: var(--primary-color);
-    background-color: var(--secondary-color);
+    color: #ffffff;
+    background-color: #2a2a2a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .navbar .nav-menu .profile-icon {
@@ -873,6 +920,8 @@ header .navbar{
 .field input[type="text"],
 .field input[type="search"],
 .field input[type="number"],
+.field input[type="email"],
+.field input[type="password"],
 .field textarea,
 .location-search input {
     width: 100%;
@@ -880,10 +929,16 @@ header .navbar{
     background: var(--secondary-color);
     border: 1px solid #333;
     border-radius: var(--border-radius-s);
-    color: var(--white-color);
+    color: #b5b5b5;
     font-family: inherit;
     font-size: 0.95rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input::placeholder,
+.field textarea::placeholder,
+.location-search input::placeholder {
+    color: #7a7a7a;
 }
 
 .field textarea {
@@ -897,6 +952,7 @@ header .navbar{
     outline: none;
     border-color: #555;
     box-shadow: 0 0 0 2px rgba(234, 234, 234, 0.08);
+    color: #d5d5d5;
 }
 
 .field input[type="file"] {
@@ -1388,6 +1444,9 @@ header .navbar{
 .app-nav {
     display: flex;
     gap: 24px;
+    flex-wrap: wrap;
+    row-gap: 10px;
+    min-width: 0;
 }
 
 .app-nav a {
@@ -1397,12 +1456,52 @@ header .navbar{
     text-transform: uppercase;
     color: #7a7a7a;
     text-decoration: none;
+    white-space: nowrap;
     transition: color 0.2s ease;
 }
 
 .app-nav a:hover,
 .app-nav a[aria-current="page"] {
     color: #f5f5f5;
+}
+
+/* On the login and the register pages the bar uses the same type as
+   the bar of the home page: the same font, the same size and the
+   same rounded shape. */
+.profile-page .app-nav a {
+    font-family: "Manrope", sans-serif;
+    font-size: var(--font-size-m);
+    font-weight: var(--font-weight-normal);
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--white-color);
+    padding: 10px 18px;
+    border-radius: var(--border-radius-m);
+    transition: 0.3s ease;
+}
+
+.profile-page .app-nav a:hover,
+.profile-page .app-nav a[aria-current="page"] {
+    color: var(--primary-color);
+    background-color: var(--secondary-color);
+}
+
+.profile-page .app-nav a.nav-login,
+.profile-page .app-nav a.nav-signup {
+    font-family: "Manrope", sans-serif;
+    font-size: var(--font-size-m);
+    font-weight: var(--font-weight-normal);
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--white-color);
+    padding: 10px 18px;
+    border-radius: var(--border-radius-m);
+}
+
+.profile-page .app-nav a.nav-login:hover,
+.profile-page .app-nav a.nav-signup:hover {
+    color: var(--primary-color);
+    background-color: var(--secondary-color);
 }
 
 .app-nav-profile {
@@ -1417,6 +1516,39 @@ header .navbar{
     padding: 0;
     text-decoration: none;
     font-size: 0.75rem;
+    flex: 0 0 auto;
+}
+
+/* The "Profile" link is a text, so it never stays inside the circle
+   and never sticks out of the bar. */
+.app-nav a.app-nav-profile {
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: none;
+    color: #7a7a7a;
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    display: inline-block;
+    padding: 0;
+}
+
+.profile-page .app-nav a.app-nav-profile {
+    border-radius: var(--border-radius-m);
+    color: var(--white-color);
+    font-size: var(--font-size-m);
+    font-weight: var(--font-weight-normal);
+    letter-spacing: normal;
+    text-transform: none;
+    padding: 10px 18px;
+}
+
+.profile-page .app-nav a.app-nav-profile:hover,
+.profile-page .app-nav a.app-nav-profile[aria-current="page"] {
+    color: var(--primary-color);
+    background-color: var(--secondary-color);
 }
 
 .app-topbar-spacer {
@@ -1453,7 +1585,9 @@ header .navbar{
         order: 3;
         width: 100%;
         gap: 18px;
-        overflow-x: auto;
+        flex-wrap: wrap;
+        row-gap: 10px;
+        overflow-x: visible;
     }
 
     .app-topbar-spacer {
@@ -1795,6 +1929,159 @@ header .navbar{
     margin-left: 6px;
 }
 
+/* The stars, the same ones of the section, in every place --------- */
+
+.star-button {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    line-height: 1;
+}
+
+.star-button.star-filled {
+    cursor: pointer;
+}
+
+.star-button.star-hover {
+    color: #e8c07a;
+}
+
+.stars-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stars-field .star {
+    font-size: 1.9rem;
+}
+
+/* The stars of the average, filled in part when the average is not a
+   whole number. The gold of the filled ones and the grey of the empty
+   ones are the ones of the section. */
+.stars-readonly {
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.stars-readonly-base {
+    color: #565656;
+}
+
+.stars-readonly-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    overflow: hidden;
+    color: #c9a227;
+    width: var(--fill, 0%);
+}
+
+.spot-rating-readonly {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.spot-rating-readonly .stars-readonly {
+    font-size: 1.6rem;
+}
+
+.spot-rating-value {
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #c9a227;
+}
+
+.spot-rating-readonly .spot-rating-count {
+    margin-left: 0;
+}
+
+/* The form of the visitor ------------------------------------------ */
+
+.spot-rating-form {
+    margin-bottom: 28px;
+}
+
+.spot-rating-input {
+    margin-bottom: 16px;
+}
+
+.spot-rating-input .field {
+    margin-bottom: 16px;
+}
+
+.spot-rating-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.spot-rating-actions .btn-primary,
+.spot-rating-actions .btn-ghost {
+    font-family: "Manrope", sans-serif;
+    font-size: 0.85rem;
+}
+
+/* The list of the ratings ------------------------------------------ */
+
+.spot-rating-list {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #1c1c1c;
+}
+
+.spot-rating-item {
+    padding: 14px 0;
+    border-bottom: 1px solid #1c1c1c;
+}
+
+.spot-rating-item:last-child {
+    border-bottom: none;
+}
+
+.spot-rating-item-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.spot-rating-item-user {
+    font-family: "Manrope", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #f7f7f7;
+}
+
+.spot-rating-item-score {
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #c9a227;
+}
+
+.spot-rating-item-date {
+    font-family: "Manrope", sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.6px;
+    color: #757575;
+}
+
+.spot-rating-item-comment {
+    margin: 8px 0 0;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #b5b5b5;
+}
+
 /* Map -------------------------------------------------------------------- */
 
 .spot-map {
@@ -2122,6 +2409,42 @@ header .navbar{
     transition: opacity 300ms ease-out;
 }
 
+/* Animaciones sutiles adicionales */
+
+.feed-item,
+.spot-card {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: fade-up 300ms ease-out forwards;
+}
+
+@keyframes fade-up {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.app-nav a,
+.app-add {
+    transition: color 180ms ease-out, opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+.app-nav a:hover,
+.app-add:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary:hover:not(:disabled) {
+    opacity: 0.92;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.btn-ghost:hover {
+    transform: translateY(-1px);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .google-btn {
         transition: none;
@@ -2152,6 +2475,32 @@ header .navbar{
     .fade-out {
         transition: none;
         opacity: 1;
+        transform: none;
+    }
+
+    .feed-item,
+    .spot-card {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+    .app-nav a,
+    .app-add {
+        transition: none;
+    }
+
+    .app-nav a:hover,
+    .app-add:hover {
+        transform: none;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-ghost:hover {
         transform: none;
     }
 }
@@ -2349,6 +2698,369 @@ header .navbar{
 @media (prefers-reduced-motion: reduce) {
     .google-btn {
         transition: none;
+    }
+}
+
+/* ==========================================================================
+   Tablet and mobile responsive adjustments
+   ========================================================================== */
+
+/* Tablet breakpoint */
+@media screen and (max-width: 1024px) {
+    :root {
+        --font-size-xl: 1.8rem;
+        --font-size-xxl: 2rem;
+    }
+
+    .profile-main,
+    .register-main {
+        padding-top: 70px;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .feed-main {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .spot-detail-main {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .spot-card {
+        grid-row: span 6;
+    }
+}
+
+/* Mobile: app-nav (profile, register, feed pages) */
+@media screen and (max-width: 720px) {
+    .app-topbar {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 18px;
+    }
+
+    .app-nav {
+        order: 3;
+        width: 100%;
+        gap: 16px;
+        flex-wrap: wrap;
+        row-gap: 10px;
+        overflow-x: visible;
+    }
+
+    .app-topbar-spacer {
+        display: none;
+    }
+
+    .app-add {
+        margin-left: auto;
+        width: 100%;
+        text-align: center;
+        padding: 10px 16px;
+    }
+
+    .app-brand {
+        font-size: 1.3rem;
+    }
+
+    .profile-main,
+    .register-main {
+        padding-top: 70px;
+        padding-left: 18px;
+        padding-right: 18px;
+        padding-bottom: 80px;
+    }
+
+    .profile-title {
+        font-size: clamp(1.6rem, 10vw, 2.2rem);
+    }
+
+    .spot-card {
+        grid-row: span 6;
+    }
+
+    /* Google button full width on mobile */
+    .google-btn {
+        max-width: 100%;
+        width: 100%;
+        min-height: 48px;
+        padding: 12px 16px;
+    }
+
+    .google-btn__logo svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Auth dropdown positioning on mobile */
+    .auth-dropdown-menu {
+        position: fixed;
+        top: 60px;
+        left: 18px;
+        right: 18px;
+        min-width: auto;
+        width: auto;
+    }
+
+    /* Spot form mobile */
+    .form-section {
+        padding-top: 90px;
+        padding-bottom: 60px;
+    }
+
+    .spot-form {
+        gap: 20px;
+    }
+
+    .field input,
+    .field textarea,
+    .location-search input {
+        padding: 12px 14px;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 1rem;
+    }
+
+    .btn-ghost {
+        width: 100%;
+        text-align: center;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .form-actions .btn-primary,
+    .form-actions .btn-ghost {
+        width: 100%;
+    }
+
+    /* Map mobile */
+    .map {
+        height: 240px;
+    }
+
+    .map-canvas {
+        height: 240px;
+    }
+}
+
+/* Small mobile phones */
+@media screen and (max-width: 480px) {
+    .profile-main,
+    .register-main {
+        padding-top: 60px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .profile-title {
+        font-size: clamp(1.4rem, 12vw, 2rem);
+    }
+
+    .spot-card {
+        grid-row: span 6;
+    }
+
+    .google-btn {
+        min-height: 44px;
+        padding: 10px 14px;
+        font-size: 0.9rem;
+    }
+
+    .google-btn__logo svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .auth-dropdown-menu {
+        top: 56px;
+        left: 16px;
+        right: 16px;
+        padding: 8px 0;
+        border-radius: 6px;
+    }
+
+    .auth-dropdown-menu a,
+    .auth-dropdown-menu button {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+    }
+
+    .spot-detail-main {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .spot-title {
+        font-size: clamp(1.5rem, 10vw, 2.2rem);
+    }
+
+    .spot-photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+}
+
+/* Spot detail page responsive */
+@media screen and (max-width: 720px) {
+    .spot-detail-main {
+        padding: 0 18px 80px;
+    }
+
+    .spot-header {
+        padding: 48px 0 20px;
+        margin-bottom: 30px;
+    }
+
+    .spot-title {
+        font-size: clamp(1.8rem, 8vw, 2.6rem);
+    }
+
+    .spot-photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .spot-map .map-canvas {
+        height: 240px;
+    }
+}
+
+/* Spot form responsive */
+@media screen and (max-width: 900px) {
+    .form-layout {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .form-photo-section {
+        flex: none;
+        order: 2;
+        height: 260px;
+        padding-top: 0;
+        padding-bottom: 60px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .form-section {
+        padding-top: 110px;
+    }
+
+    .map {
+        height: 260px;
+    }
+
+    .manual-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Navbar mobile (landing page basic_home.html / spot_form.html) */
+@media screen and (max-width: 900px) {
+    .navbar :where(#menu-close-button, #menu-open-button) {
+        display: block;
+    }
+
+    .navbar .nav-menu {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        width: 280px;
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 90px;
+        background: #0a0a0a;
+        transition: left 250ms ease-out;
+        z-index: 60;
+        border-right: 1px solid #1c1c1c;
+    }
+
+    body.show-mobile-menu .navbar .nav-menu {
+        left: 0;
+    }
+
+    .navbar .nav-menu .nav-link {
+        display: block;
+        margin-top: 0;
+        padding: 16px 24px;
+        width: 100%;
+        text-align: center;
+        color: #eaeaea;
+        font-size: 1rem;
+    }
+
+    .navbar .nav-menu .nav-link:hover,
+    .navbar .nav-menu .nav-link.is-active {
+        background: #141414;
+        color: #c9a227;
+    }
+
+    .navbar #menu-close-button {
+        position: absolute;
+        right: 20px;
+        top: 18px;
+        color: var(--white-color);
+    }
+
+    .navbar #menu-open-button {
+        color: var(--white-color);
+    }
+
+    .hero-section .hero-content {
+        gap: 40px;
+        text-align: center;
+        padding: 130px 20px 20px;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .hero-section .hero-details .subtitle,
+    .hero-section .hero-details .description,
+    .about-details .about-details {
+        max-width: 100%;
+    }
+
+    .hero-section .hero-details .buttons {
+        justify-content: center;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .hero-section .hero-details .button {
+        width: 100%;
+        max-width: 260px;
+        text-align: center;
+        padding: 12px 20px;
+    }
+
+    .hero-section .hero-image-wrapper {
+        max-width: 260px;
+        margin-right: 0;
+    }
+
+    .about-section {
+        padding: 100px 0;
+    }
+
+    .about-section .section-content {
+        flex-direction: column-reverse;
+        gap: 50px;
+    }
+
+    .cover-image {
+        height: 100px;
     }
 }
 

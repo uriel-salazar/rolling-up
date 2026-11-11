@@ -76,12 +76,44 @@ class OverpassClientTests(SimpleTestCase):
     def test_a_connection_error_is_retried_and_then_reported(self, mock_post):
         mock_post.side_effect = connection_error()
 
-        client = build_client()
+        client = build_client(mirrors=[])
 
         with self.assertRaises(OverpassRequestError):
             client.fetch_elements("[out:json];node;out;")
 
         self.assertEqual(mock_post.call_count, 3)
+
+    @patch("requests.Session.post")
+    def test_a_mirror_is_used_when_the_main_instance_is_blocked(self, mock_post):
+        """A network that blocks one instance still gets the answer."""
+        mirror = "https://mirror.example/api/interpreter"
+
+        def answer(url, **kwargs):
+            if url == mirror:
+                return FakeResponse(
+                    200, overpass_payload([{"type": "node", "id": 1}])
+                )
+            raise connection_error()
+
+        mock_post.side_effect = answer
+
+        client = build_client(mirrors=[mirror])
+        elements = client.fetch_elements("[out:json];node;out;")
+
+        self.assertEqual(len(elements), 1)
+        self.assertEqual(mock_post.call_count, 2)
+
+    @patch("requests.Session.post")
+    def test_the_query_is_not_retried_in_another_instance(self, mock_post):
+        """A rejected query is wrong for every instance."""
+        mock_post.return_value = FakeResponse(400, {"remark": "bad query"})
+
+        client = build_client(mirrors=["https://mirror.example/api/interpreter"])
+
+        with self.assertRaises(OverpassQueryError):
+            client.fetch_elements("bad query")
+
+        self.assertEqual(mock_post.call_count, 1)
 
     @patch("requests.Session.post")
     def test_a_temporary_error_is_retried(self, mock_post):

@@ -21,7 +21,14 @@ class OverpassQueryError(OverpassError):
 
 
 class OverpassRequestError(OverpassError):
-    """The request to the Overpass API failed after every retry."""
+    """The request to the Overpass API failed after every retry.
+
+        The attribute ``reachable`` tells whether the instance
+        answered at all. When it is ``False`` the network blocks it and
+        another instance may answer.
+    """
+
+    reachable = True
 
 
 class AreaResolutionError(OSMError):

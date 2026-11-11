@@ -71,6 +71,9 @@ const elements = {};
 [
     'feed-grid', 'feed-count', 'feed-search', 'feed-search-clear',
     'feed-location-search', 'feed-location-results', 'feed-location-clear',
+    'spot-modal', 'spot-modal-close', 'spot-modal-image', 'spot-modal-name',
+    'spot-modal-category', 'spot-modal-address', 'spot-modal-directions',
+    'spot-modal-body',
 ].forEach((id) => { elements[id] = makeElement('div'); });
 elements['feed-search'].value = '';
 elements['feed-location-search'].value = '';
@@ -122,6 +125,15 @@ const sandbox = {
         createElement: (tag) => makeElement(tag),
         createElementNS: (ns, tag) => makeElement(tag),
         addEventListener: () => {},
+        body: {
+            classList: {
+                _set: new Set(),
+                add(name) { this._set.add(name); },
+                remove(name) { this._set.delete(name); },
+                contains(name) { return this._set.has(name); },
+            },
+            style: {},
+        },
     },
     window: {
         setTimeout: setTimeout,
@@ -154,6 +166,11 @@ vm.createContext(sandbox);
 
 function loadApi() {
     const source = fs.readFileSync(path.join(PROJECT, 'skate/static/api.js'), 'utf8');
+    vm.runInContext(source, sandbox);
+}
+
+function loadRating() {
+    const source = fs.readFileSync(path.join(PROJECT, 'skate/static/rating.js'), 'utf8');
     vm.runInContext(source, sandbox);
 }
 
@@ -215,6 +232,7 @@ function textOf(node) {
 
 (async function run() {
     loadApi();
+    loadRating();
     loadFeed();
     await wait(30);
 
@@ -277,6 +295,14 @@ function textOf(node) {
     const unratedText = textOf(notRated[0]);
     check('an unrated spot does not have a score of zero',
         unratedText.indexOf('0.0') === -1, unratedText);
+    const stars = findByClass(cards[1], 'stars-readonly');
+    check('the average is drawn with stars', stars.length === 1);
+    const fill = stars.length === 1
+        ? (stars[0].style['--fill'] || stars[0].getAttribute('style') || '')
+        : '';
+    check('the stars are filled in part',
+        stars.length === 1 && String(fill).indexOf('--fill: 90%') !== -1,
+        String(fill));
 
     console.log('\n== 7. The directions ==');
     const directions = findByClass(cards[1], 'spot-directions');
