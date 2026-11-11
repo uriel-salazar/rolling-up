@@ -104,14 +104,29 @@ class SpotSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name_spot', 'image_url', 'body', 'created_at',
             'latitude', 'longitude', 'source', 'osm_id', 'osm_type',
-            'osm_metadata', 'user',
+            'osm_metadata', 'user', 'category', 'rating', 'rating_count',
         ]
         # The provenance fields are managed by the importer, a user may
         # not set them through the API.
         read_only_fields = [
             'id', 'created_at', 'user', 'source',
-            'osm_id', 'osm_type', 'osm_metadata',
+            'osm_id', 'osm_type', 'osm_metadata', 'rating', 'rating_count',
         ]
+
+    # The average of the ratings of the spot and how many there are.
+    # They come from the annotations of the queryset, so they are only
+    # there when the spots are read through the viewset.
+    rating = serializers.SerializerMethodField()
+    rating_count = serializers.SerializerMethodField()
+
+    def get_rating(self, obj):
+        """Return the average score of the spot, or None."""
+        value = getattr(obj, 'average_rating', None)
+        return float(value) if value is not None else None
+
+    def get_rating_count(self, obj):
+        """Return how many ratings the spot has."""
+        return getattr(obj, 'rating_count', 0) or 0
 
     latitude = CoordinateField(
         min_value=Decimal('-90'), max_value=Decimal('90'),

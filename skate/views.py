@@ -7,6 +7,7 @@ from rest_framework.generics import RetrieveUpdateAPIView
 from django.shortcuts import render,get_object_or_404
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.db.models import Avg, Count, Q
 from django.utils.safestring import mark_safe
 from .models import User,Spots,Rating
 from drf_spectacular.utils import extend_schema, OpenApiExample
@@ -17,9 +18,29 @@ from .permissions import IsOwnerOrReadOnly
 
 logger = logging.getLogger(__name__)
 
+# The raster tiles of CARTO are only available up to this zoom level.
+CARTO_MAX_ZOOM = 18
+
 
 def home(request):
     return render(request,'basic_home.html')
+
+
+def skate_map(request):
+    """ Render the map of the skate spots.
+
+        The page is public, the spots are read from the public API
+        without an account.
+    """
+    return render(
+        request,
+        'map.html',
+        {
+            'tile_config': build_tile_config(),
+            'default_center': settings.MAP_DEFAULT_CENTER,
+            'default_zoom': settings.MAP_DEFAULT_ZOOM,
+        },
+    )
 
 
 def build_tile_config():
@@ -35,15 +56,34 @@ def build_tile_config():
     * the CARTO basemaps need the credit of **both** OpenStreetMap and
       CARTO, and they need an API key.
 
+    When the provider needs a key the tiles go through the proxy of the
+    application, so the key never reaches the browser.
+
     The links use single quotes on purpose: the string is rendered
     inside a double quoted HTML attribute and it is not escaped.
     """
     url = settings.OSM_TILE_URL
     is_carto = 'cartocdn' in url
+    subdomains = settings.OSM_TILE_SUBDOMAINS
+
+    max_zoom = settings.OSM_TILE_MAX_ZOOM
+    if is_carto and max_zoom > CARTO_MAX_ZOOM:
+        # The raster tiles of CARTO only go up to zoom 18. A bigger
+        # value makes the server answer "Forbidden" and the map shows
+        # empty tiles instead of the streets.
+        logger.warning(
+            "OSM_TILE_MAX_ZOOM is %s but the CARTO raster tiles only go up "
+            "to %s, it is lowered.",
+            max_zoom,
+            CARTO_MAX_ZOOM,
+        )
+        max_zoom = CARTO_MAX_ZOOM
 
     attribution = (
         "&copy; <a href='https://www.openstreetmap.org/copyright' "
         "target='_blank' rel='noopener'>OpenStreetMap</a> contributors"
+        " &middot; <a href='https://www.openstreetmap.org/fixthemap' "
+        "target='_blank' rel='noopener'>Report a map issue</a>"
     )
 
     if is_carto:
@@ -53,19 +93,21 @@ def build_tile_config():
             "target='_blank' rel='noopener'>CARTO</a>"
         )
 
-        if settings.OSM_TILE_API_KEY:
-            url = f"{url}?key={settings.OSM_TILE_API_KEY}"
-        else:
+        if not settings.OSM_TILE_API_KEY:
             logger.warning(
                 "The CARTO basemaps need an API key, the map will show a "
                 "placeholder until OSM_TILE_API_KEY is set. "
                 "https://carto.com/basemaps/apikey/"
             )
+        else:
+            # The key is a credential, the tiles go through the proxy
+            # of the application so it never reaches the browser.
+            url = settings.TILE_PROXY_PATH
+            subdomains = ''
     else:
-        attribution += (
-            " &middot; <a href='https://www.openstreetmap.org/fixthemap' "
-            "target='_blank' rel='noopener'>Report a map issue</a>"
-        )
+        # The standard tiles need no key, the browser can ask for them
+        # directly and the server does not have to serve them.
+        pass
 
     attribution += (
         f" &middot; <a href='mailto:{settings.OSM_CONTACT_EMAIL}'>"
@@ -74,10 +116,13 @@ def build_tile_config():
 
     options = {
         'url': url,
-        'max_zoom': settings.OSM_TILE_MAX_ZOOM,
-        'subdomains': settings.OSM_TILE_SUBDOMAINS,
+        'max_zoom': max_zoom,
+        'subdomains': subdomains,
         'attribution': mark_safe(attribution),
         'provider': 'carto' if is_carto else 'osm',
+        # CARTO answers without a key with a placeholder that says
+        # "API KEY REQUIRED", so the map has to say it is not ready.
+        'key_missing': is_carto and not settings.OSM_TILE_API_KEY,
     }
 
     return options
@@ -177,6 +222,40 @@ class SpotsViewSet(ModelViewSet):
     # coordinates with a null to remove the location of a spot.
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     serializer_class= SpotSerializer
+
+    def get_queryset(self):
+        """Return the spots, filtered and with their ratings.
+
+        The parameters are all optional, so the endpoint answers the
+        same as before when none of them is used:
+
+        * ``search``   -- a text that is looked for in the name and in
+          the description of the spot,
+        * ``category`` -- ``skatepark``, ``street`` or ``diy``,
+        * ``source``   -- ``osm`` or ``community``.
+        """
+        queryset = Spots.objects.annotate(
+            average_rating=Avg('rating__score'),
+            rating_count=Count('rating', distinct=True),
+        )
+
+        params = self.request.query_params
+
+        search = (params.get('search') or '').strip()
+        if search:
+            queryset = queryset.filter(
+                Q(name_spot__icontains=search) | Q(body__icontains=search)
+            )
+
+        category = (params.get('category') or '').strip()
+        if category and category in Spots.CATEGORY_VALUES:
+            queryset = queryset.filter(category=category)
+
+        source = (params.get('source') or '').strip()
+        if source and source in Spots.SOURCE_VALUES:
+            queryset = queryset.filter(source=source)
+
+        return queryset
 
     def perform_create(self, serializer):
         """ Injects to current user before saving it."""

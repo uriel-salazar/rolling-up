@@ -46,6 +46,11 @@ MAX_BODY_LENGTH = 1000
 OSM_ATTRIBUTION = "© OpenStreetMap contributors"
 OSM_LICENSE = "ODbL-1.0"
 
+# The kinds of spot. They match the choices of the ``category`` field of
+# the spot model.
+CATEGORY_SKATEPARK = "skatepark"
+CATEGORY_STREET = "street"
+
 
 class ParsedSpot:
     """A single skatepark ready to be written to the database."""
@@ -57,6 +62,7 @@ class ParsedSpot:
         "description",
         "latitude",
         "longitude",
+        "category",
         "metadata",
     )
 
@@ -68,6 +74,7 @@ class ParsedSpot:
         description: Optional[str],
         latitude: float,
         longitude: float,
+        category: str,
         metadata: Dict[str, Any],
     ) -> None:
         self.osm_id = osm_id
@@ -76,6 +83,7 @@ class ParsedSpot:
         self.description = description
         self.latitude = latitude
         self.longitude = longitude
+        self.category = category
         self.metadata = metadata
 
     def as_dict(self) -> Dict[str, Any]:
@@ -87,6 +95,7 @@ class ParsedSpot:
             "description": self.description,
             "latitude": self.latitude,
             "longitude": self.longitude,
+            "category": self.category,
             "metadata": self.metadata,
         }
 
@@ -151,6 +160,7 @@ def parse_element(element: Dict[str, Any]) -> Tuple[Optional[ParsedSpot], str]:
 
     name = build_name(tags, osm_type, osm_id)
     description = extract_description(tags)
+    category = detect_category(tags)
 
     metadata = {
         "tags": dict(tags),
@@ -160,6 +170,7 @@ def parse_element(element: Dict[str, Any]) -> Tuple[Optional[ParsedSpot], str]:
         "operator": tags.get("operator"),
         "website": extract_website(tags),
         "description": description,
+        "category": category,
         "attribution": OSM_ATTRIBUTION,
         "license": OSM_LICENSE,
     }
@@ -172,10 +183,35 @@ def parse_element(element: Dict[str, Any]) -> Tuple[Optional[ParsedSpot], str]:
             description=description,
             latitude=latitude,
             longitude=longitude,
+            category=category,
             metadata=metadata,
         ),
         "",
     )
+
+
+def detect_category(tags: Dict[str, Any]) -> str:
+    """Return the kind of skatepark the OpenStreetMap tags describe.
+
+    A place tagged ``leisure=skatepark`` is a skatepark. A place that
+    calls itself a skatepark in its name or in its description is one
+    too, which happens with the ways that are mapped as a pitch or as a
+    sports centre. Everything else that is tagged for skateboarding is
+    a street spot.
+
+    The values match the choices of the ``category`` field of the spot.
+    """
+    leisure = (tags.get("leisure") or "").strip().lower()
+
+    if leisure == "skatepark":
+        return CATEGORY_SKATEPARK
+
+    for key in ("name", "description", "note"):
+        value = tags.get(key)
+        if value and SKATEPARK_KEYWORDS.search(str(value)):
+            return CATEGORY_SKATEPARK
+
+    return CATEGORY_STREET
 
 
 def is_skatepark(tags: Dict[str, Any]) -> bool:

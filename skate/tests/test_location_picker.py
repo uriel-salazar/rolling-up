@@ -496,23 +496,49 @@ class TileUsagePolicyTests(TestCase):
         )
         self.client = APIClient()
 
-    def test_the_tile_url_is_the_one_the_policy_asks_for(self):
-        """The standard OpenStreetMap tiles are the default."""
+    def test_the_carto_positron_basemap_is_the_default(self):
+        """The application uses the CARTO Positron basemaps."""
         self.assertEqual(
             settings.OSM_TILE_URL,
-            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png",
         )
+        self.assertEqual(settings.OSM_TILE_SUBDOMAINS, "abcd")
 
-    def test_the_tile_url_has_no_subdomain_shortcut(self):
-        """The policy asks for exactly the url above, without {s}."""
-        self.assertNotIn("{s}", settings.OSM_TILE_URL)
-        self.assertEqual(settings.OSM_TILE_SUBDOMAINS, "")
+    def test_the_max_zoom_stays_inside_the_limit_of_carto(self):
+        """The raster tiles of CARTO only go up to zoom 18."""
+        self.assertEqual(settings.OSM_TILE_MAX_ZOOM, 18)
+        self.assertLessEqual(settings.OSM_TILE_MAX_ZOOM, 18)
+
+    def test_a_too_big_max_zoom_is_lowered(self):
+        """A bigger value makes the server answer Forbidden."""
+        with override_settings(OSM_TILE_MAX_ZOOM=20):
+            response = self.client.get("/spots/new/")
+
+        self.assertContains(response, 'data-tile-max-zoom="18"')
+
+    def test_the_standard_openstreetmap_tiles_can_be_used_instead(self):
+        """The provider is a setting, so it can be changed at any time."""
+        with override_settings(
+            OSM_TILE_URL="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            OSM_TILE_SUBDOMAINS="",
+            OSM_TILE_MAX_ZOOM=19,
+        ):
+            response = self.client.get("/spots/new/")
+
+        html = response.content.decode()
+
+        self.assertIn("https://tile.openstreetmap.org/{z}/{x}/{y}.png", html)
+        # The standard tiles have no subdomain shortcut.
+        self.assertNotIn("basemaps.cartocdn.com", html)
+        # They do not use subdomains at all.
+        self.assertIn('data-tile-subdomains=""', html)
 
     def test_the_map_uses_the_configured_tile_url(self):
+        """A provider that needs a key is served through the proxy."""
         response = self.client.get("/spots/new/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, settings.OSM_TILE_URL)
+        self.assertContains(response, settings.TILE_PROXY_PATH)
 
     def test_the_carto_basemaps_can_be_used_instead(self):
         """The provider is a setting, so it can be changed at any time."""
@@ -524,10 +550,28 @@ class TileUsagePolicyTests(TestCase):
 
         html = response.content.decode()
 
-        self.assertIn("basemaps.cartocdn.com", html)
-        self.assertIn('data-tile-subdomains="abcd"', html)
+        # The provider url stays on the server, the browser only sees
+        # the proxy.
+        self.assertNotIn("basemaps.cartocdn.com", html)
+        self.assertIn(settings.TILE_PROXY_PATH, html)
         # CARTO asks for the credit of both projects.
         self.assertIn("carto.com/attribution", html)
+
+    def test_a_missing_carto_key_is_pointed_out(self):
+        """Without a key the server answers with a placeholder tile."""
+        with override_settings(OSM_TILE_API_KEY=""):
+            response = self.client.get("/spots/new/")
+
+        self.assertContains(response, "OSM_TILE_API_KEY")
+        self.assertContains(response, "carto.com/basemaps/apikey")
+
+    def test_the_key_never_reaches_the_browser(self):
+        """The key is a credential, the tiles go through the proxy."""
+        with override_settings(OSM_TILE_API_KEY="a-key"):
+            response = self.client.get("/spots/new/")
+
+        self.assertNotContains(response, "a-key")
+        self.assertContains(response, settings.TILE_PROXY_PATH)
 
     def test_the_attribution_is_shown_on_the_map(self):
         response = self.client.get("/spots/new/")
