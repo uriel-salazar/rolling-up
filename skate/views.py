@@ -43,6 +43,23 @@ def skate_map(request):
     )
 
 
+def feed_page(request):
+    """ Render the feed of the skate spots.
+
+        The page is public, the spots are read from the public API
+        without an account.
+    """
+    return render(request, 'feed.html')
+
+
+def profile_page(request):
+    """ Render the page of the profile, where the user signs in.
+
+        The page is public, signing in happens through the API.
+    """
+    return render(request, 'profile.html')
+
+
 def build_tile_config():
     """Return the configuration of the tile layer of the map.
 

@@ -1,83 +1,55 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feed</title>
-    {% load static %}
+    <title>Spots &mdash; Rolling Up</title>
+    <meta name="description" content="The skate spots of Rolling Up: skateparks, street spots and DIY spots.">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'feed.css' %}">
 </head>
-<body>
-    <section id="navbar-section">
-        <div class="nav-bar">
-            <div class="nav-one">
-                <h1> Skate Spots API </h1>
+<body class="feed-page">
+    <header class="app-topbar">
+        <a href="/" class="app-brand">Rolling Up</a>
+
+        <nav class="app-nav" aria-label="Main">
+            <a href="/map/">Map</a>
+            <a href="/feed/" aria-current="page">Spots</a>
+            <a href="/profile/">Profile</a>
+        </nav>
+
+        <span class="app-topbar-spacer"></span>
+
+        <a href="/spots/new/" class="app-add">Add spot</a>
+    </header>
+
+    <main class="feed-main">
+        <section class="feed-intro">
+            <div class="feed-intro-text">
+                <h1 class="feed-title">Explore spots</h1>
+                <p class="feed-subtitle">
+                    Skateparks, street spots and DIY spots. The places that
+                    make the city roll.
+                </p>
             </div>
-            <div class="nav-list">
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/feed/">Feed</a></li>
-                    <li><a href="/profile/">Profile</a></li>
-                    <li><a href="/spots/new/">Añadir Spot</a></li>
-                </ul>
+
+            <div class="feed-search">
+                <label class="visually-hidden" for="feed-search">Search the spots</label>
+                <input type="search" id="feed-search" autocomplete="off"
+                       placeholder="Search by name or description">
+                <button type="button" id="feed-search-clear" class="feed-search-clear"
+                        aria-label="Clear the search" hidden>&times;</button>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="spots-feed">
-        <h2>All spots</h2>
-        <div id="spots-list"></div>
-    </section>
+        <p class="feed-count" id="feed-count"></p>
 
-    <script>
-        /** Read the id of the logged in user out of the access token. */
-        function getCurrentUserId() {
-            const token = localStorage.getItem('access');
-            if (!token) {
-                return null;
-            }
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                return payload.user_id || null;
-            } catch (error) {
-                return null;
-            }
-        }
+        <section class="feed-grid" id="feed-grid" aria-label="Skate spots"
+                 aria-busy="true"></section>
+    </main>
 
-        async function loadSpots() {
-            const res = await fetch('/api/spots/?limit=20');
-            const data = await res.json();
-            const list = document.getElementById('spots-list');
-
-            if (!data.results || data.results.length === 0) {
-                list.innerHTML = '<p>No spots yet.</p>';
-                return;
-            }
-
-            const currentUserId = getCurrentUserId();
-
-            list.innerHTML = data.results.map(spot => {
-                const isOwner = currentUserId !== null && spot.user === currentUserId;
-                const editLink = isOwner
-                    ? `<a class="spot-edit" href="/spots/${spot.id}/edit/">Edit</a>`
-                    : '';
-                const coordinates = (spot.latitude && spot.longitude)
-                    ? `<p class="spot-coordinates">${spot.latitude}, ${spot.longitude}</p>`
-                    : '';
-
-                return `
-            <div class="spot-card">
-                ${spot.image_url ? `<img src="${spot.image_url}" alt="${spot.name_spot}">` : ''}
-                <h3>${spot.name_spot}</h3>
-                <p>${spot.body ?? ''}</p>
-                ${coordinates}
-                ${editLink}
-            </div>
-        `;
-            }).join('');
-        }
-
-        loadSpots();
-    </script>
+    <script src="{% static 'api.js' %}"></script>
+    <script src="{% static 'feed.js' %}"></script>
 </body>
 </html>

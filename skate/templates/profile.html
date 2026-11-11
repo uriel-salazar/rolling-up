@@ -3,38 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
+    <title>Profile &mdash; Rolling Up</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
-<body>
-    <section id="navbar-section">
-        <div class="nav-bar">
-            <div class="nav-one">
-                <h1> Skate Spots API </h1>
-            </div>
-            <div class="nav-list">
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/feed/">Feed</a></li>
-                    <li><a href="/profile/">Profile</a></li>
-                </ul>
-            </div>
-        </div>
-    </section>
+<body class="profile-page">
+    <header class="app-topbar">
+        <a href="/" class="app-brand">Rolling Up</a>
 
-    <section id="profile-section">
-        <h2>Profile</h2>
-        <p id="profile-info">Log in to see your profile.</p>
-        <form id="login-form">
-            <input type="text" id="username" placeholder="username" required>
-            <input type="password" id="password" placeholder="password" required>
-            <button type="submit">Log in</button>
+        <nav class="app-nav" aria-label="Main">
+            <a href="/map/">Map</a>
+            <a href="/feed/">Spots</a>
+            <a href="/profile/" aria-current="page">Profile</a>
+        </nav>
+
+        <span class="app-topbar-spacer"></span>
+
+        <a href="/spots/new/" class="app-add">Add spot</a>
+    </header>
+
+    <main class="profile-main">
+        <h1 class="profile-title">Profile</h1>
+        <p id="profile-info" class="profile-info">Log in to see your profile.</p>
+
+        <form id="login-form" class="profile-form">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" autocomplete="username" required>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn-primary">Log in</button>
         </form>
-    </section>
+    </main>
 
     <script>
-        const API_URL = 'http://localhost:8000';
+        // The API is on the same host as the page.
+        const API_URL = '';
 
         async function loadProfile() {
             const token = localStorage.getItem('access');

@@ -1,0 +1,418 @@
+/* ==========================================================================
+   The feed of the spots
+   ==========================================================================
+   A quiet, editorial page: a lot of air, big photography and a clear
+   hierarchy. The colours stay neutral so the pictures carry the page.
+   ========================================================================== */
+
+.feed-page {
+    margin: 0;
+    background: #0a0a0a;
+    color: #eaeaea;
+    min-height: 100vh;
+}
+
+/* The measurements of the page have to include the padding, otherwise
+   the containers become wider than the screen. */
+.feed-page,
+.feed-page *,
+.feed-page *::before,
+.feed-page *::after {
+    box-sizing: border-box;
+}
+
+/* Intro ------------------------------------------------------------------ */
+
+.feed-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 28px 120px;
+}
+
+.feed-intro {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 40px;
+    flex-wrap: wrap;
+    padding: 64px 0 44px;
+    border-bottom: 1px solid #1c1c1c;
+    margin-bottom: 56px;
+}
+
+.feed-title {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: clamp(2.8rem, 6vw, 4.6rem);
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+    color: #f7f7f7;
+}
+
+.feed-subtitle {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: #7f7f7f;
+    max-width: 46ch;
+    margin: 0;
+}
+
+.feed-search {
+    position: relative;
+    width: 320px;
+    flex-shrink: 0;
+}
+
+.feed-search input {
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent;
+    border: 1px solid #262626;
+    border-radius: 2px;
+    color: #f5f5f5;
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 0.82rem;
+    transition: border-color 0.2s ease;
+}
+
+.feed-search input:focus {
+    outline: none;
+    border-color: #4a4a4a;
+}
+
+.feed-search input::placeholder {
+    color: #5c5c5c;
+}
+
+.feed-search-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6a6a6a;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+.feed-search-clear:hover {
+    color: #f5f5f5;
+}
+
+.feed-search-clear[hidden] {
+    display: none;
+}
+
+/* The grid ---------------------------------------------------------------- */
+
+.feed-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 88px;
+    grid-auto-flow: row dense;
+    column-gap: 28px;
+    row-gap: 28px;
+    align-items: stretch;
+}
+
+/* The cards --------------------------------------------------------------- */
+
+.spot-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    grid-row: span 5;
+    min-width: 0;
+    border-bottom: 1px solid #1c1c1c;
+    padding-bottom: 16px;
+    transition: opacity 0.25s ease;
+}
+
+/* The tall plates break the rhythm of the grid. */
+.spot-card:nth-child(6n + 1),
+.spot-card:nth-child(6n + 4) {
+    grid-row: span 7;
+}
+
+.spot-card:hover {
+    opacity: 1;
+}
+
+.spot-card-media {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: #141414;
+    border-radius: 2px;
+}
+
+.spot-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scale(1);
+    transition: transform 0.7s cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+.spot-card:hover .spot-card-media img {
+    transform: scale(1.04);
+}
+
+/* The plate of a spot without a picture. It is not a broken image, it
+   is part of the composition. */
+.spot-plate {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #161616;
+    background-image:
+        linear-gradient(160deg, #1d1d1d 0%, #131313 55%, #101010 100%);
+}
+
+.spot-plate::after {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border: 1px solid #2c2c2c;
+    pointer-events: none;
+}
+
+.spot-plate-initial {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: 5.2rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -2px;
+    color: #343434;
+    user-select: none;
+}
+
+.spot-plate-label {
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #585858;
+}
+
+/* The information --------------------------------------------------------- */
+
+.spot-card-info {
+    padding-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.spot-card-name {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: 1.55rem;
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.2px;
+    margin: 0;
+    color: #f2f2f2;
+    overflow-wrap: break-word;
+}
+
+.spot-card-title {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* The whole card opens the spot, the title keeps the keyboard access. */
+.spot-card-title::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.spot-card-title:focus-visible {
+    outline: 1px solid #f5f5f5;
+    outline-offset: 4px;
+}
+
+.spot-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.spot-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.6px;
+    color: #757575;
+}
+
+.spot-meta-item svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.6;
+}
+
+.spot-rating {
+    color: #c9a227;
+}
+
+.spot-rating-empty {
+    color: #565656;
+}
+
+.spot-directions {
+    position: relative;
+    z-index: 2;
+    align-self: flex-start;
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #8a8a8a;
+    text-decoration: none;
+    border-bottom: 1px solid #2e2e2e;
+    padding-bottom: 2px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.spot-directions:hover {
+    color: #f5f5f5;
+    border-bottom-color: #f5f5f5;
+}
+
+.spot-directions:focus-visible {
+    outline: 1px solid #f5f5f5;
+    outline-offset: 3px;
+}
+
+/* The states -------------------------------------------------------------- */
+
+.feed-skeleton {
+    grid-row: span 5;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.feed-skeleton-media {
+    flex: 1;
+    min-height: 0;
+    background: #141414;
+    border-radius: 2px;
+    animation: feed-pulse 1.6s ease-in-out infinite;
+}
+
+.feed-skeleton-line {
+    height: 13px;
+    background: #141414;
+    border-radius: 2px;
+    animation: feed-pulse 1.6s ease-in-out infinite;
+}
+
+.feed-skeleton-line.short {
+    width: 42%;
+}
+
+@keyframes feed-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+.feed-message {
+    grid-column: 1 / -1;
+    padding: 80px 0;
+    text-align: center;
+}
+
+.feed-message-title {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: 1.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 10px;
+    color: #cfcfcf;
+}
+
+.feed-message-text {
+    font-size: 0.92rem;
+    color: #6f6f6f;
+    margin: 0;
+}
+
+.feed-message.is-error .feed-message-title {
+    color: #d98b7a;
+}
+
+.feed-count {
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: #555;
+    margin: 0 0 26px;
+}
+
+/* Responsive -------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+    .feed-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .feed-intro {
+        padding-top: 48px;
+    }
+}
+
+@media (max-width: 720px) {
+    .feed-main {
+        padding: 0 18px 80px;
+    }
+
+    .feed-intro {
+        padding: 34px 0 28px;
+        margin-bottom: 34px;
+        gap: 24px;
+    }
+
+    .feed-search {
+        width: 100%;
+    }
+
+    .feed-grid {
+        grid-template-columns: 1fr;
+        grid-auto-rows: 84px;
+        column-gap: 0;
+        row-gap: 34px;
+    }
+
+    .spot-card,
+    .spot-card:nth-child(6n + 1),
+    .spot-card:nth-child(6n + 4),
+    .feed-skeleton {
+        grid-row: span 6;
+    }
+
+    .spot-card-name {
+        font-size: 1.4rem;
+    }
+}

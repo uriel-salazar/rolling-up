@@ -52,9 +52,11 @@
 }
 
 .map-brand {
-    font-size: 1.25rem;
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: 1.45rem;
     font-weight: 700;
-    letter-spacing: -0.5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     color: #f5f5f5;
     text-decoration: none;
     white-space: nowrap;
@@ -322,7 +324,8 @@
 }
 
 .sidebar-title {
-    font-size: 1.15rem;
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: 1.35rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -460,8 +463,10 @@
 }
 
 .preview-name {
-    font-size: 1.05rem;
-    font-weight: 700;
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.2px;
     color: #f5f5f5;
     padding-right: 24px;
     margin-bottom: 8px;
@@ -630,4 +635,11 @@
         font-size: 0.7rem;
         padding: 4px 9px;
     }
+}
+
+.preview-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
 }

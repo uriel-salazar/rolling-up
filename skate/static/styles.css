@@ -1,12 +1,20 @@
 
 
-@import url('https://fonts.googleapis.com/css2?family=Miniver&family=Poppins:ital,wght@0,400;0,500;0,700;1,300;1,400;1,600&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700&family=LINE+Seed+JP:wght@400;700&display=swap');
+
+/* The measurements of every box have to include its padding, otherwise
+   the containers that are padded become wider than the screen. */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 
 body {
-    font-family: "Poppins","sans-serif";
+    font-family: "LINE Seed JP","sans-serif";
 	margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 :root{
@@ -103,6 +111,9 @@ header .navbar{
     text-transform: uppercase;
     font-size: var(--font-size-xl);
     color: var(--dark-color);
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.5px;
 }
 
 
@@ -122,6 +133,10 @@ header .navbar{
     color:var(--white-color);
     font-size: var(--font-size-xl);
     font-weight:  var(--font-weight-semibold);
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .navbar .nav-menu {
@@ -193,7 +208,10 @@ header .navbar{
     max-width: 600px;
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-semibold);
-
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.05;
 }
 
 .hero-section .hero-details .description{
@@ -661,6 +679,7 @@ header .navbar{
     letter-spacing: -1px;
     margin-bottom: 36px;
     color: var(--white-color);
+    font-family: "Big Shoulders Display", sans-serif;
 }
 
 .spot-form {
@@ -1163,4 +1182,151 @@ header .navbar{
     margin: 0;
     accent-color: #eaeaea;
     cursor: pointer;
+}
+
+
+/* ==========================================================================
+   The bar of the page
+   ==========================================================================
+   The same bar on every page: the brand, the way around and the action
+   that creates a spot.
+   ========================================================================== */
+
+.app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    height: 66px;
+    padding: 0 28px;
+    background: rgba(10, 10, 10, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid #1c1c1c;
+}
+
+.app-brand {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #f5f5f5;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.app-nav {
+    display: flex;
+    gap: 24px;
+}
+
+.app-nav a {
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #7a7a7a;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.app-nav a:hover,
+.app-nav a[aria-current="page"] {
+    color: #f5f5f5;
+}
+
+.app-topbar-spacer {
+    flex: 1;
+}
+
+.app-add {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #0a0a0a;
+    background: #f5f5f5;
+    padding: 9px 18px;
+    border-radius: 2px;
+    text-decoration: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.app-add:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 720px) {
+    .app-topbar {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding: 12px 18px;
+    }
+
+    .app-nav {
+        order: 3;
+        width: 100%;
+        gap: 18px;
+        overflow-x: auto;
+    }
+
+    .app-topbar-spacer {
+        display: none;
+    }
+
+    .app-add {
+        margin-left: auto;
+    }
+}
+
+
+/* ==========================================================================
+   The page of the profile
+   ========================================================================== */
+
+.profile-page {
+    background: var(--primary-color);
+    min-height: 100vh;
+}
+
+.profile-main {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 90px 28px 100px;
+}
+
+.profile-title {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-size: var(--font-size-xxl);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    color: var(--white-color);
+}
+
+.profile-info {
+    font-size: 0.95rem;
+    color: #7f7f7f;
+    margin-bottom: 36px;
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    align-items: flex-start;
+}
+
+.profile-form .field {
+    width: 100%;
+}
+
+.profile-form .btn-primary {
+    margin-top: 6px;
 }

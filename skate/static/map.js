@@ -39,6 +39,7 @@
     const previewSource = document.getElementById('preview-source');
     const previewBody = document.getElementById('preview-body');
     const previewLink = document.getElementById('preview-link');
+    const previewDirections = document.getElementById('preview-directions');
     const previewClose = document.getElementById('preview-close');
     const sidebar = document.getElementById('map-sidebar');
     const sidebarHead = document.getElementById('sidebar-head');
@@ -387,11 +388,57 @@
                 'ok'
             );
         }
+
+        openSpotOfTheLink(spots);
+    }
+
+    /**
+     * Open the spot of the link.
+     *
+     * The feed sends the visitor to the map with the id of the spot in
+     * the address, so the spot is selected as soon as the spots are
+     * loaded.
+     */
+    function openSpotOfTheLink(spots) {
+        if (selectedId !== null || !spots.length) {
+            return;
+        }
+
+        const wanted = new URLSearchParams(window.location.search).get('spot');
+        if (!wanted) {
+            return;
+        }
+
+        const spot = spots.find(function (item) {
+            return String(item.id) === wanted;
+        });
+
+        if (!spot || !readPosition(spot)) {
+            return;
+        }
+
+        selectSpot(spot.id, { fromList: true });
+    }
+
+    /**
+     * Return the url that opens Google Maps with the directions to a
+     * spot, or an empty string when the spot has no place.
+     */
+    function directionsUrl(spot) {
+        const latitude = spot.latitude;
+        const longitude = spot.longitude;
+
+        if (latitude === null || latitude === undefined || latitude === ''
+            || longitude === null || longitude === undefined || longitude === '') {
+            return '';
+        }
+
+        return 'https://www.google.com/maps/dir/?api=1&destination='
+            + encodeURIComponent(latitude + ',' + longitude);
     }
 
     /** Return the position of a spot, or null when it has none. */
-    function readPosition(spot) {
-        if (spot.latitude === null || spot.longitude === null
+    function readPosition(spot) {        if (spot.latitude === null || spot.longitude === null
             || spot.latitude === undefined || spot.longitude === undefined
             || spot.latitude === '' || spot.longitude === '') {
             return null;
@@ -536,6 +583,13 @@
         const body = spot.body ? String(spot.body) : '';
         previewBody.textContent = body;
         previewBody.hidden = body === '';
+
+        // The directions to the spot, when it has a place.
+        const directions = directionsUrl(spot);
+        if (previewDirections) {
+            previewDirections.href = directions;
+            previewDirections.hidden = !directions;
+        }
 
         previewLink.href = '/spots/' + spot.id + '/edit/';
         previewLink.textContent = spot.source === 'osm'

@@ -59,6 +59,7 @@ function makeElement(id, tag) {
             }
             return [];
         },
+        _innerHTML: '',
         querySelector(sel) { return null; },
         appendChild(child) { this.children.push(child); },
         addEventListener(name, fn) {
@@ -89,6 +90,7 @@ const elements = {};
     'map', 'spot-search', 'clear-search', 'map-filters', 'map-status',
     'spot-list', 'spot-preview', 'preview-name', 'preview-category',
     'preview-rating', 'preview-source', 'preview-body', 'preview-link',
+    'preview-directions',
     'preview-close', 'map-sidebar', 'sidebar-toggle', 'sheet-handle',
     'sheet-handle-text',
 ].forEach((id) => { elements[id] = makeElement(id); });
@@ -245,6 +247,7 @@ let fetchPages = [
     { count: 4, next: null, results: SPOTS },
 ];
 
+function createSandbox(search) {
 const sandbox = {
     console: console,
     setTimeout: setTimeout,
@@ -265,7 +268,7 @@ const sandbox = {
         setTimeout: setTimeout,
         clearTimeout: clearTimeout,
         requestAnimationFrame: (fn) => setTimeout(fn, 0),
-        location: { href: '' },
+        location: { href: '', search: search || '' },
     },
     URLSearchParams: URLSearchParams,
     AbortController: function () { this.signal = {}; this.abort = function () {}; },
@@ -287,6 +290,10 @@ sandbox.window.setTimeout = setTimeout;
 sandbox.window.clearTimeout = clearTimeout;
 
 vm.createContext(sandbox);
+return sandbox;
+}
+
+const sandbox = createSandbox('');
 vm.runInContext(fs.readFileSync(JS_PATH, 'utf8'), sandbox);
 
 // ------------------------------------------------------------------
@@ -462,7 +469,60 @@ function wait(ms) {
     check('the second one follows the link',
         fetchCalls[1] === '/api/spots/?limit=50&offset=50', fetchCalls[1]);
 
-    console.log('\n== 13. The list can be folded away ==');
+    console.log('\n== 13. A spot of the link is opened ==');
+    const deepSandbox = createSandbox('?spot=2');
+    deepSandbox.fetch = function () {
+        return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({
+                count: 3, next: null,
+                results: [
+                    { id: 1, name_spot: 'Uno', latitude: '20.1', longitude: '-103.1',
+                      source: 'osm', category: 'skatepark', rating: null, rating_count: 0 },
+                    { id: 2, name_spot: 'Dos', latitude: '20.2', longitude: '-103.2',
+                      source: 'osm', category: 'skatepark', rating: null, rating_count: 0 },
+                    { id: 3, name_spot: 'Tres', latitude: '20.3', longitude: '-103.3',
+                      source: 'osm', category: 'street', rating: null, rating_count: 0 },
+                ],
+            }),
+        });
+    };
+    const deepElements = {};
+    ['map', 'spot-search', 'clear-search', 'map-filters', 'map-status',
+     'spot-list', 'spot-preview', 'preview-name', 'preview-category',
+     'preview-rating', 'preview-source', 'preview-body', 'preview-link',
+     'preview-directions', 'preview-close', 'map-sidebar', 'sidebar-head',
+     'sidebar-toggle'].forEach((id) => {
+        deepElements[id] = makeElement('', 'div');
+        deepSandbox.document.getElementById = (wanted) => deepElements[wanted] || null;
+    });
+    deepElements['map'].dataset = {
+        tileUrl: '/tiles/{z}/{x}/{y}{r}.png',
+        tileMaxZoom: '18',
+        tileSubdomains: '',
+        tileAttribution: '&copy; OpenStreetMap contributors',
+        defaultLat: '20.6767',
+        defaultLon: '-103.3475',
+        defaultZoom: '13',
+    };
+    vm.runInContext(
+        fs.readFileSync(path.join(PROJECT, 'skate/static/map.js'), 'utf8'),
+        deepSandbox
+    );
+    await wait(50);
+    const deepSelected = deepElements['spot-list'].children.filter(
+        (item) => item.classList.contains('is-selected')
+    );
+    check('the spot of the link is selected', deepSelected.length === 1,
+        String(deepSelected.length));
+    check('it is the spot of the link',
+        deepSelected.length === 1 && deepSelected[0].dataset.spotId === '2',
+        deepSelected.length ? deepSelected[0].dataset.spotId : 'none');
+    check('the panel of the spot is open',
+        deepElements['spot-preview'].hidden === false);
+
+    console.log('\n== 14. The list can be folded away ==');
     elements['sidebar-toggle'].dispatch('click');
     check('the list opens', elements['map-sidebar'].classList.contains('is-open'));
     elements['sidebar-toggle'].dispatch('click');

@@ -466,6 +466,102 @@ no prefetching and no offline mode.
 
 ---
 
+## The feed of the spots
+
+The feed lives at **`/feed/`**. It is the editorial page of the
+application: a lot of air, big photography and a clear hierarchy.
+
+### What it reads
+
+The feed uses the endpoint that already existed:
+
+```
+GET /api/spots/?search=<text>&limit=24
+```
+
+The `search` parameter is the one the endpoint already understands, it
+looks for the text in the name and in the description of the spots. The
+pages of the answer are followed until there are no more spots.
+
+### The plates
+
+Every spot gets a card with
+
+1. the picture of the spot,
+2. the name,
+3. the place and the rating,
+4. a link with the directions to the spot.
+
+A spot without a picture gets a **plate**: a monogram with the kind of
+the spot, so the composition of the page stays together. A picture
+that does not load gets the same plate.
+
+The layout is a CSS Grid of three columns with cards that span a
+different number of rows, so the page has the rhythm of a magazine
+without a masonry library. It falls down to two columns on a tablet
+and to one on a phone.
+
+### The place and the rating
+
+The API does not have a field for the city or for the neighbourhood.
+The address is read from the tags of OpenStreetMap when the spot comes
+from there, and the line is left out when there is nothing to show.
+
+A spot without a rating says *Not rated yet*. It never gets a score of
+zero.
+
+### Opening a spot
+
+The project has no public page for a single spot, the only one is the
+page to edit a spot, which belongs to its author. The cards open the
+spot on the map instead, with `?spot=<id>`, where the panel of the map
+shows the name, the kind, the rating, the description and the
+directions.
+
+### Configuration
+
+Nothing to configure. The page reads the same API as the rest of the
+application.
+
+---
+
+## The type of the application
+
+Two families, and only two, on every page:
+
+| Face | Weights | Where |
+| ---- | ------- | ----- |
+| **LINE Seed JP** | 400, 700 | The system face: body, navigation, buttons, forms, labels and metadata. |
+| **Big Shoulders Display** | 500, 600, 700 | The display face: the titles, the brand and the names of the spots. |
+
+They are loaded once, from `skate/static/styles.css`, and every page
+uses them through the same rules.
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700&family=LINE+Seed+JP:wght@400;700&display=swap');
+```
+
+**Why LINE Seed JP.** It is the corporate typeface of LINE, a geometry
+based grotesque that is neutral enough to carry the interface and still
+has a character of its own. It only comes with four weights (100, 400,
+700 and 800), so the middle of the scale is served with the two that
+are close to it.
+
+It is hosted on Google Fonts and the browser only downloads the Latin
+subset, about 33 KB per weight, the rest of the file is for the
+Japanese glyphs and is never fetched.
+
+**Why Big Shoulders Display next to it.** A tall condensed face against
+a neutral grotesque is the classic pairing for an editorial layout: the
+display face carries the voice, the system face stays out of the way.
+It is also the face that gives the pages their streetwear character.
+
+The fonts that were there before (`Poppins`, `Miniver` and `Roboto`)
+were removed: `Miniver` and `Roboto` were downloaded on every page and
+were never used by a single rule.
+
+---
+
 ## Attribution and licence (ODbL)
 
 The data retrieved from OpenStreetMap is licensed under the
@@ -520,4 +616,5 @@ node skate/tests/spot_form.test.js
 | `skate/tests/test_location_picker.py` | Coordinate validation, creating and editing a spot with or without a location, image upload, the location search and the form pages. |
 | `skate/tests/test_map.py` | The endpoint the map reads, the search and the filters, the ratings, the page of the map and the proxy of the tiles. |
 | `skate/tests/spot_form.test.js`    | The map, the marker, the manual coordinates, the debounced search and the payload that is sent. |
-| `skate/tests/map.test.js`           | The map, the markers, the list, the selection, the search, the filters, the location and the pagination. |
+| `skate/tests/map.test.js`           | The map, the markers, the list, the selection, the search, the filters, the location, the pagination and the link to a spot. |
+| `skate/tests/feed.test.js`          | The cards, the pictures, the plates, the rating, the directions, the search and the states of the feed. |
