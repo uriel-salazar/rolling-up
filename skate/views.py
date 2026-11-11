@@ -1,20 +1,28 @@
 
 import logging
+import os
 
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.generics import RetrieveUpdateAPIView
+import requests
+from django.http import HttpResponseRedirect
 from django.shortcuts import render,get_object_or_404
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db.models import Avg, Count, Q
 from django.utils.safestring import mark_safe
-from .models import User,Spots,Rating
+from django.views.decorators.clickjacking import xframe_options_sameorigin
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.generics import RetrieveUpdateAPIView
+from .models import User,Spots,Rating,SpotPhoto
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
-from .serializers import UserSerializer,SpotSerializer,RatingSerializer
+from .serializers import UserSerializer,SpotSerializer,RatingSerializer,SpotPhotoSerializer
 from rest_framework.pagination import LimitOffsetPagination
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsOwnerOrReadOnly, IsUploaderOrReadOnly
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.decorators import action
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +34,7 @@ def home(request):
     return render(request,'basic_home.html')
 
 
+@xframe_options_sameorigin
 def skate_map(request):
     """ Render the map of the skate spots.
 
@@ -39,17 +48,23 @@ def skate_map(request):
             'tile_config': build_tile_config(),
             'default_center': settings.MAP_DEFAULT_CENTER,
             'default_zoom': settings.MAP_DEFAULT_ZOOM,
+            'embed': request.GET.get('embed') == '1',
         },
     )
 
 
+@xframe_options_sameorigin
 def feed_page(request):
     """ Render the feed of the skate spots.
 
         The page is public, the spots are read from the public API
         without an account.
     """
-    return render(request, 'feed.html')
+    return render(
+        request,
+        'feed.html',
+        {'embed': request.GET.get('embed') == '1'},
+    )
 
 
 def profile_page(request):
@@ -58,6 +73,189 @@ def profile_page(request):
         The page is public, signing in happens through the API.
     """
     return render(request, 'profile.html')
+
+
+def spot_detail_page(request, pk):
+    """ Render the detail page of a skate spot.
+
+        The page is public: the spot itself, its photos and its rating
+        are read from the API. Uploading a photo or rating the spot
+        requires being logged in.
+    """
+    spot = get_object_or_404(Spots, pk=pk)
+    tile_config = build_tile_config()
+
+    # Resolve the main image through the same pipeline the API uses.
+    from skate.media_api.images_skateparks.resolver import resolve_spot_image
+    resolved = resolve_spot_image(spot, request)
+    main_image = resolved.get('url') if resolved else None
+
+    # Additional photos uploaded by users.
+    photos = SpotPhoto.objects.filter(spot=spot).select_related('uploaded_by')
+    additional_photos = [
+        {
+            'id': photo.id,
+            'image_url': photo.image.url if photo.image else None,
+            'caption': photo.caption,
+            'uploaded_by_username': photo.uploaded_by.username,
+        }
+        for photo in photos
+    ]
+
+    # Average rating and count.
+    stats = spot.rating_set.aggregate(
+        average=Avg('score'),
+        count=Count('id'),
+    )
+    average_rating = stats['average']
+    rating_count = stats['count']
+
+    # The current user's rating, if authenticated.
+    user_rating = None
+    if request.user.is_authenticated:
+        try:
+            user_rating = Rating.objects.get(spot=spot, user=request.user)
+        except Rating.DoesNotExist:
+            pass
+
+    return render(
+        request,
+        'spot_detail.html',
+        {
+            'spot': spot,
+            'main_image': main_image,
+            'additional_photos': additional_photos,
+            'average_rating': average_rating,
+            'rating_count': rating_count,
+            'user_rating': user_rating,
+            'tile_config': tile_config,
+        },
+    )
+
+
+def register_page(request):
+    """ Render the registration page.
+
+        The page is public, account creation happens through the API.
+    """
+    return render(request, 'register.html')
+
+
+def google_login(request):
+    """ Initiate the Google OAuth2 flow.
+
+        Redirects the browser to Google's consent screen. After the user
+        approves, Google calls back at /api/auth/google/callback/.
+    """
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    if not client_id:
+        return HttpResponseRedirect("/profile/?error=google_not_configured")
+
+    redirect_uri = os.environ.get(
+        "GOOGLE_REDIRECT_URI",
+        f"{settings.HOST.rstrip('/')}/api/auth/google/callback/",
+    )
+    auth_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={client_id}&"
+        f"redirect_uri={redirect_uri}&"
+        "scope=openid%20email%20profile&"
+        "response_type=code&"
+        "access_type=offline&"
+        "prompt=consent"
+    )
+    return HttpResponseRedirect(auth_url)
+
+
+def google_callback(request):
+    """ Handle the Google OAuth2 callback.
+
+        Exchanges the authorization code for tokens, fetches the user
+        profile from Google, finds or creates a local user, and returns
+        JWT tokens so the browser can log in.
+    """
+    code = request.GET.get("code")
+    error = request.GET.get("error")
+
+    if error:
+        return HttpResponseRedirect(f"/profile/?error=google_{error}")
+
+    if not code:
+        return HttpResponseRedirect("/profile/?error=google_no_code")
+
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        return HttpResponseRedirect("/profile/?error=google_not_configured")
+
+    redirect_uri = os.environ.get(
+        "GOOGLE_REDIRECT_URI",
+        f"{settings.HOST.rstrip('/')}/api/auth/google/callback/",
+    )
+
+    # Exchange the authorization code for an access token.
+    token_response = requests.post(
+        "https://oauth2.googleapis.com/token",
+        data={
+            "code": code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+        },
+        timeout=10,
+    )
+
+    if not token_response.ok:
+        logger.warning("Google token exchange failed: %s", token_response.text)
+        return HttpResponseRedirect("/profile/?error=google_token_failed")
+
+    tokens = token_response.json()
+    access_token = tokens.get("access_token")
+    if not access_token:
+        return HttpResponseRedirect("/profile/?error=google_no_access_token")
+
+    # Fetch the user profile from Google.
+    userinfo_response = requests.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=10,
+    )
+
+    if not userinfo_response.ok:
+        logger.warning("Google userinfo failed: %s", userinfo_response.text)
+        return HttpResponseRedirect("/profile/?error=google_userinfo_failed")
+
+    userinfo = userinfo_response.json()
+    email = userinfo.get("email")
+    if not email:
+        return HttpResponseRedirect("/profile/?error=google_no_email")
+
+    # Find or create a local user for this Google account.
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        base_username = email.split("@")[0]
+        username = base_username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=None,
+        )
+        logger.info("Created user %s from Google account %s", username, email)
+
+    # Issue JWT tokens and redirect to the profile page so the frontend
+    # can store them in local storage.
+    refresh = RefreshToken.for_user(user)
+    return HttpResponseRedirect(
+        f"/profile/?access={str(refresh.access_token)}"
+        f"&refresh={str(refresh)}&google=1"
+    )
 
 
 def build_tile_config():
@@ -145,6 +343,7 @@ def build_tile_config():
     return options
 
 
+@xframe_options_sameorigin
 def spot_form(request, pk=None):
     """ Render the form used to create or to edit a skate spot.
 
@@ -177,6 +376,7 @@ def spot_form(request, pk=None):
             'spot': spot,
             'is_edit': pk is not None,
             'tile_config': tile_config,
+            'embed': request.GET.get('embed') == '1',
         },
     )
 
@@ -297,5 +497,38 @@ class RatingViewSet(ModelViewSet):
                 user=self.request.user,
                 spot=spot
             )
+
+
+class SpotPhotoViewSet(viewsets.ModelViewSet):
+    """ Additional photographs for a skate spot.
+
+        Users can attach several extra photos to any spot (including
+        OpenStreetMap imported ones). The uploader is recorded so only
+        the owner can delete their own photos.
+    """
+    serializer_class = SpotPhotoSerializer
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        spot_id = self.kwargs.get('spot_id')
+        if spot_id:
+            return SpotPhoto.objects.filter(spot_id=spot_id)
+        return SpotPhoto.objects.none()
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [IsAuthenticated()]
+        if self.action in ('update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsUploaderOrReadOnly()]
+        return [AllowAny()]
+
+    def perform_create(self, serializer):
+        spot = get_object_or_404(Spots, pk=self.kwargs['spot_id'])
+        serializer.save(spot=spot, uploaded_by=self.request.user)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     

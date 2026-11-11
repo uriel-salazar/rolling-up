@@ -37,6 +37,7 @@ NOMINATIM_RESULT = {
     "type": "skatepark",
     "osm_id": 256129315,
     "osm_type": "way",
+    "boundingbox": ["20.6400", "20.6800", "-103.3200", "-103.2800"],
 }
 
 
@@ -377,6 +378,27 @@ class GeocodeSearchTests(TestCase):
         self.assertEqual(result["short_label"], "Skatepark San Jacinto")
         self.assertAlmostEqual(result["latitude"], 20.6626071, places=6)
         self.assertAlmostEqual(result["longitude"], -103.2972617, places=6)
+        self.assertEqual(
+            result["bounding_box"],
+            {
+                "south": 20.64,
+                "west": -103.32,
+                "north": 20.68,
+                "east": -103.28,
+            },
+        )
+
+    @patch("skate.geocode.services.requests.get")
+    def test_an_invalid_bounding_box_falls_back_to_a_point_box(self, mock_get):
+        result = dict(NOMINATIM_RESULT)
+        result["boundingbox"] = ["not", "a", "box", "0"]
+        mock_get.return_value = FakeNominatimResponse([result])
+
+        response = self.client.get("/api/geocode/search/", {"q": "skatepark"})
+
+        box = response.data["results"][0]["bounding_box"]
+        self.assertAlmostEqual(box["south"], 20.6526071, places=6)
+        self.assertAlmostEqual(box["north"], 20.6726071, places=6)
 
     @patch("skate.geocode.services.requests.get")
     def test_the_request_identifies_the_application(self, mock_get):
@@ -421,12 +443,14 @@ class GeocodeSearchTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 0)
 
-    def test_the_search_needs_a_login(self):
+    def test_the_search_is_available_without_an_account(self):
         self.client.force_authenticate(user=None)
 
-        response = self.client.get("/api/geocode/search/", {"q": "skatepark"})
+        with patch("skate.geocode.services.requests.get") as mock_get:
+            mock_get.return_value = FakeNominatimResponse([NOMINATIM_RESULT])
+            response = self.client.get("/api/geocode/search/", {"q": "skatepark"})
 
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.status_code, 200)
 
     @patch("skate.geocode.services.requests.get")
     def test_the_search_is_throttled(self, mock_get):

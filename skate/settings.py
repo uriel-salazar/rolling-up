@@ -31,6 +31,7 @@ if _cloudinary_cloud_name and _cloudinary_api_key and _cloudinary_api_secret:
         "SECURE": True,
     }
 
+HOST = os.environ.get("HOST", "")
 ADMIN_URL = os.getenv("ADMIN_URL", "admin/")
 
 ALLOWED_HOSTS = [
@@ -200,6 +201,7 @@ REST_FRAMEWORK = {
         'anon': '100/day',  
         'user': '1000/day',  
         'geocode': os.environ.get("GEOCODE_THROTTLE_RATE", "30/min"),
+        'overpass': os.environ.get("OVERPASS_DISCOVERY_THROTTLE_RATE", "60/min"),
     },
 }
 
@@ -376,6 +378,33 @@ GOOGLE_PLACES_PHOTO_CACHE_SECONDS = int(
 )
 GOOGLE_PLACES_DEDUPE_RADIUS_METERS = float(
     os.environ.get("GOOGLE_PLACES_DEDUPE_RADIUS_METERS", "120")
+)
+
+# Live discovery for the map and the feed.
+#
+# These requests never write to the database. The answer is cached so
+# rapid map movement does not hammer the public Overpass instance, and a
+# stale copy is kept as a fallback for a temporary outage.
+OVERPASS_DISCOVERY_DEFAULT_RADIUS = int(
+    os.environ.get("OVERPASS_DISCOVERY_DEFAULT_RADIUS", "10000")
+)
+OVERPASS_DISCOVERY_MAX_RADIUS = int(
+    os.environ.get("OVERPASS_DISCOVERY_MAX_RADIUS", "50000")
+)
+OVERPASS_DISCOVERY_MAX_RESULTS = int(
+    os.environ.get("OVERPASS_DISCOVERY_MAX_RESULTS", "250")
+)
+OVERPASS_DISCOVERY_MAX_VIEWPORT_SPAN = float(
+    os.environ.get("OVERPASS_DISCOVERY_MAX_VIEWPORT_SPAN", "2.0")
+)
+OVERPASS_DISCOVERY_CACHE_SECONDS = int(
+    os.environ.get("OVERPASS_DISCOVERY_CACHE_SECONDS", "300")
+)
+OVERPASS_DISCOVERY_STALE_SECONDS = int(
+    os.environ.get("OVERPASS_DISCOVERY_STALE_SECONDS", "86400")
+)
+OVERPASS_DISCOVERY_THROTTLE_RATE = os.environ.get(
+    "OVERPASS_DISCOVERY_THROTTLE_RATE", "60/min"
 )
 
 # Internationalization

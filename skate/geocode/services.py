@@ -207,8 +207,38 @@ def _normalize(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "short_label": parts[0].strip() if parts else label,
         "latitude": latitude,
         "longitude": longitude,
+        "bounding_box": _bounding_box(item, latitude, longitude),
         "category": item.get("category") or item.get("class") or "",
         "type": item.get("type") or "",
         "osm_id": item.get("osm_id"),
         "osm_type": item.get("osm_type") or "",
+    }
+
+
+def _bounding_box(item: Dict[str, Any], latitude: float, longitude: float):
+    """Return a validated Nominatim bounding box, or a tiny point box."""
+    raw = item.get("boundingbox")
+    if isinstance(raw, (list, tuple)) and len(raw) == 4:
+        try:
+            south, north, west, east = (float(value) for value in raw)
+        except (TypeError, ValueError):
+            south = north = west = east = None
+        if (
+            south is not None
+            and -90.0 <= south <= north <= 90.0
+            and -180.0 <= west <= east <= 180.0
+        ):
+            return {
+                "south": south,
+                "west": west,
+                "north": north,
+                "east": east,
+            }
+
+    delta = 0.01
+    return {
+        "south": max(-90.0, latitude - delta),
+        "west": max(-180.0, longitude - delta),
+        "north": min(90.0, latitude + delta),
+        "east": min(180.0, longitude + delta),
     }

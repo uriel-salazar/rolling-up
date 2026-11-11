@@ -12,16 +12,13 @@ OpenStreetMap.
 ### How the integration works
 
 The importer talks to the **official Overpass API**
-(`https://overpass-api.de/api/interpreter`) and pulls only the objects
-that are explicitly tagged as a skatepark:
+(`https://overpass-api.de/api/interpreter`) and pulls candidates tagged
+as skateparks:
 
-| Tag                 | Meaning                    |
-| ------------------- | -------------------------- |
-| `leisure=skatepark` | An actual skatepark.       |
-
-A generic `sport=skateboard` tag is intentionally ignored: it can
-describe a single ramp, a plaza, a shop or a sports centre, none of
-which is an actual skatepark record.
+| Tag                 | Meaning                                                  |
+| ------------------- | -------------------------------------------------------- |
+| `leisure=skatepark` | An actual skatepark, always imported.                    |
+| `sport=skateboard`  | Accepted only when the `leisure` value or the name / description clearly describes a skatepark. A generic tag is not enough. |
 
 Nodes, ways and relations are all supported:
 
@@ -37,6 +34,7 @@ not hammered:
 {{geocodeArea:Guadalajara, Jalisco, Mexico}}->.searchArea;
 (
   nwr["leisure"="skatepark"](area.searchArea);
+  nwr["sport"="skateboard"](area.searchArea);
 );
 out center tags;
 ```
@@ -207,6 +205,98 @@ colour or control was changed.
 
 ---
 
+## Worldwide skatepark discovery
+
+The map and the feed can show skateparks anywhere in the world without
+saving them. Two read-only endpoints query Overpass for the current
+viewport or for a radius around a point:
+
+```
+GET /api/spots/nearby/?lat=41.3851&lon=2.1734&radius=10000
+GET /api/spots/viewport/?south=41.30&west=2.10&north=41.45&east=2.25
+```
+
+Both accept an optional `limit` (maximum `250`) and answer with the
+same shape:
+
+```json
+{
+  "source": "openstreetmap",
+  "count": 1,
+  "results": [
+    {
+      "id": "osm:way:123456",
+      "external": true,
+      "name_spot": "Skatepark de la Mar Bella",
+      "latitude": 41.3985,
+      "longitude": 2.2055,
+      "category": "skatepark",
+      "source": "osm",
+      "osm_id": 123456,
+      "osm_type": "way",
+      "image_url": null
+    }
+  ],
+  "area": {"type": "viewport", "south": 41.3, "west": 2.1,
+           "north": 41.45, "east": 2.25},
+  "cached": false,
+  "stale": false,
+  "attribution": "© OpenStreetMap contributors"
+}
+```
+
+The live results
+
+* are **never written to the database**,
+* are limited to `leisure=skatepark`, so plazas and generic parks are
+  not shown as skateparks,
+* are deduplicated by OSM type and id,
+* carry `external: true` and an id with the `osm:` prefix,
+* include nodes, ways and relations,
+* reuse the same address and image rules as the registered spots,
+* keep the latest answer for a day (`OVERPASS_DISCOVERY_STALE_SECONDS`)
+  so a temporary Overpass `502` or `504` does not empty the map or the
+  feed.
+
+The browser only asks for a viewport when the map is at zoom 10 or
+closer, and the request is debounced. A viewport may span at most two
+degrees, which keeps the public Overpass query small. The feed uses the
+bounding box of the selected place when it is small enough and falls
+back to a 50 km radius around its centre for a country or a very large
+region.
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `OVERPASS_DISCOVERY_DEFAULT_RADIUS` | `10000` | Default radius in metres. |
+| `OVERPASS_DISCOVERY_MAX_RADIUS` | `50000` | Largest accepted radius. |
+| `OVERPASS_DISCOVERY_MAX_RESULTS` | `250` | Results kept per answer. |
+| `OVERPASS_DISCOVERY_MAX_VIEWPORT_SPAN` | `2.0` | Largest accepted box, degrees. |
+| `OVERPASS_DISCOVERY_CACHE_SECONDS` | `300` | How long an answer is fresh. |
+| `OVERPASS_DISCOVERY_STALE_SECONDS` | `86400` | How long a stale answer is kept. |
+| `OVERPASS_DISCOVERY_THROTTLE_RATE` | `60/min` | Requests allowed per user and minute. |
+
+The location search of the map and the feed is public, because it is a
+read-only helper of a public page:
+
+```
+GET /api/geocode/search/?q=Barcelona
+```
+
+The answer now includes the `bounding_box` of the place, so the map can
+fit a city or a region without a second request:
+
+```json
+"bounding_box": {"south": 41.3170359, "west": 2.0524977,
+                 "north": 41.4682658, "east": 2.2283634}
+```
+
+The two boxes and the radius are validated on the server. Outside the
+usage policy the endpoints answer `400`; when Overpass is down and
+there is no cached answer they answer `503` with an empty `results`
+list, so the registered spots remain usable.
+
+---
+
 ## Interactive location selection
 
 Users publish their spots through a form with a map, so they never have
@@ -266,7 +356,13 @@ GET /api/geocode/search/?q=skatepark guadalajara
       "category": "leisure",
       "type": "skatepark",
       "osm_id": 256129315,
-      "osm_type": "way"
+      "osm_type": "way",
+      "bounding_box": {
+        "south": 20.6400,
+        "west": -103.3200,
+        "north": 20.6800,
+        "east": -103.2800
+      }
     }
   ]
 }
@@ -655,6 +751,7 @@ without any dependency:
 
 ```bash
 node skate/tests/spot_form.test.js
+node skate/tests/location_search.test.js
 ```
 
 | Test module                 | Covers                                                       |
@@ -662,8 +759,10 @@ node skate/tests/spot_form.test.js
 | `skate/tests/test_osm_parser.py`  | Nodes, ways, relations, missing names, missing tags, invalid coordinates, skatepark detection. |
 | `skate/tests/test_osm_client.py`  | Successful responses, rejected queries, connection failures, retries, rate limiting, invalid payloads. |
 | `skate/tests/test_osm_import.py`  | Creation, duplicate prevention, repeated imports, dry run, community protection, the management command. |
-| `skate/tests/test_location_picker.py` | Coordinate validation, creating and editing a spot with or without a location, image upload, the location search and the form pages. |
+| `skate/tests/test_location_picker.py` | Coordinate validation, creating and editing a spot with or without a location, image upload, the location search, its bounding box and the form pages. |
+| `skate/tests/test_discovery.py` | Nearby and viewport validation, nodes/ways/relations, deduplication, the `leisure=skatepark` query, caching, stale answers and the `503`/`400` responses. |
 | `skate/tests/test_map.py` | The endpoint the map reads, the search and the filters, the ratings, the page of the map and the proxy of the tiles. |
 | `skate/tests/spot_form.test.js`    | The map, the marker, the manual coordinates, the debounced search and the payload that is sent. |
+| `skate/tests/location_search.test.js` | The shared city/region search, its submit-only request, the bounding box and its error states. |
 | `skate/tests/map.test.js`           | The map, the markers, the list, the selection, the search, the filters, the location, the pagination and the link to a spot. |
 | `skate/tests/feed.test.js`          | The cards, the pictures, the plates, the rating, the directions, the search and the states of the feed. |

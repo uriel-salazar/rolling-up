@@ -126,9 +126,13 @@ class ParseElementTests(SimpleTestCase):
         )
         self.assertEqual(spot.metadata["website"], "https://example.org")
 
-    def test_only_skatepark_objects_are_requested(self):
+    def test_skatepark_and_skateboard_candidates_are_requested(self):
         self.assertEqual(
-            ALL_TAG_FILTERS, [{"key": "leisure", "value": "skatepark"}]
+            ALL_TAG_FILTERS,
+            [
+                {"key": "leisure", "value": "skatepark"},
+                {"key": "sport", "value": "skateboard"},
+            ],
         )
 
     def test_a_licensed_image_is_normalised(self):
@@ -235,13 +239,13 @@ class SkateparkDetectionTests(SimpleTestCase):
     def test_sport_skateboard_alone_is_rejected(self):
         self.assertFalse(is_skatepark({"sport": "skateboard"}))
 
-    def test_sport_skateboard_inside_a_sports_centre_is_rejected(self):
-        self.assertFalse(
+    def test_sport_skateboard_inside_a_sports_centre_is_accepted(self):
+        self.assertTrue(
             is_skatepark({"sport": "skateboard", "leisure": "sports_centre"})
         )
 
-    def test_sport_skateboard_with_a_skatepark_name_is_rejected(self):
-        self.assertFalse(
+    def test_sport_skateboard_with_a_skatepark_name_is_accepted(self):
+        self.assertTrue(
             is_skatepark({"sport": "skateboard", "name": "Skatepark del Centro"})
         )
 

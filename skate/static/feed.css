@@ -9,7 +9,28 @@
     margin: 0;
     background: #0a0a0a;
     color: #eaeaea;
+    font-family: "Manrope", sans-serif;
     min-height: 100vh;
+}
+
+.feed-page.is-embed .app-topbar {
+    display: none;
+}
+
+.feed-page .app-topbar,
+.feed-page .app-brand,
+.feed-page .app-nav a,
+.feed-page .app-add {
+    font-family: inherit;
+}
+
+.feed-page .app-brand {
+    font-family: "LINE Seed JP", sans-serif;
+}
+
+.feed-page .app-nav a,
+.feed-page .app-add {
+    font-family: "Manrope", sans-serif;
 }
 
 /* The measurements of the page have to include the padding, otherwise
@@ -41,7 +62,7 @@
 }
 
 .feed-title {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: clamp(2.8rem, 6vw, 4.6rem);
     font-weight: 700;
     line-height: 0.92;
@@ -59,10 +80,26 @@
     margin: 0;
 }
 
+.feed-search-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 320px;
+    flex-shrink: 0;
+}
+
 .feed-search {
     position: relative;
     width: 320px;
     flex-shrink: 0;
+}
+
+.feed-search-group .feed-search {
+    width: 100%;
+}
+
+.feed-search .search-results {
+    top: calc(100% + 6px);
 }
 
 .feed-search input {
@@ -72,7 +109,7 @@
     border: 1px solid #262626;
     border-radius: 2px;
     color: #f5f5f5;
-    font-family: "LINE Seed JP", sans-serif;
+    font-family: "Manrope", sans-serif;
     font-size: 0.82rem;
     transition: border-color 0.2s ease;
 }
@@ -189,7 +226,7 @@
 }
 
 .spot-plate-initial {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: 5.2rem;
     font-weight: 700;
     line-height: 1;
@@ -199,7 +236,7 @@
 }
 
 .spot-plate-label {
-    font-family: "LINE Seed JP", sans-serif;
+    font-family: "Manrope", sans-serif;
     font-size: 0.62rem;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -216,7 +253,7 @@
 }
 
 .spot-card-name {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: 1.55rem;
     font-weight: 600;
     line-height: 1.08;
@@ -244,6 +281,16 @@
     outline-offset: 4px;
 }
 
+.spot-source-live {
+    color: #bdbdbd;
+    border: 1px solid #333;
+    border-radius: 2px;
+    padding: 1px 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.62rem;
+}
+
 .spot-card-meta {
     display: flex;
     align-items: center;
@@ -255,7 +302,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-family: "LINE Seed JP", sans-serif;
+    font-family: "Manrope", sans-serif;
     font-size: 0.7rem;
     letter-spacing: 0.6px;
     color: #757575;
@@ -282,7 +329,7 @@
     position: relative;
     z-index: 2;
     align-self: flex-start;
-    font-family: "LINE Seed JP", sans-serif;
+    font-family: "Manrope", sans-serif;
     font-size: 0.68rem;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -343,7 +390,7 @@
 }
 
 .feed-message-title {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: 1.9rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -363,7 +410,7 @@
 }
 
 .feed-count {
-    font-family: "LINE Seed JP", sans-serif;
+    font-family: "Manrope", sans-serif;
     font-size: 0.68rem;
     letter-spacing: 1.4px;
     text-transform: uppercase;
@@ -394,6 +441,10 @@
         gap: 24px;
     }
 
+    .feed-search-group {
+        width: 100%;
+    }
+
     .feed-search {
         width: 100%;
     }
@@ -415,4 +466,12 @@
     .spot-card-name {
         font-size: 1.4rem;
     }
+}
+
+/* The feed is embedded in the landing page, so its own scroll must not
+   fight with the scroll of the page. Its height is adjusted by the
+   parent page to avoid a nested scrollbar. */
+.feed-page.is-embed {
+    min-height: 0;
+    overscroll-behavior: contain;
 }

@@ -9,6 +9,7 @@
     margin: 0;
     background: #0a0a0a;
     color: #eaeaea;
+    font-family: "Manrope", sans-serif;
     overflow: hidden;
     height: 100vh;
     height: 100dvh;
@@ -21,6 +22,7 @@
 .map-page *::before,
 .map-page *::after {
     box-sizing: border-box;
+    font-family: "Manrope", sans-serif;
 }
 
 .map-layout {
@@ -29,6 +31,10 @@
     flex-direction: column;
     height: 100vh;
     height: 100dvh;
+}
+
+.map-page.is-embed .map-topbar {
+    display: none;
 }
 
 /* Top bar ---------------------------------------------------------------- */
@@ -52,7 +58,7 @@
 }
 
 .map-brand {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: 1.45rem;
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -68,6 +74,7 @@
 }
 
 .map-nav-link {
+    font-family: "Manrope", sans-serif;
     font-size: 0.78rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -148,6 +155,15 @@
     background: #0a0a0a;
     border-bottom: 1px solid #1e1e1e;
     z-index: 19;
+}
+
+.map-location-search {
+    width: 250px;
+    margin-left: 0;
+}
+
+.map-location-search .search-results {
+    min-width: 250px;
 }
 
 .filter-group {
@@ -324,7 +340,7 @@
 }
 
 .sidebar-title {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: 1.35rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -345,6 +361,7 @@
 
 .sidebar-status {
     padding: 0 18px 10px;
+    font-family: "Manrope", sans-serif;
     font-size: 0.74rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -362,6 +379,7 @@
 .spot-list {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior: contain;
     list-style: none;
     margin: 0;
     padding: 0;
@@ -395,6 +413,7 @@
 }
 
 .spot-item-name {
+    font-family: "Manrope", sans-serif;
     font-size: 0.92rem;
     font-weight: 600;
     color: #eaeaea;
@@ -408,6 +427,7 @@
 }
 
 .tag {
+    font-family: "Manrope", sans-serif;
     font-size: 0.62rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -463,7 +483,7 @@
 }
 
 .preview-name {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: 1.3rem;
     font-weight: 600;
     letter-spacing: -0.2px;
@@ -482,6 +502,7 @@
 .preview-category,
 .preview-rating,
 .preview-source {
+    font-family: "Manrope", sans-serif;
     font-size: 0.64rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -503,6 +524,7 @@
 }
 
 .preview-body {
+    font-family: "Manrope", sans-serif;
     font-size: 0.84rem;
     line-height: 1.6;
     color: #9a9a9a;
@@ -564,6 +586,14 @@
         width: 100%;
         margin-left: 0;
         order: 2;
+    }
+
+    .map-location-search {
+        width: 220px;
+    }
+
+    .map-location-search .search-results {
+        min-width: 240px;
     }
 
     /* The filters become a row that can be scrolled. */
@@ -659,4 +689,15 @@
     align-items: center;
     gap: 18px;
     flex-wrap: wrap;
+}
+
+/* The map keeps its own internal list, but reaching its end must not
+   block or hijack the scroll of the landing page. */
+.map-page.is-embed {
+    overscroll-behavior: contain;
+}
+
+.map-page.is-embed .spot-list,
+.map-page.is-embed .map-filters {
+    overscroll-behavior: contain;
 }

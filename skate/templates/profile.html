@@ -14,34 +14,83 @@
         <nav class="app-nav" aria-label="Main">
             <a href="/map/">Map</a>
             <a href="/feed/">Spots</a>
+            {% if user.is_authenticated %}
             <a href="/profile/" aria-current="page">Profile</a>
+            <div class="auth-dropdown">
+                <button type="button" class="app-nav-profile" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-user"></i>
+                </button>
+                <ul class="auth-dropdown-menu" role="menu">
+                    <li role="menuitem"><a href="/profile/">My Profile</a></li>
+                    <li role="menuitem"><button type="button" id="logout-btn">Log Out</button></li>
+                </ul>
+            </div>
+            {% else %}
+            <a href="/profile/" class="nav-login">Log in</a>
+            <a href="/register/" class="nav-signup">Sign up</a>
+            {% endif %}
         </nav>
 
         <span class="app-topbar-spacer"></span>
 
-        <a href="/spots/new/" class="app-add">Add spot</a>
+        {% if not user.is_authenticated %}
+        <a href="/profile/" class="app-add nav-login-btn">Log in</a>
+        {% endif %}
     </header>
 
     <main class="profile-main">
-        <h1 class="profile-title">Profile</h1>
-        <p id="profile-info" class="profile-info">Log in to see your profile.</p>
+        {% if user.is_authenticated %}
+        <h1 class="profile-title">Welcome, {{ user.username }}</h1>
+        <p class="profile-info">You are logged in as <strong>{{ user.username }}</strong> ({{ user.email }}).</p>
+        <p class="profile-info">Member since {{ user.created_at|date:"F j, Y" }}.</p>
+        <p class="profile-actions">
+            <a href="/profile/" class="btn-primary">My Profile</a>
+            <button type="button" id="logout-btn" class="btn-ghost">Log Out</button>
+        </p>
+        {% else %}
+        <h1 class="profile-title">Log in</h1>
+        <p id="profile-info" class="profile-info">Welcome back to Rolling Up.</p>
 
         <form id="login-form" class="profile-form">
-            <div class="field">
-                <label for="username">Username</label>
+            <div class="field password-field">
+                <label for="username">Username or email</label>
                 <input type="text" id="username" name="username" autocomplete="username" required>
             </div>
-            <div class="field">
+            <div class="field password-field">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <div class="password-input">
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
-            <button type="submit" class="btn-primary">Log in</button>
+            <button type="submit" class="btn-primary" id="login-btn">Log in</button>
         </form>
+
+        <p class="profile-info" style="margin-top: 24px; font-size: 0.85rem; text-align: center;">
+            Don't have an account? <a href="/register/" style="color: var(--white-color); text-decoration: underline;">Create account</a>
+        </p>
+        <p class="profile-info" style="font-size: 0.85rem; text-align: center;">
+            Or <a href="/auth/google/login/" style="color: var(--white-color); text-decoration: underline;">log in with Google</a>
+        </p>
+        {% endif %}
     </main>
 
     <script>
         // The API is on the same host as the page.
         const API_URL = '';
+
+        // When Google OAuth redirects here with tokens in the URL,
+        // store them in local storage and clean up the address bar.
+        const params = new URLSearchParams(window.location.search);
+        const access = params.get('access');
+        const refresh = params.get('refresh');
+        if (access && refresh) {
+            localStorage.setItem('access', access);
+            localStorage.setItem('refresh', refresh);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
 
         async function loadProfile() {
             const token = localStorage.getItem('access');
@@ -50,38 +99,119 @@
             const res = await fetch(`${API_URL}/api/users/?limit=1`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (!res.ok) { localStorage.removeItem('access'); return; }
+            if (!res.ok) {
+                localStorage.removeItem('access');
+                localStorage.removeItem('refresh');
+                return;
+            }
 
             const data = await res.json();
             const user = data.results[0];
-            document.getElementById('profile-info').textContent =
-                `Logged in as ${user.username}`;
-            document.getElementById('login-form').style.display = 'none';
+            if (!user) return;
+
+            const info = document.getElementById('profile-info');
+            if (info) {
+                info.textContent = `Logged in as ${user.username}`;
+                info.style.color = '#f5f5f5';
+            }
+
+            const form = document.getElementById('login-form');
+            if (form) form.style.display = 'none';
+
+            // Show authenticated state on any page (topbar).
+            document.querySelectorAll('.app-nav-profile').forEach(el => {
+                el.style.display = 'flex';
+            });
+            document.querySelectorAll('.nav-login, .nav-signup, .nav-login-btn').forEach(el => {
+                el.style.display = 'none';
+            });
         }
+
+        // Toggle password visibility.
+        const toggleBtn = document.querySelector('.password-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function () {
+                const input = document.getElementById('password');
+                const icon = this.querySelector('i');
+                const showing = this.getAttribute('aria-pressed') === 'true';
+                if (showing) {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                    this.setAttribute('aria-pressed', 'false');
+                    this.setAttribute('aria-label', 'Show password');
+                } else {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                    this.setAttribute('aria-pressed', 'true');
+                    this.setAttribute('aria-label', 'Hide password');
+                }
+            });
+        }
+
+        // Logout handler (works from any page).
+        const logoutBtns = document.querySelectorAll('#logout-btn');
+        logoutBtns.forEach(btn => {
+            btn.addEventListener('click', async function () {
+                localStorage.removeItem('access');
+                localStorage.removeItem('refresh');
+                window.location.href = '/profile/';
+            });
+        });
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const res = await fetch(`${API_URL}/api/token/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: document.getElementById('username').value,
-                    password: document.getElementById('password').value
-                })
-            });
 
-            if (res.ok) {
-                const { access, refresh } = await res.json();
-                localStorage.setItem('access', access);
-                localStorage.setItem('refresh', refresh);
-                await loadProfile();
+            const btn = document.getElementById('login-btn');
+            const info = document.getElementById('profile-info');
 
-                // Send the user back to the page they asked for, the
-                // spot form redirects here when the session is missing.
-                const next = new URLSearchParams(window.location.search).get('next');
-                window.location.href = next || '/profile/';
-            } else {
-                alert('Wrong username or password');
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Loading state.
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            info.textContent = '';
+            info.style.color = '#f5f5f5';
+
+            try {
+                const res = await fetch(`${API_URL}/api/token/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (res.ok) {
+                    const { access, refresh } = await res.json();
+                    localStorage.setItem('access', access);
+                    localStorage.setItem('refresh', refresh);
+
+                    info.textContent = 'Logged in.';
+                    info.style.color = '#8cc88c';
+
+                    await loadProfile();
+
+                    // Redirect to the page that required login, or the profile.
+                    const next = new URLSearchParams(window.location.search).get('next');
+                    setTimeout(() => {
+                        window.location.href = next || '/profile/';
+                    }, 800);
+                } else {
+                    let message = 'Wrong username or password.';
+                    try {
+                        const data = await res.json();
+                        if (data.detail) message = data.detail;
+                    } catch {}
+                    info.textContent = message;
+                    info.style.color = '#d98b7a';
+                }
+            } catch {
+                info.textContent = 'Could not reach the server. Try again.';
+                info.style.color = '#d98b7a';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Log in';
             }
         });
 

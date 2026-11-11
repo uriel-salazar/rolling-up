@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
-<body class="form-page tile-provider-{{ tile_config.provider }}">
+<body class="form-page tile-provider-{{ tile_config.provider }}{% if embed %} is-embed{% endif %}">
     <main>
         <header class="form-header">
             <nav class="navbar section-content">
@@ -21,15 +21,32 @@
                     <li class="nav-item">
                         <a href="/feed/" class="nav-link"> Spots </a>
                     </li>
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a href="/profile/" class="nav-link"> Profile </a>
                     </li>
+                    <li class="nav-item">
+                        <div class="auth-dropdown">
+                            <button type="button" class="nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-user"></i>
+                            </button>
+                            <ul class="auth-dropdown-menu" role="menu">
+                                <li role="menuitem"><a href="/profile/">My Profile</a></li>
+                                <li role="menuitem"><button type="button" id="logout-btn">Log Out</button></li>
+                            </ul>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="nav-item"><a href="/profile/" class="nav-link">Log in</a></li>
+                    <li class="nav-item"><a href="/register/" class="nav-link">Sign up</a></li>
+                    {% endif %}
                 </ul>
                 <button id='menu-open-button' class='fas fa-bars'></button>
             </nav>
         </header>
 
-        <section class="form-section section-content">
+        <div class="form-layout">
+        <section class="form-section">
             <h1 class="form-title">{% if is_edit %}Editar Spot{% else %}Añadir Spot{% endif %}</h1>
 
             <form id="spot-form" class="spot-form" novalidate>
@@ -169,10 +186,10 @@
             </form>
         </section>
 
-        <section>
-            <img src='static/images/pexels-tima-miroshnichenko-7946230.jpg'>
-        
-        </section>
+        <aside class="form-photo-section" aria-hidden="true">
+            <img src="{% static 'images/pexels-tima-miroshnichenko-7946230.jpg' %}" alt="">
+        </aside>
+        </div>
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" referrerpolicy="no-referrer"></script>

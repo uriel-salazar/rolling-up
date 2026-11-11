@@ -70,8 +70,10 @@ function makeElement(tag) {
 const elements = {};
 [
     'feed-grid', 'feed-count', 'feed-search', 'feed-search-clear',
+    'feed-location-search', 'feed-location-results', 'feed-location-clear',
 ].forEach((id) => { elements[id] = makeElement('div'); });
 elements['feed-search'].value = '';
+elements['feed-location-search'].value = '';
 
 // ------------------------------------------------------------------
 // The API
@@ -88,6 +90,7 @@ const SPOTS = [
         id: 3, name_spot: 'Skatepark San Jacinto', body: null, image_url: null,
         latitude: '20.662607', longitude: '-103.297262', source: 'osm',
         category: 'skatepark', rating: 4.5, rating_count: 12,
+        osm_id: 123, osm_type: 'way',
         osm_metadata: {
             tags: {
                 name: 'Skatepark San Jacinto',
@@ -108,6 +111,7 @@ let fetchCalls = [];
 let fetchPages = [
     { count: SPOTS.length, next: null, results: SPOTS },
 ];
+let locationOptions = null;
 
 const sandbox = {
     console: console,
@@ -126,6 +130,12 @@ const sandbox = {
     },
     URLSearchParams: URLSearchParams,
     AbortController: function () { this.signal = {}; this.abort = function () {}; },
+    RollingUpLocationSearch: {
+        create: function (options) {
+            locationOptions = options;
+            return { search() {}, clear() {} };
+        },
+    },
     fetch: function (url) {
         fetchCalls.push(url);
         const page = fetchPages.shift() || { count: 0, next: null, results: [] };
@@ -138,6 +148,7 @@ const sandbox = {
 };
 sandbox.window.setTimeout = setTimeout;
 sandbox.window.clearTimeout = clearTimeout;
+sandbox.window.RollingUpLocationSearch = sandbox.RollingUpLocationSearch;
 
 vm.createContext(sandbox);
 
@@ -349,6 +360,77 @@ function textOf(node) {
     check('it follows the link of the API',
         fetchCalls.some((url) => url.indexOf('offset=24') !== -1),
         fetchCalls.join(' | '));
+
+    console.log('\n== 13. Searching a place adds live results ==');
+    const EXTERNAL = [
+        {
+            id: 'osm:way:99', external: true, name_spot: 'Live Park',
+            body: null, latitude: 20.670000, longitude: -103.350000,
+            source: 'osm', category: 'skatepark', osm_id: 99, osm_type: 'way',
+            rating: null, rating_count: 0, image_url: null,
+        },
+        {
+            id: 'osm:way:123', external: true, name_spot: 'Duplicate park',
+            body: null, latitude: 20.662607, longitude: -103.297262,
+            source: 'osm', category: 'skatepark', osm_id: 123, osm_type: 'way',
+            rating: null, rating_count: 0, image_url: null,
+        },
+    ];
+    fetchCalls = [];
+    fetchPages = [{ count: SPOTS.length, next: null, results: SPOTS }];
+    sandbox.fetch = function (url) {
+        fetchCalls.push(url);
+        if (url.indexOf('/api/spots/viewport/') === 0) {
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({
+                    source: 'openstreetmap', count: EXTERNAL.length,
+                    results: EXTERNAL,
+                }),
+            });
+        }
+        const page = fetchPages.shift()
+            || { count: 0, next: null, results: [] };
+        return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(page),
+        });
+    };
+
+    locationOptions.onSelect({
+        label: 'Guadalajara, Jalisco, México',
+        short_label: 'Guadalajara',
+        latitude: 20.6767,
+        longitude: -103.3475,
+        bounding_box: {
+            south: 20.60, west: -103.45, north: 20.75, east: -103.25,
+        },
+    });
+    await wait(40);
+
+    const liveCards = findByClass(grid, 'spot-card');
+    check('the viewport is asked for the place',
+        fetchCalls.some((url) => url.indexOf('/api/spots/viewport/') === 0),
+        fetchCalls.join(' | '));
+    check('the registered spots and the live ones are merged',
+        liveCards.length === 3, String(liveCards.length));
+    check('the live card is marked',
+        findByClass(grid, 'spot-source-live').length === 1);
+    const liveTitle = findByClass(grid, 'spot-card-title')
+        .find((link) => textOf(link) === 'Live Park');
+    check('the live card links to OpenStreetMap',
+        liveTitle && liveTitle.href === 'https://www.openstreetmap.org/way/99',
+        liveTitle && liveTitle.href);
+    check('the same OSM object is not repeated',
+        findByClass(grid, 'spot-card-title')
+            .filter((link) => textOf(link) === 'Duplicate park').length === 0);
+
+    locationOptions.onClear();
+    await wait(40);
+    check('clearing the place removes the live results',
+        findByClass(grid, 'spot-source-live').length === 0);
 
     console.log('\n' + (failures === 0
         ? 'ALL CHECKS PASSED'

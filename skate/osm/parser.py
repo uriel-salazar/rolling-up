@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 # sports centre, so it is not an actual skatepark and is intentionally
 # left out of the discovery query.
 SKATEPARK_TAG_FILTERS = [{"key": "leisure", "value": "skatepark"}]
-ALL_TAG_FILTERS = list(SKATEPARK_TAG_FILTERS)
+SKATEBOARD_TAG_FILTERS = [{"key": "sport", "value": "skateboard"}]
+ALL_TAG_FILTERS = list(SKATEPARK_TAG_FILTERS) + list(SKATEBOARD_TAG_FILTERS)
 
 # Keys used to find a photograph and the information that has to be
 # displayed next to it.
@@ -53,6 +54,20 @@ IMAGE_ATTRIBUTION_KEYS = (
     "photographer",
     "author",
     "image:author",
+)
+
+# ``leisure`` values that can legitimately contain a skatepark. A
+# ``sport=skateboard`` object is only accepted when it also has one of
+# these values or a name / description that clearly describes a
+# skatepark.
+SKATEPARK_FRIENDLY_LEISURE = frozenset(
+    {
+        "skatepark",
+        "sports_centre",
+        "sports_center",
+        "park",
+        "recreation_ground",
+    }
 )
 
 # Keywords used to recognise a skatepark by name or description.
@@ -245,13 +260,30 @@ def detect_category(tags: Dict[str, Any]) -> str:
 def is_skatepark(tags: Dict[str, Any]) -> bool:
     """Decide whether the given OSM tags describe a skatepark.
 
-    Only objects explicitly tagged ``leisure=skatepark`` are accepted.
-    A ``sport=skateboard`` tag is not enough: it can describe a single
-    ramp, a plaza, a shop or a sports centre, none of which is an
-    actual skatepark record.
+    Objects tagged ``leisure=skatepark`` are always accepted. A
+    generic ``sport=skateboard`` tag is not enough: it can describe a
+    single ramp, a plaza or a shop, so it is only accepted when the
+    object also has a skatepark-friendly ``leisure`` value or its name
+    / description clearly mentions a skatepark.
     """
     leisure = (tags.get("leisure") or "").strip().lower()
-    return leisure == "skatepark"
+    sport = (tags.get("sport") or "").strip().lower()
+
+    if leisure == "skatepark":
+        return True
+
+    if sport != "skateboard":
+        return False
+
+    if leisure in SKATEPARK_FRIENDLY_LEISURE:
+        return True
+
+    for key in ("name", "description", "note", "operator"):
+        value = tags.get(key)
+        if value and SKATEPARK_KEYWORDS.search(str(value)):
+            return True
+
+    return False
 
 
 def extract_coordinates(

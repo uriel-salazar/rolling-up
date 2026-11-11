@@ -16,6 +16,10 @@ class GeocodeResultSerializer(serializers.Serializer):
     )
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
+    bounding_box = serializers.DictField(
+        child=serializers.FloatField(),
+        help_text='Bounding box with south, west, north and east.',
+    )
     category = serializers.CharField(
         allow_blank=True, help_text='The category of the place, for example leisure.'
     )

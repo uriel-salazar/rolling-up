@@ -212,6 +212,13 @@ check('readout shows the pair',
     elements['coordinates-output'].textContent === '20.671072, -103.405056');
 check('clear button visible', elements['clear-location'].hidden === false);
 
+console.log('\n== 2b. Coordinates are rounded to six decimal places ==');
+mapState.events.click({ latlng: { lat: 20.7123456789, lng: -103.987654321 } });
+check('latitude is rounded', elements.latitude.value === '20.712346',
+    elements.latitude.value);
+check('longitude is rounded', elements.longitude.value === '-103.987654',
+    elements.longitude.value);
+
 console.log('\n== 3. Dragging the marker updates the coordinates ==');
 markerState.latlng = [21.5, -104.5];
 markerState.onDrag();

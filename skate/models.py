@@ -141,7 +141,24 @@ class Rating(models.Model):
     def __str__(self):
         return f"{self.user} rated {self.spot} - {self.score}"
     
-    
-   
+
+class SpotPhoto(models.Model):
+    """ Additional photographs for a skate spot.
+
+        A spot keeps its main ``image_url`` (the cover photo) but users
+        may attach several extra photos to it. Each photo stores its own
+        image file, an optional caption, who uploaded it and when.
+    """
+    spot = models.ForeignKey(Spots, on_delete=models.CASCADE, related_name='photos')
+    image = models.ImageField(null=True)
+    caption = models.CharField(max_length=200, blank=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Photo of {self.spot.name_spot} by {self.uploaded_by.username}"
 
     

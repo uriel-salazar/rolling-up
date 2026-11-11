@@ -12,12 +12,24 @@
     const countBox = document.getElementById('feed-count');
     const searchInput = document.getElementById('feed-search');
     const clearButton = document.getElementById('feed-search-clear');
+    const locationSearchInput = document.getElementById('feed-location-search');
+    const locationSearchResults = document.getElementById('feed-location-results');
+    const locationClearButton = document.getElementById('feed-location-clear');
 
     // The search waits for the visitor to stop typing.
     const SEARCH_DELAY = 400;
 
     // How many plates are shown while the spots are loaded.
     const SKELETONS = 6;
+
+    // The live results of a selected place. They are never saved.
+    const DISCOVERY_LIMIT = 250;
+    const DISCOVERY_MAX_SPAN = 2;
+    const DISCOVERY_RADIUS = 50000;
+
+    let selectedLocation = null;
+    let externalController = null;
+    let loadVersion = 0;
 
     const CATEGORY_LABELS = {
         skatepark: 'Skatepark',
@@ -81,8 +93,15 @@
 
         const title = document.createElement('a');
         title.className = 'spot-card-title';
-        title.href = '/map/?spot=' + encodeURIComponent(spot.id);
+        title.href = spot.external && spot.osm_type && spot.osm_id
+            ? 'https://www.openstreetmap.org/' + spot.osm_type + '/' + spot.osm_id
+            : '/map/?spot=' + encodeURIComponent(spot.id);
         title.textContent = spot.name_spot;
+
+        if (spot.external) {
+            title.target = '_blank';
+            title.rel = 'noopener noreferrer';
+        }
 
         name.appendChild(title);
         info.appendChild(name);
@@ -96,6 +115,13 @@
         }
 
         meta.appendChild(buildRating(spot));
+
+        if (spot.external) {
+            const live = document.createElement('span');
+            live.className = 'spot-meta-item spot-source-live';
+            live.textContent = 'OSM live';
+            meta.appendChild(live);
+        }
 
         if (meta.children.length) {
             info.appendChild(meta);
@@ -228,6 +254,190 @@
     }
 
     // ------------------------------------------------------------------
+    // The live discovery
+    // ------------------------------------------------------------------
+
+    /** The stable identity of a spot, also for live OSM results. */
+    function spotIdentity(spot) {
+        if (spot && spot.osm_type && spot.osm_id) {
+            return 'osm:' + spot.osm_type + ':' + spot.osm_id;
+        }
+        return 'spot:' + spot.id;
+    }
+
+    /** Merge registered spots with the live results, without duplicates. */
+    function mergeSpots(registered, external) {
+        const seen = new Set();
+        const merged = [];
+
+        registered.forEach(function (spot) {
+            const identity = spotIdentity(spot);
+            if (!seen.has(identity)) {
+                seen.add(identity);
+                merged.push(spot);
+            }
+        });
+
+        external.forEach(function (spot) {
+            const identity = spotIdentity(spot);
+            if (!seen.has(identity)) {
+                seen.add(identity);
+                merged.push(spot);
+            }
+        });
+
+        return merged;
+    }
+
+    /** The selected place as a box or as a radius. */
+    function selectedArea() {
+        if (!selectedLocation) {
+            return null;
+        }
+
+        const box = selectedLocation.bounding_box;
+        if (box) {
+            const south = Number(box.south);
+            const west = Number(box.west);
+            const north = Number(box.north);
+            const east = Number(box.east);
+            if ([south, west, north, east].every(Number.isFinite)
+                && south < north && west < east) {
+                return { type: 'bbox', south, west, north, east };
+            }
+        }
+
+        const latitude = Number(selectedLocation.latitude);
+        const longitude = Number(selectedLocation.longitude);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+            return {
+                type: 'radius',
+                latitude,
+                longitude,
+                radius: DISCOVERY_RADIUS,
+            };
+        }
+
+        return null;
+    }
+
+    /** The distance in metres between two points. */
+    function distanceInMetres(latitude, longitude, otherLatitude, otherLongitude) {
+        const radius = 6371000;
+        const toRadians = Math.PI / 180;
+        const dLatitude = (otherLatitude - latitude) * toRadians;
+        const dLongitude = (otherLongitude - longitude) * toRadians;
+        const a = Math.sin(dLatitude / 2) * Math.sin(dLatitude / 2)
+            + Math.cos(latitude * toRadians)
+            * Math.cos(otherLatitude * toRadians)
+            * Math.sin(dLongitude / 2) * Math.sin(dLongitude / 2);
+        return radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    /** Whether a registered spot belongs to the selected place. */
+    function isInsideSelectedArea(spot) {
+        const area = selectedArea();
+        if (!area) {
+            return true;
+        }
+
+        if (spot.latitude === null || spot.latitude === undefined
+            || spot.longitude === null || spot.longitude === undefined
+            || spot.latitude === '' || spot.longitude === '') {
+            return false;
+        }
+
+        const latitude = Number(spot.latitude);
+        const longitude = Number(spot.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            return false;
+        }
+
+        if (area.type === 'bbox') {
+            return latitude >= area.south && latitude <= area.north
+                && longitude >= area.west && longitude <= area.east;
+        }
+
+        return distanceInMetres(
+            area.latitude,
+            area.longitude,
+            latitude,
+            longitude
+        ) <= area.radius;
+    }
+
+    /** The discovery endpoint that fits the selected place. */
+    function externalUrl() {
+        const area = selectedArea();
+        if (!area) {
+            return '';
+        }
+
+        if (area.type === 'bbox'
+            && area.north - area.south <= DISCOVERY_MAX_SPAN
+            && area.east - area.west <= DISCOVERY_MAX_SPAN) {
+            const query = new URLSearchParams({
+                south: area.south.toFixed(6),
+                west: area.west.toFixed(6),
+                north: area.north.toFixed(6),
+                east: area.east.toFixed(6),
+                limit: String(DISCOVERY_LIMIT),
+            });
+            return '/api/spots/viewport/?' + query.toString();
+        }
+
+        let latitude;
+        let longitude;
+        if (area.type === 'bbox') {
+            latitude = (area.south + area.north) / 2;
+            longitude = (area.west + area.east) / 2;
+        } else {
+            latitude = area.latitude;
+            longitude = area.longitude;
+        }
+
+        const query = new URLSearchParams({
+            lat: latitude.toFixed(6),
+            lon: longitude.toFixed(6),
+            radius: String(DISCOVERY_RADIUS),
+            limit: String(DISCOVERY_LIMIT),
+        });
+        return '/api/spots/nearby/?' + query.toString();
+    }
+
+    /** Read the live skateparks of the selected place. */
+    async function fetchExternal() {
+        const url = externalUrl();
+        if (!url) {
+            return [];
+        }
+
+        if (externalController) {
+            externalController.abort();
+        }
+        externalController = new AbortController();
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'Accept': 'application/json' },
+                signal: externalController.signal,
+            });
+            if (!response.ok) {
+                throw new Error('The discovery API answered with HTTP '
+                    + response.status);
+            }
+            const data = await response.json();
+            return Array.isArray(data.results) ? data.results : [];
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return [];
+            }
+            console.warn('The live skateparks could not be loaded:', error);
+            return [];
+        }
+    }
+
+    // ------------------------------------------------------------------
     // The states
     // ------------------------------------------------------------------
 
@@ -284,36 +494,70 @@
     /** Read the spots and draw them. */
     async function loadSpots() {
         const query = searchInput.value.trim();
+        const version = ++loadVersion;
 
         showSkeletons();
         countBox.textContent = '';
 
         try {
+            const externalPromise = selectedLocation
+                ? fetchExternal()
+                : Promise.resolve([]);
+            const embedded = document.body.classList.contains('is-embed');
             const data = await window.RollingUpApi.fetchSpots(
                 { search: query },
-                { limit: 24, maxPages: 10 }
+                { limit: embedded ? 9 : 24, maxPages: 10 }
             );
+
+            if (version !== loadVersion) {
+                return;
+            }
+
+            const external = await externalPromise;
+            if (version !== loadVersion) {
+                return;
+            }
+
+            const registered = selectedLocation
+                ? data.results.filter(isInsideSelectedArea)
+                : data.results;
+            const results = mergeSpots(registered, external).filter(function (spot) {
+                if (!query || !spot.external) {
+                    return true;
+                }
+                const name = String(spot.name_spot || '').toLowerCase();
+                const body = String(spot.body || '').toLowerCase();
+                return name.indexOf(query.toLowerCase()) !== -1
+                    || body.indexOf(query.toLowerCase()) !== -1;
+            });
 
             grid.setAttribute('aria-busy', 'false');
 
-            if (!data.results.length) {
+            if (!results.length) {
                 countBox.textContent = '';
+                const where = selectedLocation
+                    ? ' near ' + (selectedLocation.short_label
+                        || selectedLocation.label || 'this place')
+                    : '';
                 showMessage(
                     'Nothing found',
                     query
                         ? 'No spot matches that search. Try another word.'
-                        : 'There is no spot yet. Be the first to add one.',
+                        : selectedLocation
+                            ? 'No skatepark was found' + where
+                                + '. Try another place.'
+                            : 'There is no spot yet. Be the first to add one.',
                     false
                 );
                 return;
             }
 
-            countBox.textContent = data.count === 1
+            countBox.textContent = results.length === 1
                 ? '1 spot'
-                : data.count + ' spots';
+                : results.length + ' spots';
 
             grid.innerHTML = '';
-            data.results.forEach(function (spot) {
+            results.forEach(function (spot) {
                 grid.appendChild(buildCard(spot));
             });
         } catch (error) {
@@ -357,6 +601,32 @@
     });
 
     // ------------------------------------------------------------------
+    // The location search
+    // ------------------------------------------------------------------
 
+    function setupLocationSearch() {
+        if (!window.RollingUpLocationSearch || !locationSearchInput
+            || !locationSearchResults) {
+            return;
+        }
+
+        window.RollingUpLocationSearch.create({
+            input: locationSearchInput,
+            results: locationSearchResults,
+            clearButton: locationClearButton,
+            onSelect: function (place) {
+                selectedLocation = place;
+                loadSpots();
+            },
+            onClear: function () {
+                selectedLocation = null;
+                loadSpots();
+            },
+        });
+    }
+
+    // ------------------------------------------------------------------
+
+    setupLocationSearch();
     loadSpots();
 })();

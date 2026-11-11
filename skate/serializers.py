@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User,Spots,Rating
+from .models import User,Spots,Rating,SpotPhoto
 from decimal import Decimal
 from django.contrib.auth.password_validation import validate_password
 from skate.media_api.images_skateparks import image_logic
@@ -273,6 +273,48 @@ class SpotSerializer(serializers.ModelSerializer):
             instance.image_url.storage.delete(old_image_name)
 
         return instance
+
+
+class SpotPhotoSerializer(serializers.ModelSerializer):
+    """ Serializer for additional spot photographs.
+        The uploader is read-only and is filled from the request user.
+    """
+    uploaded_by = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = SpotPhoto
+        fields = ['id', 'spot', 'image', 'caption', 'uploaded_by', 'created_at']
+        read_only_fields = ['id', 'uploaded_by', 'created_at']
+
+    def validate_image(self, value):
+        if value is None:
+            return value
+
+        max_size = 5 * 1024 * 1024
+        if value.size > max_size:
+            raise serializers.ValidationError("Image must be 5 MB or smaller.")
+
+        allowed_types = {"image/jpeg", "image/png", "image/webp"}
+        content_type = getattr(value, "content_type", None)
+        if content_type not in allowed_types:
+            raise serializers.ValidationError(
+                "Unsupported image format. Use JPEG, PNG or WebP."
+            )
+        return value
+
+    def create(self, validated_data):
+        validated_data['image'] = self._process_image(validated_data['image'])
+        return super().create(validated_data)
+
+    def _process_image(self, image):
+        try:
+            image.seek(0)
+            resized_image = image_logic.image_resize_800(image)
+        except Exception:
+            raise serializers.ValidationError(
+                {"image": "Could not process the uploaded image."}
+            )
+        return ContentFile(resized_image.getvalue(), name=image.name)
 
 
 class RatingSerializer(serializers.ModelSerializer):

@@ -29,6 +29,9 @@
 
     const searchInput = document.getElementById('spot-search');
     const clearSearchButton = document.getElementById('clear-search');
+    const locationSearchInput = document.getElementById('map-location-search');
+    const locationSearchResults = document.getElementById('map-location-results');
+    const locationSearchClear = document.getElementById('map-location-clear');
     const filtersPanel = document.getElementById('map-filters');
     const statusBox = document.getElementById('map-status');
     const listBox = document.getElementById('spot-list');
@@ -58,6 +61,12 @@
 
     // The search waits for the visitor to stop typing.
     const SEARCH_DELAY = 300;
+
+    // The external skateparks are discovered for the current viewport.
+    const DISCOVERY_DELAY = 450;
+    const DISCOVERY_MIN_ZOOM = 10;
+    const DISCOVERY_MAX_SPAN = 1.5;
+    const DISCOVERY_LIMIT = 250;
 
     const config = {
         tileUrl: mapElement.dataset.tileUrl,
@@ -256,6 +265,13 @@
     /** The spot that is selected right now. */
     let selectedId = null;
 
+    /** The registered spots and the live OpenStreetMap discoveries. */
+    let registeredSpots = [];
+    let externalSpots = new Map();
+    let externalController = null;
+    let viewportTimer = null;
+    let locationSearch = null;
+
     function initMap() {
         if (typeof L === 'undefined') {
             showStatus('El mapa no se pudo cargar. Recarga la página.', 'error');
@@ -298,6 +314,13 @@
         }, 300);
 
         createCustomControls();
+
+        map.on('moveend', function () {
+            scheduleDiscovery();
+        });
+        map.on('zoomend', function () {
+            scheduleDiscovery();
+        });
     }
 
     /** The controls that Leaflet does not bring. */
@@ -503,7 +526,10 @@
                 ));
             }
             meta.appendChild(buildTag(
-                SOURCE_LABELS[spot.source] || spot.source, 'tag tag-source'
+                spot.external
+                    ? 'OSM live'
+                    : (SOURCE_LABELS[spot.source] || spot.source),
+                'tag tag-source'
             ));
 
             button.appendChild(name);
@@ -548,7 +574,7 @@
         Array.prototype.forEach.call(
             listBox.querySelectorAll('.spot-item'),
             function (item) {
-                const isSelected = Number(item.dataset.spotId) === selectedId;
+                const isSelected = String(item.dataset.spotId) === String(selectedId);
                 item.classList.toggle('is-selected', isSelected);
                 if (isSelected) {
                     item.scrollIntoView({ block: 'nearest' });
@@ -637,7 +663,9 @@
             previewRating.hidden = false;
         }
 
-        previewSource.textContent = SOURCE_LABELS[spot.source] || spot.source;
+        previewSource.textContent = spot.external
+            ? 'OSM live'
+            : (SOURCE_LABELS[spot.source] || spot.source);
 
         const body = spot.body ? String(spot.body) : '';
         previewBody.textContent = body;
@@ -650,17 +678,15 @@
             previewDirections.hidden = !directions;
         }
 
-        previewLink.href = '/spots/' + spot.id + '/edit/';
-        previewLink.textContent = spot.source === 'osm'
-            ? 'Ver en OpenStreetMap'
-            : 'Ver el spot';
-
-        if (spot.source === 'osm' && spot.osm_id) {
+        if (spot.external && spot.osm_type && spot.osm_id) {
             previewLink.href = 'https://www.openstreetmap.org/' + spot.osm_type
                 + '/' + spot.osm_id;
+            previewLink.textContent = 'Ver en OpenStreetMap';
             previewLink.target = '_blank';
             previewLink.rel = 'noopener';
         } else {
+            previewLink.href = '/spots/' + spot.id + '/';
+            previewLink.textContent = 'Ver detalle';
             previewLink.removeAttribute('target');
             previewLink.removeAttribute('rel');
         }
@@ -676,7 +702,260 @@
     }
 
     // -----------------------------------------------------------------
-    // 6. The search and the filters
+    // 6. The live discovery
+    // -----------------------------------------------------------------
+
+    /** The stable identity of a spot, also for live OSM results. */
+    function spotIdentity(spot) {
+        if (spot && spot.osm_type && spot.osm_id) {
+            return 'osm:' + spot.osm_type + ':' + spot.osm_id;
+        }
+        return 'spot:' + spot.id;
+    }
+
+    /** Whether a spot is inside the viewport of the map. */
+    function isInsideViewport(spot, viewport) {
+        const position = readPosition(spot);
+        if (!position) {
+            return false;
+        }
+        return position[0] >= viewport.south && position[0] <= viewport.north
+            && position[1] >= viewport.west && position[1] <= viewport.east;
+    }
+
+    /**
+     * Return the current viewport when it is small enough for Overpass.
+     * Low zooms are skipped because the answer would be enormous.
+     */
+    function currentViewport() {
+        if (!map || !map.getBounds) {
+            return null;
+        }
+        if (map.getZoom() < DISCOVERY_MIN_ZOOM) {
+            return null;
+        }
+
+        const bounds = map.getBounds();
+        if (!bounds || !bounds.getSouth) {
+            return null;
+        }
+
+        const viewport = {
+            south: bounds.getSouth(),
+            west: bounds.getWest(),
+            north: bounds.getNorth(),
+            east: bounds.getEast(),
+        };
+
+        if (![viewport.south, viewport.west, viewport.north, viewport.east]
+            .every(Number.isFinite)) {
+            return null;
+        }
+        if (viewport.south >= viewport.north || viewport.west >= viewport.east) {
+            return null;
+        }
+        if (viewport.north - viewport.south > DISCOVERY_MAX_SPAN
+            || viewport.east - viewport.west > DISCOVERY_MAX_SPAN) {
+            return null;
+        }
+
+        return viewport;
+    }
+
+    /** Merge registered spots with the live results, without duplicates. */
+    function mergeSpots(registered, external) {
+        const seen = new Set();
+        const merged = [];
+
+        registered.forEach(function (spot) {
+            const identity = spotIdentity(spot);
+            if (!seen.has(identity)) {
+                seen.add(identity);
+                merged.push(spot);
+            }
+        });
+
+        external.forEach(function (spot) {
+            const identity = spotIdentity(spot);
+            if (!seen.has(identity)) {
+                seen.add(identity);
+                merged.push(spot);
+            }
+        });
+
+        return merged;
+    }
+
+    /** Apply the search and the filters to any kind of spot. */
+    function visibleSpots() {
+        const categories = readChecked('category');
+        const sources = readChecked('source');
+        const term = searchInput.value.trim().toLowerCase();
+        const viewport = currentViewport();
+
+        let registered = registeredSpots;
+        let external = Array.from(externalSpots.values());
+
+        if (viewport) {
+            registered = registered.filter(function (spot) {
+                return isInsideViewport(spot, viewport);
+            });
+            external = external.filter(function (spot) {
+                return isInsideViewport(spot, viewport);
+            });
+        } else if (registeredSpots.length) {
+            // A live result for another place must not stay on the map
+            // when the visitor zooms out to the whole world.
+            external = [];
+        }
+
+        return mergeSpots(registered, external).filter(function (spot) {
+            const category = spot.category || 'street';
+            if (categories.indexOf(category) === -1) {
+                return false;
+            }
+
+            const matchesSource = sources.some(function (source) {
+                const group = SOURCE_GROUPS[source] || [source];
+                return group.indexOf(spot.source) !== -1;
+            });
+            if (!matchesSource) {
+                return false;
+            }
+
+            if (!term) {
+                return true;
+            }
+
+            const name = String(spot.name_spot || '').toLowerCase();
+            const body = String(spot.body || '').toLowerCase();
+            return name.indexOf(term) !== -1 || body.indexOf(term) !== -1;
+        });
+    }
+
+    /** Draw the registered spots and the live results. */
+    function renderVisible() {
+        render(visibleSpots());
+    }
+
+    /** Ask the API for the skateparks of the current viewport. */
+    async function loadViewport() {
+        const viewport = currentViewport();
+
+        if (!viewport) {
+            if (externalSpots.size) {
+                externalSpots = new Map();
+                renderVisible();
+            }
+            return;
+        }
+
+        if (externalController) {
+            externalController.abort();
+        }
+        externalController = new AbortController();
+
+        const query = new URLSearchParams({
+            south: viewport.south.toFixed(6),
+            west: viewport.west.toFixed(6),
+            north: viewport.north.toFixed(6),
+            east: viewport.east.toFixed(6),
+            limit: String(DISCOVERY_LIMIT),
+        });
+
+        try {
+            const response = await fetch(
+                '/api/spots/viewport/?' + query.toString(),
+                {
+                    headers: { 'Accept': 'application/json' },
+                    signal: externalController.signal,
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('The discovery API answered with HTTP '
+                    + response.status);
+            }
+
+            const data = await response.json();
+            const results = Array.isArray(data.results) ? data.results : [];
+            const next = new Map();
+
+            results.forEach(function (spot) {
+                next.set(spotIdentity(spot), spot);
+            });
+
+            externalSpots = next;
+            renderVisible();
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
+            // The registered spots stay usable when Overpass is down.
+            console.warn('The live skateparks could not be loaded:', error);
+        }
+    }
+
+    /** Wait for the map to settle before asking Overpass. */
+    function scheduleDiscovery(delay) {
+        window.clearTimeout(viewportTimer);
+        viewportTimer = window.setTimeout(
+            loadViewport,
+            delay === undefined ? DISCOVERY_DELAY : delay
+        );
+    }
+
+    /** Move the map to the selected place. */
+    function showPlace(place) {
+        const bbox = place.bounding_box;
+
+        if (bbox) {
+            const south = Number(bbox.south);
+            const west = Number(bbox.west);
+            const north = Number(bbox.north);
+            const east = Number(bbox.east);
+
+            if ([south, west, north, east].every(Number.isFinite)
+                && south < north && west < east) {
+                map.fitBounds([[south, west], [north, east]], {
+                    padding: [24, 24],
+                    maxZoom: 16,
+                });
+                scheduleDiscovery(0);
+                return;
+            }
+        }
+
+        const latitude = Number(place.latitude);
+        const longitude = Number(place.longitude);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+            map.setView([latitude, longitude], 14);
+            scheduleDiscovery(0);
+        }
+    }
+
+    /** Build the shared location search of the map. */
+    function setupLocationSearch() {
+        if (!window.RollingUpLocationSearch || !locationSearchInput
+            || !locationSearchResults || !map) {
+            return;
+        }
+
+        locationSearch = window.RollingUpLocationSearch.create({
+            input: locationSearchInput,
+            results: locationSearchResults,
+            clearButton: locationSearchClear,
+            onSelect: showPlace,
+            onClear: function () {
+                externalSpots = new Map();
+                resetView();
+                renderVisible();
+            },
+        });
+    }
+
+    // -----------------------------------------------------------------
+    // 7. The search and the filters
     // -----------------------------------------------------------------
 
     let searchTimer = null;
@@ -685,26 +964,14 @@
         showStatus('Cargando spots...', 'loading');
 
         const params = currentParams();
-        const categories = params._categories;
-        const sources = params._sources;
         delete params._categories;
         delete params._sources;
 
         fetchSpots(params)
             .then(function (spots) {
-                // When more than one category or source is selected the
-                // API only takes one of them, so the rest is filtered
-                // here.
-                const filtered = spots.filter(function (spot) {
-                    const category = spot.category || 'street';
-                    const matchesSource = sources.some(function (source) {
-                        const group = SOURCE_GROUPS[source] || [source];
-                        return group.indexOf(spot.source) !== -1;
-                    });
-                    return categories.indexOf(category) !== -1 && matchesSource;
-                });
-
-                render(filtered);
+                registeredSpots = spots;
+                renderVisible();
+                scheduleDiscovery(0);
             })
             .catch(function (error) {
                 if (error.name === 'AbortError') {
@@ -749,7 +1016,7 @@
     });
 
     // -----------------------------------------------------------------
-    // 7. The position of the visitor
+    // 8. The position of the visitor
     // -----------------------------------------------------------------
 
     /**
@@ -865,5 +1132,6 @@
     // -----------------------------------------------------------------
 
     initMap();
+    setupLocationSearch();
     refresh();
 })();

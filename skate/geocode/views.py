@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -32,7 +32,7 @@ class GeocodeSearchView(APIView):
     Nominatim.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     throttle_classes = [GeocodeRateThrottle]
 
     @extend_schema(

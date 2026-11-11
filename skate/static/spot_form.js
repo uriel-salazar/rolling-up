@@ -46,6 +46,14 @@
     let marker = null;
     let searchController = null;
 
+    // Navigation links of the embedded form must escape the iframe.
+    if (document.body.classList.contains('is-embed')) {
+        document.querySelectorAll('a[href="/profile/"], a[href="/feed/"]')
+            .forEach(function (link) {
+                link.target = '_top';
+            });
+    }
+
     // -----------------------------------------------------------------
     // Coordinates
     // -----------------------------------------------------------------
@@ -60,9 +68,19 @@
         return Number.isFinite(value) ? value : null;
     }
 
+    /** Round a coordinate to the precision accepted by the API. */
+    function roundCoordinate(value) {
+        return Number(Number(value).toFixed(6));
+    }
+
     /** Write the coordinates into the hidden inputs and the readout. */
     function setCoordinates(latitude, longitude) {
         const hasLocation = latitude !== null && longitude !== null;
+
+        if (hasLocation) {
+            latitude = roundCoordinate(latitude);
+            longitude = roundCoordinate(longitude);
+        }
 
         latitudeInput.value = hasLocation ? String(latitude) : '';
         longitudeInput.value = hasLocation ? String(longitude) : '';
@@ -473,7 +491,12 @@
                     return;
                 }
                 showStatus('Guardado.', 'success');
-                window.location.href = '/feed/';
+                if (document.body.classList.contains('is-embed')
+                        && window.top !== window.self) {
+                    window.top.location.href = '/#spots';
+                } else {
+                    window.location.href = '/feed/';
+                }
             })
             .catch(function () {
                 showStatus(

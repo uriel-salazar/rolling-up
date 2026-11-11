@@ -1,6 +1,6 @@
 
 
-@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700&family=LINE+Seed+JP:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=LINE+Seed+JP:wght@400;500;600;700&display=swap');
 
 /* The measurements of every box have to include its padding, otherwise
    the containers that are padded become wider than the screen. */
@@ -10,11 +10,100 @@
     box-sizing: border-box;
 }
 
+html,
 body {
-    font-family: "LINE Seed JP","sans-serif";
+    background-color: #0a0a0a;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Manrope","sans-serif";
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+main {
+    margin: 0;
+    padding: 0;
+    background-color: #0a0a0a;
+}
+
+.landing-section {
+    margin: 0;
+    padding: 0;
+    scroll-margin-top: 90px;
+    background: #0a0a0a;
+    color: #eaeaea;
+}
+
+.landing-section + .landing-section {
+    margin-top: 0;
+}
+
+.landing-section .section-title {
+    color: #f5f5f5;
+}
+
+.landing-section .section-title::after {
+    background: #f5f5f5;
+}
+
+.landing-map-frame,
+.landing-feed-frame,
+.landing-form-frame {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: #0a0a0a;
+}
+
+.landing-map-frame {
+    height: min(80vh, 820px);
+}
+
+.landing-feed-frame {
+    height: min(100vh, 1100px);
+}
+
+.landing-form-frame {
+    height: 1100px;
+}
+
+.landing-section.is-reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.landing-section.is-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .landing-section.is-reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+.landing-about-text {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+    line-height: 1.8;
+    color: #b5b5b5;
 }
 
 :root{
@@ -85,9 +174,9 @@ header {
     left: 0;
     z-index: 5;
     width: 100%;
-    background: rgba(10, 10, 10, 0.35);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(10, 10, 10, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(32, 31, 31, 0.2);
 }
 
@@ -111,7 +200,7 @@ header .navbar{
     text-transform: uppercase;
     font-size: var(--font-size-xl);
     color: var(--dark-color);
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-weight: 700;
     letter-spacing: -0.5px;
 }
@@ -133,7 +222,7 @@ header .navbar{
     color:var(--white-color);
     font-size: var(--font-size-xl);
     font-weight:  var(--font-weight-semibold);
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -152,9 +241,26 @@ header .navbar{
 }
 
 
-.navbar .nav-menu .nav-link:hover{
+.navbar .nav-menu .nav-link:hover,
+.navbar .nav-menu .nav-link.is-active {
     color: var(--primary-color);
     background-color: var(--secondary-color);
+}
+
+.navbar .nav-menu .profile-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    color: var(--white-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.navbar .nav-menu .profile-icon i {
+    font-size: var(--font-size-m);
 }
 
 .navbar :where(#menu-close-button, #menu-open-button){
@@ -208,7 +314,7 @@ header .navbar{
     max-width: 600px;
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-semibold);
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-weight: 700;
     letter-spacing: -1px;
     line-height: 1.05;
@@ -663,11 +769,72 @@ header .navbar{
     border-bottom: 1px solid rgba(32, 31, 31, 0.5);
 }
 
+.form-page.is-embed {
+    overscroll-behavior: contain;
+}
+
+.form-page.is-embed .form-header,
+.form-page.is-embed .form-title,
+.form-layout {
+    display: flex;
+    align-items: stretch;
+    gap: 40px;
+    max-width: var(--site-max-width);
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.form-photo-section {
+    flex: 0 0 38%;
+    display: flex;
+    padding-top: 130px;
+    padding-bottom: 80px;
+    min-width: 0;
+}
+
+.form-photo-section img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.form-page.is-embed .form-photo-section {
+    display: none;
+}
+
+.form-page.is-embed .form-layout {
+    display: block;
+    padding: 0;
+}
+
+@media (max-width: 900px) {
+    .form-layout {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .form-photo-section {
+        flex: none;
+        order: 2;
+        height: 260px;
+        padding-top: 0;
+        padding-bottom: 60px;
+    }
+}
+
+.form-page.is-embed .form-section {
+    padding-top: 0;
+}
+
 .form-page .navbar .logo-text {
     color: var(--white-color);
 }
 
 .form-section {
+    flex: 1 1 620px;
+    min-width: 0;
     padding-top: 130px;
     padding-bottom: 80px;
 }
@@ -679,7 +846,7 @@ header .navbar{
     letter-spacing: -1px;
     margin-bottom: 36px;
     color: var(--white-color);
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
 }
 
 .spot-form {
@@ -1208,7 +1375,7 @@ header .navbar{
 }
 
 .app-brand {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: 1.45rem;
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -1236,6 +1403,20 @@ header .navbar{
 .app-nav a:hover,
 .app-nav a[aria-current="page"] {
     color: #f5f5f5;
+}
+
+.app-nav-profile {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    color: var(--white-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    text-decoration: none;
+    font-size: 0.75rem;
 }
 
 .app-topbar-spacer {
@@ -1301,7 +1482,7 @@ header .navbar{
 }
 
 .profile-title {
-    font-family: "Big Shoulders Display", sans-serif;
+    font-family: "LINE Seed JP", sans-serif;
     font-size: var(--font-size-xxl);
     font-weight: 700;
     text-transform: uppercase;
@@ -1330,3 +1511,549 @@ header .navbar{
 .profile-form .btn-primary {
     margin-top: 6px;
 }
+
+/* ==========================================================================
+   Spot detail page
+   ========================================================================== */
+
+.spot-detail-page {
+    margin: 0;
+    background: #0a0a0a;
+    color: #eaeaea;
+    font-family: "Manrope", sans-serif;
+    min-height: 100vh;
+}
+
+.spot-detail-page,
+.spot-detail-page *,
+.spot-detail-page *::before,
+.spot-detail-page *::after {
+    box-sizing: border-box;
+}
+
+.spot-detail-main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 28px 120px;
+}
+
+.spot-header {
+    padding: 64px 0 24px;
+    border-bottom: 1px solid #1c1c1c;
+    margin-bottom: 40px;
+}
+
+.spot-badge {
+    display: inline-block;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: #c9a227;
+    margin-bottom: 10px;
+}
+
+.spot-title {
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+    color: #f7f7f7;
+}
+
+.spot-category {
+    font-family: "Manrope", sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #7f7f7f;
+    margin: 0 0 10px;
+}
+
+.spot-address {
+    font-size: 0.92rem;
+    color: #b5b5b5;
+    margin: 0 0 16px;
+}
+
+.spot-description {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #c9c9c9;
+    max-width: 65ch;
+    margin: 0;
+}
+
+/* Photos ----------------------------------------------------------------- */
+
+.spot-photos {
+    margin-bottom: 56px;
+}
+
+.spot-section-title {
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    margin: 0 0 20px;
+    color: #f7f7f7;
+}
+
+.spot-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+.spot-photo-main,
+.spot-photo-item {
+    position: relative;
+    overflow: hidden;
+    background: #141414;
+    border-radius: 2px;
+    aspect-ratio: 1;
+}
+
+.spot-photo-main img,
+.spot-photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #f7f7f7;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 4px 10px;
+    border-radius: 2px;
+    z-index: 2;
+}
+
+.photo-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.8rem;
+    color: #f7f7f7;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    padding: 20px 12px 10px;
+    z-index: 2;
+}
+
+.photo-delete {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    color: #f7f7f7;
+    border-radius: 2px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-delete:hover {
+    background: rgba(217, 139, 122, 0.9);
+}
+
+.spot-no-photos {
+    font-size: 0.92rem;
+    color: #7f7f7f;
+}
+
+/* Photo upload form ------------------------------------------------------ */
+
+.spot-photo-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.spot-photo-upload .field {
+    width: 100%;
+}
+
+.spot-photo-upload input[type="file"] {
+    width: 100%;
+    padding: 12px 16px;
+    background: #141414;
+    border: 1px solid #262626;
+    border-radius: 2px;
+    color: #f5f5f5;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.9rem;
+}
+
+.spot-form-status {
+    font-family: "Manrope", sans-serif;
+    font-size: 0.85rem;
+    margin: 0;
+    min-height: 1.2em;
+}
+
+.spot-form-status.is-success {
+    color: #8cc88c;
+}
+
+.spot-form-status.is-error {
+    color: #d98b7a;
+}
+
+.spot-login-note {
+    font-size: 0.9rem;
+    color: #7f7f7f;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.spot-login-note a {
+    color: #c9a227;
+    text-decoration: underline;
+}
+
+.spot-login-note a:hover {
+    color: #e8c07a;
+}
+
+/* Rating ----------------------------------------------------------------- */
+
+.spot-rating-section {
+    margin-bottom: 56px;
+    padding-top: 24px;
+    border-top: 1px solid #1c1c1c;
+}
+
+.spot-rating-current,
+.spot-rating-input,
+.spot-rating-average {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.spot-rating-score {
+    font-family: "LINE Seed JP", sans-serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #c9a227;
+}
+
+.star {
+    font-size: 1.6rem;
+    color: #565656;
+    cursor: pointer;
+    user-select: none;
+    line-height: 1;
+}
+
+.star.star-filled {
+    color: #c9a227;
+    cursor: default;
+}
+
+.star.star-hover {
+    color: #e8c07a;
+}
+
+.star.star-selected {
+    color: #c9a227;
+}
+
+.spot-rating-note {
+    font-size: 0.85rem;
+    color: #7f7f7f;
+    font-style: italic;
+}
+
+.spot-rating-count {
+    font-size: 0.9rem;
+    color: #7f7f7f;
+    margin-left: 6px;
+}
+
+/* Map -------------------------------------------------------------------- */
+
+.spot-map {
+    margin-bottom: 40px;
+}
+
+.spot-map .map-canvas {
+    width: 100%;
+    height: 320px;
+    border-radius: 2px;
+    background: #141414;
+    margin-bottom: 12px;
+}
+
+.spot-directions-link {
+    font-family: "Manrope", sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #8a8a8a;
+    text-decoration: none;
+    border-bottom: 1px solid #2e2e2e;
+    padding-bottom: 2px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.spot-directions-link:hover {
+    color: #f5f5f5;
+    border-bottom-color: #f5f5f5;
+}
+
+/* Back link -------------------------------------------------------------- */
+
+.spot-back {
+    display: inline-block;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #7f7f7f;
+    text-decoration: none;
+    border-bottom: 1px solid #2e2e2e;
+    padding-bottom: 2px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.spot-back:hover {
+    color: #f5f5f5;
+    border-bottom-color: #f5f5f5;
+}
+
+/* Responsive ------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+    .spot-detail-main {
+        padding: 0 18px 80px;
+    }
+
+    .spot-header {
+        padding: 48px 0 20px;
+        margin-bottom: 30px;
+    }
+
+    .spot-title {
+        font-size: clamp(1.8rem, 8vw, 2.6rem);
+    }
+
+    .spot-photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .spot-map .map-canvas {
+        height: 240px;
+    }
+}
+
+/* ==========================================================================
+   Authentication UI
+   ========================================================================== */
+
+/* Auth dropdown menu */
+.auth-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.auth-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 160px;
+    background: var(--primary-color);
+    border: 1px solid #262626;
+    border-radius: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+    display: none;
+}
+
+.auth-dropdown:hover .auth-dropdown-menu,
+.auth-dropdown:focus-within .auth-dropdown-menu {
+    display: block;
+}
+
+.auth-dropdown-menu li {
+    margin: 0;
+}
+
+.auth-dropdown-menu a,
+.auth-dropdown-menu button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.85rem;
+    color: #eaeaea;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.auth-dropdown-menu a:hover,
+.auth-dropdown-menu button:hover {
+    background: #1a1a1a;
+    color: #c9a227;
+}
+
+.auth-dropdown-menu button {
+    width: 100%;
+    text-align: left;
+}
+
+/* Map auth dropdown (compact) */
+.map-auth-dropdown .auth-dropdown-menu {
+    min-width: 140px;
+}
+
+/* Password field wrapper */
+.password-field .password-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-field input {
+    padding-right: 44px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #8a8a8a;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-toggle:hover {
+    color: #f5f5f5;
+}
+
+.password-toggle i {
+    font-size: 0.9rem;
+}
+
+/* Loading state on buttons */
+.btn-primary:disabled,
+.btn-ghost:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Logout button as ghost */
+.btn-ghost {
+    background: transparent;
+    border: 1px solid #262626;
+    color: #eaeaea;
+    padding: 10px 18px;
+    border-radius: 2px;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-ghost:hover {
+    border-color: #4a4a4a;
+    background: #141414;
+}
+
+/* Auth links in navbar (app-nav style) */
+.nav-login,
+.nav-signup {
+    font-family: "Manrope", sans-serif;
+    font-size: 0.9rem;
+    color: #eaeaea;
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 2px;
+}
+
+.nav-login:hover,
+.nav-signup:hover {
+    background: #1a1a1a;
+    color: #c9a227;
+}
+
+.nav-login-btn {
+    font-family: "Manrope", sans-serif;
+    font-size: 0.85rem;
+    color: #0a0a0a;
+    background: #f5f5f5;
+    padding: 9px 18px;
+    border-radius: 2px;
+    text-decoration: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.nav-login-btn:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+
+/* Profile actions on logged-in profile page */
+.profile-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+    .auth-dropdown-menu {
+        min-width: 140px;
+        font-size: 0.8rem;
+    }
+
+    .profile-actions {
+        flex-direction: column;
+    }
+
+    .profile-actions .btn-primary,
+    .profile-actions .btn-ghost {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+

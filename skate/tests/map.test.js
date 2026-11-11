@@ -122,7 +122,10 @@ const filterBoxes = {
 // Leaflet stub
 // ------------------------------------------------------------------
 
-const mapState = { center: null, zoom: null, markers: [], views: [], tile: null, invalidated: 0 };
+const mapState = {
+    center: null, zoom: null, markers: [], views: [], tile: null,
+    invalidated: 0, bounds: null, events: {},
+};
 const layerState = { markers: [], cleared: 0 };
 const controlState = { controls: [] };
 const icons = [];
@@ -158,7 +161,9 @@ const L = {
         return {
             setView(c, z) { mapState.center = c; mapState.zoom = z; mapState.views.push([c, z]); },
             getZoom() { return mapState.zoom; },
-            on() {},
+            getBounds() { return mapState.bounds; },
+            fitBounds() {},
+            on(name, fn) { mapState.events[name] = fn; },
             removeLayer() {},
             addLayer() {},
             invalidateSize() { mapState.invalidated += 1; },
@@ -470,6 +475,7 @@ function wait(ms) {
         fetchCalls[1] === '/api/spots/?limit=50&offset=50', fetchCalls[1]);
 
     console.log('\n== 13. A spot of the link is opened ==');
+    const mainMapEvents = Object.assign({}, mapState.events);
     const deepSandbox = createSandbox('?spot=2');
     deepSandbox.fetch = function () {
         return Promise.resolve({
@@ -521,12 +527,80 @@ function wait(ms) {
         deepSelected.length ? deepSelected[0].dataset.spotId : 'none');
     check('the panel of the spot is open',
         deepElements['spot-preview'].hidden === false);
+    mapState.events = mainMapEvents;
 
     console.log('\n== 14. The list can be folded away ==');
     elements['sidebar-toggle'].dispatch('click');
     check('the list opens', elements['map-sidebar'].classList.contains('is-open'));
     elements['sidebar-toggle'].dispatch('click');
     check('the list closes', !elements['map-sidebar'].classList.contains('is-open'));
+
+    console.log('\n== 15. The viewport loads live skateparks ==');
+    fetchCalls = [];
+    fetchPages = [];
+    sandbox.fetch = function (url) {
+        fetchCalls.push(url);
+        if (url.indexOf('/api/spots/viewport/') === 0) {
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({
+                    source: 'openstreetmap',
+                    count: 1,
+                    results: [
+                        {
+                            id: 'osm:way:99', external: true,
+                            name_spot: 'Live Guadalajara Park', body: null,
+                            latitude: 20.68, longitude: -103.34,
+                            source: 'osm', category: 'skatepark',
+                            osm_id: 99, osm_type: 'way',
+                            rating: null, rating_count: 0, image_url: null,
+                        },
+                    ],
+                }),
+            });
+        }
+        return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ count: 0, next: null, results: [] }),
+        });
+    };
+
+    mapState.bounds = {
+        south: 20.60, west: -103.45, north: 20.75, east: -103.25,
+        getSouth() { return this.south; },
+        getWest() { return this.west; },
+        getNorth() { return this.north; },
+        getEast() { return this.east; },
+    };
+    mapState.zoom = 13;
+    mapState.events.moveend();
+    await wait(520);
+
+    check('the viewport endpoint is asked',
+        fetchCalls.some((url) => url.indexOf('/api/spots/viewport/') === 0),
+        fetchCalls.join(' | '));
+    check('the live marker is drawn with the registered ones',
+        layerState.markers.length === 4, String(layerState.markers.length));
+    check('the status counts the live result',
+        elements['map-status'].textContent === '4 spots',
+        elements['map-status'].textContent);
+
+    function textOf(element) {
+        return String(element.textContent || '')
+            + element.children.map(textOf).join(' ');
+    }
+    check('the list marks the live result',
+        textOf(elements['spot-list']).indexOf('OSM live') !== -1,
+        textOf(elements['spot-list']));
+
+    mapState.zoom = 8;
+    mapState.events.moveend();
+    await wait(520);
+    check('a very low zoom does not ask Overpass again',
+        fetchCalls.filter((url) => url.indexOf('/api/spots/viewport/') === 0).length === 1,
+        String(fetchCalls.length));
 
     console.log('\n' + (failures === 0
         ? 'ALL CHECKS PASSED'

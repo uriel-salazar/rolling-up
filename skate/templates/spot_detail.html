@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ spot.name_spot }} &mdash; Rolling Up</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'map.css' %}">
+</head>
+<body class="spot-detail-page" data-spot-id="{{ spot.id }}">
+    <header class="app-topbar">
+        <a href="/" class="app-brand">Rolling Up</a>
+
+        <nav class="app-nav" aria-label="Main">
+            <a href="/map/">Map</a>
+            <a href="/feed/">Spots</a>
+            {% if user.is_authenticated %}
+            <a href="/profile/" class="app-nav-profile">Profile</a>
+            <div class="auth-dropdown">
+                <button type="button" class="app-nav-profile" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-user"></i>
+                </button>
+                <ul class="auth-dropdown-menu" role="menu">
+                    <li role="menuitem"><a href="/profile/">My Profile</a></li>
+                    <li role="menuitem"><button type="button" id="logout-btn">Log Out</button></li>
+                </ul>
+            </div>
+            {% else %}
+            <a href="/profile/" class="nav-login">Log in</a>
+            <a href="/register/" class="nav-signup">Sign up</a>
+            {% endif %}
+        </nav>
+
+        <span class="app-topbar-spacer"></span>
+
+        <a href="/spots/new/" class="app-add">Add spot</a>
+    </header>
+
+    <main class="spot-detail-main">
+        <section class="spot-header">
+            <div class="spot-badge">{{ spot.get_source_display }}</div>
+            <h1 class="spot-title">{{ spot.name_spot }}</h1>
+            <p class="spot-category">{{ spot.get_category_display }}</p>
+            {% if spot.address %}
+            <p class="spot-address">{{ spot.address }}</p>
+            {% endif %}
+            {% if spot.description %}
+            <p class="spot-description">{{ spot.description }}</p>
+            {% endif %}
+        </section>
+
+        <!-- Photos --------------------------------------------------------- -->
+        <section class="spot-photos">
+            <h2 class="spot-section-title">Photos</h2>
+
+            <div class="spot-photo-grid">
+                {% if spot.main_image %}
+                <div class="spot-photo-main">
+                    <img src="{{ spot.main_image }}" alt="{{ spot.name_spot }}">
+                    <span class="photo-badge">Cover</span>
+                </div>
+                {% endif %}
+
+                {% for photo in spot.additional_photos %}
+                <div class="spot-photo-item">
+                    <img src="{{ photo.image_url }}" alt="{{ photo.caption }}">
+                    {% if photo.caption %}
+                    <span class="photo-caption">{{ photo.caption }}</span>
+                    {% endif %}
+                    {% if photo.uploaded_by_username == user.username %}
+                    <button type="button" class="photo-delete" data-photo-id="{{ photo.id }}" title="Delete">
+                        &times;
+                    </button>
+                    {% endif %}
+                </div>
+                {% empty %}
+                {% if not spot.main_image %}
+                <p class="spot-no-photos">No photos yet.</p>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Photo upload form (logged in only) -->
+            {% if user.is_authenticated %}
+            <form id="photo-upload-form" class="spot-photo-upload" enctype="multipart/form-data">
+                <div class="field">
+                    <label for="photo-image">Add a photo</label>
+                    <input type="file" id="photo-image" name="image"
+                           accept="image/jpeg,image/png,image/webp" required>
+                </div>
+                <div class="field">
+                    <label for="photo-caption">Caption (optional)</label>
+                    <input type="text" id="photo-caption" name="caption"
+                           placeholder="What does this photo show?">
+                </div>
+                <button type="submit" class="btn-primary" id="photo-submit">Upload</button>
+            </form>
+            <p id="photo-status" class="spot-form-status"></p>
+            {% else %}
+            <p class="spot-login-note">
+                Log in to add photos to this spot.
+                <a href="/profile/">Log in</a> or
+                <a href="/register/">create an account</a>.
+            </p>
+            {% endif %}
+        </section>
+
+        <!-- Rating --------------------------------------------------------- -->
+        <section class="spot-rating-section">
+            <h2 class="spot-section-title">Rate this spot</h2>
+
+            {% if spot.user_rating %}
+            <div class="spot-rating-current">
+                <span class="spot-rating-score">{{ spot.user_rating.score }}</span>
+                <span class="star star-filled" data-score="1">&#9733;</span>
+                <span class="star star-filled" data-score="2">&#9733;</span>
+                <span class="star star-filled" data-score="3">&#9733;</span>
+                <span class="star star-filled" data-score="4">&#9733;</span>
+                <span class="star star-filled" data-score="5">&#9733;</span>
+                <span class="spot-rating-note">Your rating</span>
+            </div>
+            {% elif user.is_authenticated %}
+            <div class="spot-rating-input">
+                <span class="star" data-score="1">&#9733;</span>
+                <span class="star" data-score="2">&#9733;</span>
+                <span class="star" data-score="3">&#9733;</span>
+                <span class="star" data-score="4">&#9733;</span>
+                <span class="star" data-score="5">&#9733;</span>
+                <p id="rating-status" class="spot-form-status"></p>
+            </div>
+            {% else %}
+            <p class="spot-login-note">
+                Log in to rate this spot.
+                <a href="/profile/">Log in</a> or
+                <a href="/register/">create an account</a>.
+            </p>
+            {% endif %}
+
+            {% if spot.average_rating is not None %}
+            <div class="spot-rating-average">
+                <span class="spot-rating-score">{{ spot.average_rating }}</span>
+                <span class="star star-filled" data-score="1">&#9733;</span>
+                <span class="star star-filled" data-score="2">&#9733;</span>
+                <span class="star star-filled" data-score="3">&#9733;</span>
+                <span class="star star-filled" data-score="4">&#9733;</span>
+                <span class="star star-filled" data-score="5">&#9733;</span>
+                <span class="spot-rating-count">({{ spot.rating_count }})</span>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Map preview ---------------------------------------------------- -->
+        {% if spot.latitude and spot.longitude %}
+        <section class="spot-map">
+            <h2 class="spot-section-title">Location</h2>
+            <div id="spot-map" class="map-canvas"
+                 data-tile-url="{{ tile_config.url }}"
+                 data-tile-max-zoom="{{ tile_config.max_zoom }}"
+                 data-tile-subdomains="{{ tile_config.subdomains }}"
+                 data-tile-attribution="{{ tile_config.attribution }}"
+                 data-lat="{{ spot.latitude }}"
+                 data-lon="{{ spot.longitude }}"
+                 data-zoom="15"
+                 role="application"
+                 aria-label="Mapa del spot"></div>
+            <p class="spot-directions-link">
+                <a href="https://www.google.com/maps/dir/?api=1&destination={{ spot.latitude }},{{ spot.longitude }}"
+                   target="_blank" rel="noopener">Get directions</a>
+            </p>
+        </section>
+        {% endif %}
+
+        <a href="/feed/" class="spot-back">&larr; Back to spots</a>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" referrerpolicy="no-referrer"></script>
+    <script src="{% static 'spot_detail.js' %}"></script>
+    <script>
+        // Logout from any page.
+        document.querySelectorAll('#logout-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                localStorage.removeItem('access');
+                localStorage.removeItem('refresh');
+                window.location.href = '/profile/';
+            });
+        });
+    </script>
+</body>
+</html>
