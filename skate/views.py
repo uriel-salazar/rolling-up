@@ -1,6 +1,7 @@
 
 import logging
 import os
+import threading
 
 import requests
 from django.http import HttpResponseRedirect
@@ -133,6 +134,11 @@ def spot_detail_page(request, pk):
         except Rating.DoesNotExist:
             pass
 
+    # The tiles of the map are brought into the cache while the visitor
+    # reads the page. The browser asks for them a moment later, and
+    # then they are already there.
+    _warm_the_tiles(spot)
+
     return render(
         request,
         'spot_detail.html',
@@ -147,6 +153,42 @@ def spot_detail_page(request, pk):
             'tile_config': tile_config,
         },
     )
+
+
+def _warm_the_tiles(spot):
+    """Bring the tiles of the map of a spot into the cache.
+
+    The server answers the tiles of the map one after the other, so the
+    map of the page of a spot takes a while to appear. The tiles are
+    fetched in the background while the visitor reads the page, and by
+    the time the browser asks for them they are already in the cache.
+
+    It is done in a thread so the visitor does not wait for it.
+    """
+    latitude = spot.latitude
+    longitude = spot.longitude
+
+    if latitude is None or longitude is None:
+        return
+
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except (TypeError, ValueError):
+        return
+
+    zoom = 15
+
+    def worker():
+        from skate.tiles import warm_tiles
+
+        try:
+            warm_tiles(latitude, longitude, zoom)
+        except Exception:  # pragma: no cover - defensive
+            logger.warning("The tiles of the spot %s were not warmed.", spot.pk)
+
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
 
 
 def register_page(request):
