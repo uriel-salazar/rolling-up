@@ -15,7 +15,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from skate.models import Rating, Spots
-from skate.tiles import build_tile_url, pick_subdomain
+from skate.tiles import build_tile_url, pick_subdomain, tile_range, warm_tiles
 
 User = get_user_model()
 
@@ -252,6 +252,50 @@ class TileProxyTests(TestCase):
     def tearDown(self):
         cache.clear()
 
+    def test_the_tiles_of_a_place_are_calculated(self):
+        """The map asks for the tiles around the place."""
+        tiles = tile_range(20.6767, -103.3475, 15)
+
+        self.assertTrue(tiles)
+        for zoom, x, y in tiles:
+            self.assertEqual(zoom, 15)
+            self.assertGreaterEqual(x, 0)
+            self.assertGreaterEqual(y, 0)
+
+    def test_a_place_without_coordinates_has_no_tiles(self):
+        self.assertEqual(tile_range(None, None, 15), [])
+        self.assertEqual(tile_range("abc", 1.5, 15), [])
+
+    @patch("skate.tiles._session.get")
+    def test_the_tiles_are_brought_into_the_cache(self, mock_get):
+        """The tiles are fetched before the browser asks for them."""
+        mock_get.return_value = FakeTileResponse(
+            200, b"a-png", {"Content-Type": "image/png"}
+        )
+
+        warm_tiles(20.6767, -103.3475, 15)
+
+        self.assertTrue(mock_get.called)
+        # Every tile that was brought is in the cache.
+        key = 'tile:15:%d:%d:1x' % (
+            tile_range(20.6767, -103.3475, 15)[0][1],
+            tile_range(20.6767, -103.3475, 15)[0][2],
+        )
+        self.assertIsNotNone(cache.get(key))
+
+    @patch("skate.tiles._session.get")
+    def test_the_tiles_that_are_in_the_cache_are_not_fetched(self, mock_get):
+        mock_get.return_value = FakeTileResponse(
+            200, b"a-png", {"Content-Type": "image/png"}
+        )
+
+        warm_tiles(20.6767, -103.3475, 15)
+        first = mock_get.call_count
+
+        warm_tiles(20.6767, -103.3475, 15)
+
+        self.assertEqual(mock_get.call_count, first)
+
     def test_the_url_of_a_tile_is_built_with_the_key(self):
         with override_settings(
             OSM_TILE_URL="https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png",
@@ -283,7 +327,7 @@ class TileProxyTests(TestCase):
         self.assertEqual(first, second)
         self.assertIn(first, "abcd")
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_the_tile_is_served(self, mock_get):
         mock_get.return_value = FakeTileResponse(
             200, b"a-png", {"Content-Type": "image/png"}
@@ -295,7 +339,7 @@ class TileProxyTests(TestCase):
         self.assertEqual(response.content, b"a-png")
         self.assertEqual(response["Content-Type"], "image/png")
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_the_tile_is_kept_in_the_cache_of_the_server(self, mock_get):
         """The same tile is not asked to the provider again."""
         mock_get.return_value = FakeTileResponse(
@@ -312,7 +356,7 @@ class TileProxyTests(TestCase):
         self.assertEqual(second["X-Tile-Source"], "cache")
         mock_get.assert_called_once()
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_a_different_tile_is_asked_to_the_provider(self, mock_get):
         mock_get.return_value = FakeTileResponse(
             200, b"a-png", {"Content-Type": "image/png"}
@@ -323,7 +367,7 @@ class TileProxyTests(TestCase):
 
         self.assertEqual(mock_get.call_count, 2)
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_the_caching_headers_of_the_provider_are_passed_on(self, mock_get):
         mock_get.return_value = FakeTileResponse(
             200, b"a-png", {"Cache-Control": "public, max-age=2592000"}
@@ -333,7 +377,7 @@ class TileProxyTests(TestCase):
 
         self.assertEqual(response["Cache-Control"], "public, max-age=2592000")
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_a_cache_header_is_set_when_the_provider_has_none(self, mock_get):
         mock_get.return_value = FakeTileResponse(200, b"a-png", {})
 
@@ -341,7 +385,7 @@ class TileProxyTests(TestCase):
 
         self.assertIn("max-age=", response["Cache-Control"])
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_the_request_carries_the_user_agent_of_the_application(self, mock_get):
         mock_get.return_value = FakeTileResponse(200, b"a-png")
 
@@ -350,14 +394,14 @@ class TileProxyTests(TestCase):
         _, kwargs = mock_get.call_args
         self.assertIn("RollingUp", kwargs["headers"]["User-Agent"])
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_a_wrong_path_is_refused(self, mock_get):
         response = self.client.get("/tiles/not-a-tile.png")
 
         self.assertEqual(response.status_code, 400)
         mock_get.assert_not_called()
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_a_failing_provider_is_reported(self, mock_get):
         mock_get.return_value = FakeTileResponse(503)
 
@@ -365,7 +409,7 @@ class TileProxyTests(TestCase):
 
         self.assertEqual(response.status_code, 503)
 
-    @patch("skate.tiles.requests.get")
+    @patch("skate.tiles._session.get")
     def test_an_unreachable_provider_is_reported(self, mock_get):
         import requests
 
