@@ -99,6 +99,14 @@ class Spots(models.Model):
     google_metadata = models.JSONField(null=True, blank=True)
 
     class Meta:
+        # The indexes of the spots. The filters of the API use the
+        # category and the source together, the list is ordered by the
+        # date and the map looks for the places near a point.
+        indexes = [
+            models.Index(fields=['category', 'source']),
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['latitude', 'longitude']),
+        ]
         constraints = [
             # Partial unique index: only OSM records carry osm_id, so
             # community spots (NULL) are never affected.
