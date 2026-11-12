@@ -687,7 +687,7 @@
             previewLink.target = '_blank';
             previewLink.rel = 'noopener';
         } else {
-            previewLink.href = '/spots/' + spot.id + '/';
+            previewLink.href = '/spots/' + spot.id + '/#spot-header';
             previewLink.textContent = 'Ver detalle';
             previewLink.removeAttribute('target');
             previewLink.removeAttribute('rel');

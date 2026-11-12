@@ -395,6 +395,9 @@ function wait(ms) {
         elements['preview-source'].textContent === 'OpenStreetMap');
     check('the map moved to the spot',
         mapState.center[0] === 20.706324, JSON.stringify(mapState.center));
+    check('the detail link opens the title of the spot',
+        elements['preview-link'].href === '/spots/1/#spot-header',
+        elements['preview-link'].href);
 
     console.log('\n== 7. The list and the map stay in sync ==');
     const selected = elements['spot-list'].children.filter(
