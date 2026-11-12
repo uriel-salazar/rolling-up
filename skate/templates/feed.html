@@ -23,7 +23,7 @@
                 </button>
                 <ul class="auth-dropdown-menu" role="menu">
                     <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
-                    <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
+                    <li role="menuitem"><button type="button" id="logout-btn" data-logout-button data-redirect="/profile/">Cerrar sesión</button></li>
                 </ul>
             </div>
             <a href="/profile/" class="nav-login" data-session="out">Iniciar sesión</a>
@@ -163,15 +163,5 @@
     <script src="{% static 'rating.js' %}"></script>
     <script src="{% static 'location_search.js' %}"></script>
     <script src="{% static 'feed.js' %}"></script>
-    <script>
-        // Logout from any page.
-        document.querySelectorAll('#logout-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                localStorage.removeItem('access');
-                localStorage.removeItem('refresh');
-                window.location.href = '/profile/';
-            });
-        });
-    </script>
 </body>
 </html>

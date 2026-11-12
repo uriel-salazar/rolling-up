@@ -31,7 +31,7 @@
                             </button>
                             <ul class="auth-dropdown-menu" role="menu">
                                 <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
-                                <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
+                                <li role="menuitem"><button type="button" id="logout-btn" data-logout-button data-redirect="/profile/">Cerrar sesión</button></li>
                             </ul>
                         </div>
                     </li>
@@ -197,18 +197,5 @@
     <script src="{% static 'session.js' %}"></script>
     <script src="{% static 'script.js' %}"></script>
     <script src="{% static 'spot_form.js' %}"></script>
-    <script>
-        // Mobile menu toggle for the spot form navbar.
-        const menuOpen = document.getElementById('menu-open-button');
-        const menuClose = document.getElementById('menu-close-button');
-        if (menuOpen && menuClose) {
-            menuOpen.addEventListener('click', function () {
-                document.body.classList.add('show-mobile-menu');
-            });
-            menuClose.addEventListener('click', function () {
-                document.body.classList.remove('show-mobile-menu');
-            });
-        }
-    </script>
 </body>
 </html>

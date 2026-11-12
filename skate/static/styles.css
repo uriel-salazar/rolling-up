@@ -2357,76 +2357,6 @@ header .navbar{
     background: #141414;
 }
 
-/* ==========================================================================
-   Google sign-in button
-   ========================================================================== */
-
-.google-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    max-width: 340px;
-    padding: 12px 16px;
-    margin-top: 16px;
-    background: #ffffff;
-    border: 1px solid #dadce0;
-    border-radius: var(--border-radius-s);
-    color: #3c4043;
-    font-family: "Manrope", sans-serif;
-    font-size: 0.9rem;
-    font-weight: var(--font-weight-medium);
-    text-decoration: none;
-    cursor: pointer;
-    transition: transform 180ms ease-out, box-shadow 180ms ease-out, opacity 180ms ease-out;
-}
-
-.google-btn__logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aria-hidden: true;
-}
-
-.google-btn__logo svg {
-    display: block;
-    width: 18px;
-    height: 18px;
-}
-
-.google-btn__label {
-    font-family: inherit;
-    font-size: inherit;
-    font-weight: inherit;
-}
-
-.google-btn--dark {
-    background: #201f1f;
-    border: 1px solid #3a3a3a;
-    color: #eaeaea;
-}
-
-.google-btn--dark:hover:not(:disabled) {
-    background: #2a2a2a;
-    transform: scale(1.02);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-}
-
-.google-btn--dark:active:not(:disabled) {
-    transform: scale(0.98);
-}
-
-.google-btn--dark:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.4);
-}
-
-.google-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
 .login-spinner {
     position: relative;
     width: 16px;
@@ -2518,20 +2448,6 @@ header .navbar{
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .google-btn {
-        transition: none;
-    }
-
-    .google-btn--dark:hover:not(:disabled) {
-        transform: none;
-        box-shadow: none;
-        background: #201f1f;
-    }
-
-    .google-btn--dark:active:not(:disabled) {
-        transform: none;
-    }
-
     .login-spinner::before {
         animation: none;
     }

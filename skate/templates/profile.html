@@ -22,7 +22,7 @@
                 </button>
                 <ul class="auth-dropdown-menu" role="menu">
                     <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
-                    <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
+                    <li role="menuitem"><button type="button" id="logout-btn" data-logout-button data-redirect="/profile/">Cerrar sesión</button></li>
                 </ul>
             </div>
             <a href="/profile/" class="nav-login" data-session="out">Iniciar sesión</a>
@@ -41,7 +41,7 @@
             <p class="profile-info" id="profile-details">Has iniciado sesión.</p>
             <p class="profile-actions">
                 <a href="/profile/" class="btn-primary">Mi perfil</a>
-                <button type="button" id="logout-btn-profile" class="btn-ghost">Cerrar sesión</button>
+                <button type="button" id="logout-btn-profile" class="btn-ghost" data-logout-button data-redirect="/profile/">Cerrar sesión</button>
             </p>
         </div>
 

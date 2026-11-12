@@ -43,6 +43,8 @@ function buildSandbox(store) {
 
     const sandbox = {
         console: console,
+        atob: globalThis.atob,
+        btoa: globalThis.btoa,
         document: {
             body: { classList: { _set: new Set(), toggle() {} } },
             readyState: 'complete',
@@ -132,7 +134,23 @@ console.log('\n== 2. A visitor with a session ==');
 // 3. The bar is drawn again when the session changes
 // ------------------------------------------------------------------
 
-console.log('\n== 3. The bar is drawn again ==');
+console.log('\n== 3. An expired token is treated as no session ==');
+{
+    const expiredToken = 'eyJhbGciOiJub25lIn0.eyJleHAiOjE3MDAwMDAwMDB9.';
+    const store = { access: expiredToken };
+    const built = buildSandbox(store);
+    const inPart = makeElement('in');
+    inPart.attributes['data-session'] = 'in';
+    built.elements.in = inPart;
+
+    vm.createContext(built.sandbox);
+    vm.runInContext(fs.readFileSync(JS_PATH, 'utf8'), built.sandbox);
+
+    check('expired tokens are cleared from the session state',
+        built.sandbox.RollingUpSession.hasSession() === false && !('access' in store));
+}
+
+console.log('\n== 4. The bar is drawn again ==');
 {
     const store = {};
     const built = buildSandbox(store);

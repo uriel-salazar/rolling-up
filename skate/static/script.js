@@ -8,20 +8,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  const closeMenu = () => {
-    body.classList.remove('show-mobile-menu');
-    navMenu.classList.remove('show');
+  const setMenuState = (isOpen) => {
+    body.classList.toggle('show-mobile-menu', isOpen);
   };
 
-  const openMenu = () => {
-    body.classList.add('show-mobile-menu');
-    navMenu.classList.add('show');
-  };
-
-  menuOpenButton.addEventListener('click', openMenu);
-  menuCloseButton.addEventListener('click', closeMenu);
+  menuOpenButton.addEventListener('click', () => setMenuState(true));
+  menuCloseButton.addEventListener('click', () => setMenuState(false));
 
   navMenu.querySelectorAll('.nav-link').forEach((link) => {
-    link.addEventListener('click', closeMenu);
+    link.addEventListener('click', () => setMenuState(false));
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && body.classList.contains('show-mobile-menu')) {
+      setMenuState(false);
+    }
   });
 });

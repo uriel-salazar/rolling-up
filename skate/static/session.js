@@ -17,9 +17,51 @@
 (function (global) {
     'use strict';
 
-    /** Whether the browser holds a session of the application. */
+    function clearStoredSession() {
+        localStorage.removeItem('access');
+        localStorage.removeItem('refresh');
+    }
+
+    function isJwtExpired(token) {
+        if (!token || typeof token !== 'string') {
+            return true;
+        }
+
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            return false;
+        }
+
+        try {
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            const now = Math.floor(Date.now() / 1000);
+            return typeof payload.exp === 'number' && payload.exp <= now;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /** Whether the browser holds a valid session of the application. */
     function hasSession() {
-        return !!localStorage.getItem('access');
+        const token = localStorage.getItem('access');
+        if (!token) {
+            return false;
+        }
+
+        if (isJwtExpired(token)) {
+            clearStoredSession();
+            return false;
+        }
+
+        return true;
+    }
+
+    function logout(redirectTo) {
+        clearStoredSession();
+        if (typeof global.RollingUpSession !== 'undefined' && typeof global.RollingUpSession.refresh === 'function') {
+            global.RollingUpSession.refresh();
+        }
+        window.location.href = redirectTo || '/profile/';
     }
 
     /** Show the part of the page that belongs to the session. */
@@ -45,5 +87,13 @@
     global.RollingUpSession = {
         refresh: applySession,
         hasSession: hasSession,
+        clearStoredSession: clearStoredSession,
+        logout: logout,
     };
+
+    document.querySelectorAll('[data-logout-button]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            logout(button.dataset.redirect || '/profile/');
+        });
+    });
 })(window);
