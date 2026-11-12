@@ -338,6 +338,23 @@ class SpotDetailPageTests(TestCase):
 
         self.assertContains(response, 'data-uploaded-by="%d"' % self.user.id)
 
+    def test_the_page_can_be_shown_inside_a_frame_of_the_map(self):
+        """The map of the home page is shown inside a frame.
+
+        The link "Ver detalle" of the map opens the page of the spot
+        inside that frame, so the browser has to allow it. With the
+        default of Django the page is blocked and the visitor sees an
+        error instead of the spot.
+        """
+        response = self.client.get("/spots/%d/" % self.spot.id)
+
+        self.assertEqual(
+            response.headers.get("X-Frame-Options"),
+            "SAMEORIGIN",
+            "The page of the spot has to allow the frames of the same "
+            "site, the map of the home page is shown inside one.",
+        )
+
 
 class SessionNavigationTests(TestCase):
     """The bar of the page.

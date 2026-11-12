@@ -107,6 +107,29 @@ class TemplateScriptOrderTests(SimpleTestCase):
         self._check("basic_home.html")
 
 
+class LeafletStylesheetTests(SimpleTestCase):
+    """The pages with a map need the stylesheet of Leaflet.
+
+    Leaflet positions the tiles with the rules of its own stylesheet.
+    A page that loads the script of the map without the stylesheet
+    shows the tiles outside of the map, spread over the whole page.
+    """
+
+    TEMPLATES_WITH_A_MAP = ["map.html", "spot_detail.html", "spot_form.html"]
+
+    def test_the_pages_with_a_map_load_the_stylesheet_of_leaflet(self):
+        for template_name in self.TEMPLATES_WITH_A_MAP:
+            template = (TEMPLATES_DIR / template_name).read_text(encoding="utf-8")
+
+            self.assertIn(
+                "leaflet.css",
+                template,
+                "%s shows a map but does not load the stylesheet of "
+                "Leaflet. The tiles are not positioned and they end up "
+                "spread over the whole page." % template_name,
+            )
+
+
 class HiddenAttributeTests(SimpleTestCase):
     """The attribute "hidden" has to hide the element.
 

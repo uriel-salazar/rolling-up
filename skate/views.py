@@ -77,12 +77,17 @@ def profile_page(request):
     return render(request, 'profile.html')
 
 
+@xframe_options_sameorigin
 def spot_detail_page(request, pk):
     """ Render the detail page of a skate spot.
 
         The page is public: the spot itself, its photos and its rating
         are read from the API. Uploading a photo or rating the spot
         requires being logged in.
+
+        The map of the home page is shown inside a frame, so the detail
+        has to allow the frames of the same site. Without this the
+        browser refuses to show the page inside the frame of the map.
     """
     spot = get_object_or_404(Spots, pk=pk)
     tile_config = build_tile_config()
