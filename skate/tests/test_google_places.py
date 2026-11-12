@@ -241,6 +241,21 @@ class ImageResolverTests(TestCase):
         self.assertEqual(data["image_source"], "google")
         self.assertEqual(data["address"], "Av. Skate 123, Guadalajara")
 
+    def test_detail_page_uses_google_photo_when_local_image_is_missing(self):
+        place = parse_place(google_place())
+        spot = Spots.objects.create(
+            name_spot="Skatepark Oasis", user=self.user,
+            source=Spots.SOURCE_GOOGLE,
+            google_place_id=place.place_id,
+            google_metadata=place.metadata,
+        )
+
+        response = self.client.get(f"/spots/{spot.pk}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "/api/places/photo/places/")
+        self.assertContains(response, spot.name_spot)
+
     def test_stale_metadata_is_not_exposed(self):
         place = parse_place(google_place())
         metadata = dict(place.metadata)
