@@ -687,13 +687,5 @@
     // The edit and delete buttons belong only to the owner of the spot.
     showOwnerActions();
 
-    // When the visitor lands on the detail page (from a card, a map
-    // marker or a search result) the viewport starts at the top: title,
-    // main image and basic information. The mini-map stays further down,
-    // where it already is in the content hierarchy. The scroll happens on
-    // load so it is not reset by asynchronous image loading.
-    window.addEventListener('load', function () {
-        window.scrollTo(0, 0);
-    });
 
 })();

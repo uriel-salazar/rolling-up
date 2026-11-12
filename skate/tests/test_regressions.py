@@ -291,6 +291,8 @@ class SpotDetailPageTests(TestCase):
             user=self.user,
             source=Spots.SOURCE_COMMUNITY,
             category=Spots.CATEGORY_SKATEPARK,
+            latitude=40.7128,
+            longitude=-74.0060,
         )
 
     def test_the_page_is_public(self):
@@ -298,6 +300,15 @@ class SpotDetailPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "spot_detail.html")
+
+    def test_the_header_stays_at_the_top_of_the_content(self):
+        response = self.client.get("/spots/%d/" % self.spot.id)
+
+        self.assertContains(response, 'id="spot-header"')
+        self.assertContains(response, 'id="spot-map"')
+
+        static_file = Path(__file__).resolve().parent.parent / "static" / "spot_detail.js"
+        self.assertNotIn("window.scrollTo(0, 0)", static_file.read_text())
 
     def test_the_description_of_the_spot_is_shown(self):
         response = self.client.get("/spots/%d/" % self.spot.id)

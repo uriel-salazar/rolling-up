@@ -11,7 +11,7 @@
 </head>
 <body class="spot-detail-page" data-spot-id="{{ spot.id }}" data-spot-user-id="{{ spot_user_id }}">
     <main class="spot-detail-main">
-        <section class="spot-header">
+        <section class="spot-header" id="spot-header">
             <div class="spot-badge">{{ spot.get_source_display }}</div>
             <h1 class="spot-title">{{ spot.name_spot }}</h1>
             <p class="spot-category">{{ spot.get_category_display }}</p>
