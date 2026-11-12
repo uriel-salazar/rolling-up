@@ -72,6 +72,23 @@
                  aria-busy="true"></section>
     </main>
 
+    <!-- Modal de detalle del spot -->
+    <div id="spot-modal" class="spot-modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+        <button type="button" id="spot-modal-close" class="spot-modal-close" aria-label="Cerrar">&times;</button>
+        <div class="spot-modal-content">
+            <img id="spot-modal-image" class="spot-modal-image" alt="">
+            <div class="spot-modal-info">
+                <h2 id="spot-modal-name" class="spot-modal-name"></h2>
+                <p id="spot-modal-category" class="spot-modal-category"></p>
+                <p id="spot-modal-address" class="spot-modal-address"></p>
+                <a id="spot-modal-directions" class="spot-modal-directions" href="#" target="_blank" rel="noopener">Ver en Google Maps</a>
+                <p id="spot-modal-body" class="spot-modal-body"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- The scripts go at the end of the page, so the whole markup of
+         the page exists when they look for their elements. -->
     <script src="{% static 'session.js' %}"></script>
     <script src="{% static 'api.js' %}"></script>
     <script src="{% static 'rating.js' %}"></script>
@@ -87,20 +104,5 @@
             });
         });
     </script>
-
-    <!-- Modal de detalle del spot -->
-    <div id="spot-modal" class="spot-modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
-        <button type="button" id="spot-modal-close" class="spot-modal-close" aria-label="Cerrar">&times;</button>
-        <div class="spot-modal-content">
-            <img id="spot-modal-image" class="spot-modal-image" alt="">
-            <div class="spot-modal-info">
-                <h2 id="spot-modal-name" class="spot-modal-name"></h2>
-                <p id="spot-modal-category" class="spot-modal-category"></p>
-                <p id="spot-modal-address" class="spot-modal-address"></p>
-                <a id="spot-modal-directions" class="spot-modal-directions" href="#" target="_blank" rel="noopener">Ver en Google Maps</a>
-                <p id="spot-modal-body" class="spot-modal-body"></p>
-            </div>
-        </div>
-    </div>
 </body>
 </html>

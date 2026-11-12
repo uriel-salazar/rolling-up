@@ -14,7 +14,7 @@
  * The elements that belong to a session come with the `hidden`
  * attribute, so nothing is shown before the script runs.
  */
-(function () {
+(function (global) {
     'use strict';
 
     /** Whether the browser holds a session of the application. */
@@ -46,4 +46,4 @@
         refresh: applySession,
         hasSession: hasSession,
     };
-})();
+})(window);

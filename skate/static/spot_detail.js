@@ -205,8 +205,6 @@
     // The delete buttons are shown only to the uploader of the photo.
     refreshDeleteButtons();
 
-    });
-
     // ------------------------------------------------------------------
     // Rating
     // ------------------------------------------------------------------

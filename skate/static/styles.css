@@ -10,6 +10,14 @@
     box-sizing: border-box;
 }
 
+/* The attribute "hidden" has to hide the element, always. The browser
+   does it with a rule of its own, but any rule of the application that
+   sets a "display" wins over it, and the element stays on the screen
+   even though the script marked it as hidden. */
+[hidden] {
+    display: none !important;
+}
+
 html,
 body {
     background-color: #0a0a0a;

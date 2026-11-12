@@ -129,6 +129,7 @@ const sandbox = {
         getElementById: (id) => elements[id] || null,
         createElement: (tag) => makeElement(tag),
         querySelector: () => null,
+        querySelectorAll: () => [],
         addEventListener: () => {},
         body: {
             dataset: { spotId: '13' },
