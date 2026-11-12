@@ -430,6 +430,21 @@ class FeedMoreButtonTests(TestCase):
         self.assertContains(response, 'class="feed-more" id="feed-more" hidden')
 
 
+class LandingCtaButtonsTests(TestCase):
+    """The home page shows the main calls to action for spots."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_the_home_page_has_cta_buttons_for_more_and_add_spot(self):
+        response = self.client.get("/")
+
+        self.assertContains(response, "Ver más")
+        self.assertContains(response, 'href="/feed/"')
+        self.assertContains(response, "Añadir spot")
+        self.assertContains(response, 'href="/spots/new/"')
+
+
 class FeedNavbarTests(TestCase):
     """The button that adds a spot, in the bar of the feed.
 
@@ -510,3 +525,12 @@ class FeedPaginationTests(TestCase):
         self.assertContains(response, "Spot 001")
         self.assertContains(response, "search=Spot")
         self.assertContains(response, "?search=Spot&page=2")
+
+    def test_the_embedded_feed_uses_a_compact_preview_size(self):
+        response = self.client.get("/feed/?embed=1")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Mostrando 1–9 de 25")
+        self.assertContains(response, "Spot 009")
+        self.assertNotContains(response, "Spot 010")
+        self.assertNotContains(response, "page=2")

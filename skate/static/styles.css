@@ -79,6 +79,43 @@ main {
     height: min(100vh, 1100px);
 }
 
+.landing-feed-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 24px auto 0;
+    padding-bottom: 12px;
+}
+
+.landing-feed-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 180px;
+    padding: 0.9rem 1.6rem;
+    border-radius: 999px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.landing-feed-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.18);
+}
+
+.landing-feed-button-primary {
+    background: #f5f5f5;
+    color: #090909;
+}
+
+.landing-feed-button-secondary {
+    background: transparent;
+    border: 1px solid rgba(245, 245, 245, 0.45);
+    color: #f5f5f5;
+}
+
 .landing-form-frame {
     height: 1100px;
 }

@@ -107,7 +107,7 @@
             {% endfor %}
         </section>
 
-        {% if page_obj.paginator.num_pages > 1 %}
+        {% if not embed and page_obj.paginator.num_pages > 1 %}
         <nav class="feed-pagination" aria-label="Paginación del feed">
             {% if page_obj.has_previous %}
                 <a class="feed-page-button" href="?{% if base_query_string %}{{ base_query_string }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Página anterior">Anterior</a>

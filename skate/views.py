@@ -90,7 +90,9 @@ def feed_page(request):
     if source and source in Spots.SOURCE_VALUES:
         queryset = queryset.filter(source=source)
 
-    paginator = Paginator(queryset, 12)
+    embed = request.GET.get('embed') == '1'
+    page_size = 9 if embed else 12
+    paginator = Paginator(queryset, page_size)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
@@ -101,7 +103,7 @@ def feed_page(request):
         request,
         'feed.html',
         {
-            'embed': request.GET.get('embed') == '1',
+            'embed': embed,
             'spots': page_obj.object_list,
             'page_obj': page_obj,
             'paginator': paginator,
