@@ -266,13 +266,21 @@ class SpotCoordinateAPITests(TestCase):
 
         response = self.client.patch(
             f"/api/spots/{spot.pk}/",
-            {"image_url": make_image_file("cover.jpg")},
+            {
+                "name_spot": "Spot actualizado",
+                "body": "Nueva descripción",
+                "category": "skatepark",
+                "latitude": "21.0",
+                "longitude": "-104.0",
+                "image_url": make_image_file("cover.jpg"),
+            },
             format="multipart",
         )
 
         self.assertEqual(response.status_code, 200, response.data)
         spot.refresh_from_db()
         self.assertTrue(spot.image_url)
+        self.assertEqual(spot.name_spot, "Spot actualizado")
 
     def test_the_spot_can_still_be_deleted(self):
         spot = Spots.objects.create(

@@ -20,7 +20,7 @@ class IsOwnerOrReadOnly(BasePermission):
 
 
 class IsOwnerOrReadOnlyOrSpotImageManager(BasePermission):
-    """Owners can edit their spots; this specific maintainer may update only the cover image on any spot."""
+    """Owners can edit their spots; the maintainer can update the standard spot form on any spot."""
 
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
@@ -39,7 +39,14 @@ class IsOwnerOrReadOnlyOrSpotImageManager(BasePermission):
         if not hasattr(data, 'keys'):
             return False
 
-        allowed_fields = {'image_url'}
+        allowed_fields = {
+            'name_spot',
+            'body',
+            'category',
+            'latitude',
+            'longitude',
+            'image_url',
+        }
         changed_fields = set(data.keys())
         return bool(changed_fields) and changed_fields.issubset(allowed_fields)
 
