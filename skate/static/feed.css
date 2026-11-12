@@ -276,6 +276,7 @@
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
+    font-size: 0.78rem;
 }
 
 .spot-meta-item {
@@ -286,6 +287,27 @@
     font-size: 0.7rem;
     letter-spacing: 0.6px;
     color: #757575;
+}
+
+/* Truncate long addresses in card meta */
+.spot-meta-item.address {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+/* Rating stars in cards */
+.spot-rating {
+    color: #c9a227;
+    font-size: 0.85rem;
+}
+
+/* Rating empty state */
+.spot-rating-empty {
+    color: #565656;
+    font-style: italic;
 }
 
 .spot-meta-item svg {
