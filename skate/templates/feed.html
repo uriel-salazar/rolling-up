@@ -79,8 +79,8 @@
             {% for spot in spots %}
             <article class="spot-card">
                 <div class="spot-card-media">
-                    {% if spot.image_url %}
-                        <img src="{{ spot.image_url.url }}" alt="{{ spot.name_spot }}" loading="lazy">
+                    {% if spot.display_image_url %}
+                        <img src="{{ spot.display_image_url }}" alt="{{ spot.name_spot }}" loading="lazy">
                     {% else %}
                         <div class="spot-plate" aria-hidden="true">
                             <span class="spot-plate-initial">{{ spot.name_spot|first|upper }}</span>

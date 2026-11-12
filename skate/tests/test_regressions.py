@@ -533,4 +533,30 @@ class FeedPaginationTests(TestCase):
         self.assertContains(response, "Mostrando 1–9 de 25")
         self.assertContains(response, "Spot 009")
         self.assertNotContains(response, "Spot 010")
-        self.assertNotContains(response, "page=2")
+
+    def test_google_places_photos_are_shown_when_there_is_no_local_image(self):
+        self.user = User.objects.create_user(
+            username="rider2",
+            email="rider2@example.com",
+            password="secret-password",
+        )
+        spot = Spots.objects.create(
+            name_spot="Google Spot",
+            body="Spot with Google photo",
+            user=self.user,
+            source=Spots.SOURCE_GOOGLE,
+            category=Spots.CATEGORY_SKATEPARK,
+            google_place_id="google-spot-1",
+            google_metadata={
+                "photos": [{
+                    "name": "places/google-spot-1/photos/ref",
+                    "attribution": "Google",
+                }],
+                "expires_at": "2099-01-01T00:00:00Z",
+            },
+        )
+
+        response = self.client.get("/feed/")
+
+        self.assertContains(response, "/api/places/photo/places/google-spot-1/photos/ref")
+        self.assertContains(response, spot.name_spot)

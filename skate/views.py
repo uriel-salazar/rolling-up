@@ -20,6 +20,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.generics import RetrieveUpdateAPIView
 from . import google_auth
 from .models import User,Spots,Rating,SpotPhoto
+from .media_api.images_skateparks.resolver import resolve_spot_image
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
 from .serializers import UserSerializer,SpotSerializer,RatingSerializer,SpotPhotoSerializer
@@ -98,6 +99,10 @@ def feed_page(request):
 
     params = request.GET.copy()
     params.pop('page', None)
+
+    for spot in page_obj.object_list:
+        resolved = resolve_spot_image(spot, request)
+        spot.display_image_url = resolved.get('url') if resolved else None
 
     return render(
         request,
