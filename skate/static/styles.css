@@ -262,16 +262,6 @@ header .navbar{
 
 
 
-.section-title::after {
-    content: "";
-    width: 80px;
-    height: 8px;
-    margin: 4px auto 0;
-    display: block;
-    background: var(--secondary-color);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 8'%3E%3Cpath d='M3 4 Q13 1 23 4 T43 4 T63 4 T77 4' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 8'%3E%3Cpath d='M3 4 Q13 1 23 4 T43 4 T63 4 T77 4' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain;
-}
 .navbar .logo-text {
     color:var(--white-color);
     font-size: var(--font-size-xl);
