@@ -213,12 +213,22 @@ button{
     background: none;
 }
 
-img {
+img,
+iframe,
+svg,
+video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
 
+img {
     width: 100%;
 }
 
-
+body {
+    overflow-x: hidden;
+}
 
 /* Navbar styling */ 
 
@@ -2691,11 +2701,6 @@ header .navbar{
     align-items: flex-start;
 }
 
-.site-footer .footer-brand p {
-    color: #9aa0a6;
-    margin-top: 8px;
-}
-
 .site-footer .footer-links {
     display: flex;
     flex-wrap: wrap;
@@ -2718,6 +2723,22 @@ header .navbar{
     border-top: 1px solid #333;
     padding-top: 16px;
     margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+    .site-footer .footer-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .site-footer .footer-links {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .site-footer .footer-copy {
+        text-align: left;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2881,6 +2902,11 @@ header .navbar{
 
 /* Small mobile phones */
 @media screen and (max-width: 480px) {
+    .section-content {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
     .profile-main,
     .register-main {
         padding-top: 60px;
@@ -2993,6 +3019,10 @@ header .navbar{
 
 /* Navbar mobile (landing page basic_home.html / spot_form.html) */
 @media screen and (max-width: 900px) {
+    body.show-mobile-menu {
+        overflow: hidden;
+    }
+
     .navbar :where(#menu-close-button, #menu-open-button) {
         display: block;
     }

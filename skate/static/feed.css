@@ -559,6 +559,36 @@
     }
 }
 
+@media (max-width: 480px) {
+    .feed-main {
+        padding: 0 14px 72px;
+    }
+
+    .feed-title {
+        font-size: clamp(2.1rem, 12vw, 3.1rem);
+    }
+
+    .feed-subtitle {
+        font-size: 0.88rem;
+    }
+
+    .feed-page-button {
+        min-width: 36px;
+        min-height: 36px;
+        padding: 8px 10px;
+        letter-spacing: 0.08em;
+        font-size: 0.7rem;
+    }
+
+    .spot-card-name {
+        font-size: 1.15rem;
+    }
+
+    .spot-card-meta {
+        gap: 8px 12px;
+    }
+}
+
 /* The feed is embedded in the landing page, so its own scroll must not
    fight with the scroll of the page. Its height is adjusted by the
    parent page to avoid a nested scrollbar. */
