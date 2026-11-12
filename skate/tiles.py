@@ -18,6 +18,8 @@ from __future__ import annotations
 import logging
 import math
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from django.conf import settings
@@ -41,6 +43,24 @@ DEFAULT_CACHE_SECONDS = 60 * 60 * 24 * 7
 # the map waits for it.
 _session = requests.Session()
 _session.headers.update({"User-Agent": settings.OVERPASS_USER_AGENT})
+
+# How many tiles are brought at the same time when the tiles of a place
+# are prepared.
+WARM_WORKERS = 8
+
+# Each thread has its own connection to the provider, a connection
+# cannot be used by two threads at the same time.
+_thread_local = threading.local()
+
+
+def _thread_session():
+    """Return the connection of the thread that is asking."""
+    session = getattr(_thread_local, 'session', None)
+    if session is None:
+        session = requests.Session()
+        session.headers.update({"User-Agent": settings.OVERPASS_USER_AGENT})
+        _thread_local.session = session
+    return session
 
 
 @csrf_exempt
@@ -217,34 +237,56 @@ def warm_tiles(latitude, longitude, zoom):
     It is called when the page of a spot is served, before the browser
     asks for the tiles. The tiles that are already in the cache are
     left alone.
+
+    The tiles are brought at the same time, so the map is ready when
+    the browser asks for it. A thread of its own has its own
+    connection to the provider.
     """
     if not settings.OSM_TILE_URL:
         return
 
-    for tile_zoom, tile_x, tile_y in tile_range(latitude, longitude, zoom):
-        cache_key = 'tile:%d:%d:%d:%s' % (tile_zoom, tile_x, tile_y, '1x')
-        if cache.get(cache_key) is not None:
-            continue
+    tiles = tile_range(latitude, longitude, zoom)
+    if not tiles:
+        return
 
-        url = build_tile_url(tile_zoom, tile_x, tile_y, '')
-        if url is None:
-            continue
+    # The tiles that are around the place come first, they are the
+    # ones the browser asks for.
+    center_x = tiles[0][1]
+    center_y = tiles[0][2]
+    tiles.sort(key=lambda tile: (tile[1] - center_x) ** 2
+               + (tile[2] - center_y) ** 2)
 
-        try:
-            response = _session.get(url, timeout=10)
-        except requests.RequestException:
-            continue
+    with ThreadPoolExecutor(max_workers=WARM_WORKERS) as pool:
+        list(pool.map(_warm_one, tiles))
 
-        if not response.ok:
-            continue
 
-        content_type = response.headers.get('Content-Type', 'image/png')
-        max_age = response.headers.get('Cache-Control')
-        if not max_age:
-            max_age = f"public, max-age={DEFAULT_CACHE_SECONDS}"
+def _warm_one(tile):
+    """Bring one tile into the cache of the server."""
+    tile_zoom, tile_x, tile_y = tile
 
-        cache.set(
-            cache_key,
-            (response.content, content_type, max_age),
-            DEFAULT_CACHE_SECONDS,
-        )
+    cache_key = 'tile:%d:%d:%d:%s' % (tile_zoom, tile_x, tile_y, '1x')
+    if cache.get(cache_key) is not None:
+        return
+
+    url = build_tile_url(tile_zoom, tile_x, tile_y, '')
+    if url is None:
+        return
+
+    try:
+        response = _thread_session().get(url, timeout=10)
+    except requests.RequestException:
+        return
+
+    if not response.ok:
+        return
+
+    content_type = response.headers.get('Content-Type', 'image/png')
+    max_age = response.headers.get('Cache-Control')
+    if not max_age:
+        max_age = f"public, max-age={DEFAULT_CACHE_SECONDS}"
+
+    cache.set(
+        cache_key,
+        (response.content, content_type, max_age),
+        DEFAULT_CACHE_SECONDS,
+    )

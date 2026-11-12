@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Spots &mdash; Rolling Up - Feed{% endblock %}
+{% block body_class %}feed-page{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'feed.css' %}">
+{% endblock %}
+{% block content %}
+<header class="app-topbar">
+    {% include "_navbar.html" %}
+</header>
+
+<main class="feed-main">
+    <section class="feed-intro">
+        <div class="feed-intro-text">
+            <h1 class="feed-title">Explora los spots</h1>
+            <p class="feed-subtitle">
+                Skateparks, spots callejeros y spots DIY. Los lugares que
+                hacen rodar la ciudad.
+            </p>
+        </div>
+
+        <div class="feed-search-group">
+            <div class="feed-search">
+                <label class="visually-hidden" for="feed-search">Buscar los spots</label>
+                <input type="search" id="feed-search" autocomplete="off"
+                       placeholder="Buscar por nombre o descripción">
+                <button type="button" id="feed-search-clear" class="feed-search-clear"
+                        aria-label="Limpiar la búsqueda" hidden>&times;</button>
+            </div>
+
+            <div class="feed-search feed-location-search">
+                <label class="visually-hidden" for="feed-location-search">Buscar una ciudad, región o país</label>
+                <input type="search" id="feed-location-search" autocomplete="off"
+                       placeholder="Ciudad, región o país">
+                <button type="button" id="feed-location-clear" class="feed-search-clear"
+                        aria-label="Limpiar la ubicación" hidden>&times;</button>
+                <div id="feed-location-results" class="search-results" hidden></div>
+            </div>
+        </section>
+    </main>
+
+    <p class="feed-count" id="feed-count"></p>
+
+    <section class="feed-grid" id="feed-grid" aria-label="Spots de skate"
+             aria-busy="true"></section>
+
+    <!-- The button that opens the whole feed. It only shows when the
+         feed is embedded in the landing page, which shows a few
+         spots and the rest are here. -->
+    <div class="feed-more" id="feed-more" hidden>
+        <a class="feed-more-link" href="/feed/" target="_top" rel="noopener">
+            Ver más
+        </a>
+    </div>
+
+    <!-- Pagination controls for the full feed page. -->
+    <nav class="feed-pagination" id="feed-pagination" aria-label="Paginación de spots">
+        <button type="button" class="feed-pagination-btn feed-pagination-prev" id="feed-pagination-prev">
+            Anterior
+        </button>
+        <span class="feed-pagination-page" id="feed-pagination-page"></span>
+        <button type="button" class="feed-pagination-btn feed-pagination-next" id="feed-pagination-next">
+            Siguiente
+        </button>
+    </nav>
+</main>
+
+<!-- Modal de detalle del spot -->
+<div id="spot-modal" class="spot-modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+    <button type="button" id="spot-modal-close" class="spot-modal-close" aria-label="Cerrar">&times;</button>
+    <div class="spot-modal-content">
+        <img id="spot-modal-image" class="spot-modal-image" alt="">
+        <div class="spot-modal-info">
+            <h2 id="spot-modal-name" class="spot-modal-name"></h2>
+            <p id="spot-modal-category" class="spot-modal-category"></p>
+            <p id="spot-modal-address" class="spot-modal-address"></p>
+            <a id="spot-modal-directions" class="spot-modal-directions" href="#" target="_blank" rel="noopener">Ver en Google Maps</a>
+            <p id="spot-modal-body" class="spot-modal-body"></p>
+        </div>
+    </div>
+</div>
+
+<!-- The scripts go at the end of the page, so the whole markup of
+     the page exists when they look for their elements. -->
+<script src="{% static 'session.js' %}"></script>
+<script src="{% static 'api.js' %}"></script>
+<script src="{% static 'rating.js' %}"></script>
+<script src="{% static 'location_search.js' %}"></script>
+<script src="{% static 'feed.js' %}"></script>
+{% endblock %}

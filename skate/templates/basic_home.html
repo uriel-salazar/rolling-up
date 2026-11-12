@@ -1,109 +1,100 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Rolling Up - Home </title>
-    <!-- Linking Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body>
-    <main>
-        <!-- Hero Section -->
-        <section class="hero-section">
-    <header class="app-topbar">
-        {% include "_navbar.html" %}
-    </header>
-            
-            <div class="hero-content">
-            <div class="hero-details">
-                 <h3 class="subtitle"> Encuentra tu próximo spot</h3>
-                 <p class="description"> Skateparks, plazas y spots de calle. Todo en un solo mapa,
-                    para que no tengas que rodar la ciudad a ciegas.
-                 </p>
+{% extends "base.html" %}
+{% block title %} Rolling Up - Home {% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+<main>
+    <!-- Hero Section -->
+    <section class="hero-section">
+    {% block hero_content %}
+    <div class="hero-content">
+        <div class="hero-details">
+             <h3 class="subtitle"> Encuentra tu próximo spot</h3>
+             <p class="description"> Skateparks, plazas y spots de calle. Todo en un solo mapa,
+                para que no tengas que rodar la ciudad a ciegas.
+             </p>
 
-                 <div class="buttons">
-                    <a href="#mapa" class="button order-now"> Explorar el Mapa </a>
-                     <a href="/spots/new/" class="button contact-us"> Añadir Spot </a>
+             <div class="buttons">
+                <a href="#mapa" class="button order-now"> Explorar el Mapa </a>
+                 <a href="/spots/new/" class="button contact-us"> Añadir Spot </a>
 
-                 </div>
-            </div>
-            </div>
-        </section>
+             </div>
+        </div>
+        </div>
+    </section>
 
-        <!-- Scroll placeholders -->
-        <section id="mapa" class="landing-section">
-            <div class="section-content">
-                <h2 class="section-title">Mapa de skateparks en Guadalajara</h2>
-                <iframe class="landing-map-frame" src="/map/?embed=1"
-                        title="Mapa de skateparks en Guadalajara"
-                        loading="lazy"></iframe>
-            </div>
-        </section>
+    <!-- Scroll placeholders -->
+    <section id="mapa" class="landing-section">
+        <div class="section-content">
+            <h2 class="section-title">Mapa de skateparks en Guadalajara</h2>
+            <iframe class="landing-map-frame" src="/map/?embed=1"
+                    title="Mapa de skateparks en Guadalajara"
+                    loading="lazy"></iframe>
+        </div>
+    </section>
 
-        <section id="spots" class="landing-section">
-            <div class="section-content">
-                <h2 class="section-title">Spots</h2>
-                <iframe class="landing-feed-frame landing-auto-frame" src="/feed/?embed=1"
-                        title="Spots de skate en Guadalajara"
-                        loading="lazy"></iframe>
-            </div>
-        </section>
+    <section id="spots" class="landing-section">
+        <div class="section-content">
+            <h2 class="section-title">Spots</h2>
+            <iframe class="landing-feed-frame landing-auto-frame" src="/feed/?embed=1"
+                    title="Spots de skate en Guadalajara"
+                    loading="lazy"></iframe>
+        </div>
+    </section>
 
 
-        <section id="nosotros" class="landing-section">
-            <div class="section-content">
-                <h2 class="section-title">Nosotros</h2>
-                <div class="landing-about-text">
-                    <p>
-                        Rolling Up es una comunidad para descubrir y compartir
-                        skateparks, plazas y spots de calle. Nacimos con la idea
-                        de que encontrar un buen lugar para rodar no debería ser
-                        complicado.
-                    </p>
-                    <p>
-                        Reunimos los spots en un solo mapa, con información útil
-                        para que riders de Guadalajara y de cualquier ciudad
-                        puedan salir a patinar sin rodar a ciegas. La comunidad
-                        suma lugares, fotos y detalles; nosotros los mantenemos
-                        ordenados para que siempre estén a mano.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-    </main>
-    <footer class="site-footer">
-        <div class="footer-content section-content">
-            <div class="footer-brand">
-                <h2 class="logo-text">Rolling Up</h2>
-                <p>Descubre y comparte skateparks, plazas y spots de calle.</p>
-            </div>
-            <div class="footer-links">
-                <a href="#mapa">Mapa</a>
-                <a href="#spots">Spots</a>
-                <a href="/spots/new/">Añadir Spot</a>
-                <a href="#nosotros">Nosotros</a>
-                <a href="/profile/">Perfil</a>
-            </div>
-            <div class="footer-copy">
-                <p>&copy; {% now "Y" %} Rolling Up. Hecho por riders, para riders.</p>
+    <section id="nosotros" class="landing-section">
+        <div class="section-content">
+            <h2 class="section-title">Nosotros</h2>
+            <div class="landing-about-text">
+                <p>
+                    Rolling Up es una comunidad para descubrir y compartir
+                    skateparks, plazas y spots de calle. Nacimos con la idea
+                    de que encontrar un buen lugar para rodar no debería ser
+                    complicado.
+                </p>
+                <p>
+                    Reunimos los spots en un solo mapa, con información útil
+                    para que riders de Guadalajara y de cualquier ciudad
+                    puedan salir a patinar sin rodar a ciegas. La comunidad
+                    suma lugares, fotos y detalles; nosotros los mantenemos
+                    ordenados para que siempre estén a mano.
+                </p>
             </div>
         </div>
-    </footer>
-    <script src="{% static 'session.js' %}"></script>
-    <script src="{% static 'landing_scroll.js' %}"></script>
-    <script>
-        // Logout from any page.
-        document.querySelectorAll('#logout-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                localStorage.removeItem('access');
-                localStorage.removeItem('refresh');
-                window.location.href = '/profile/';
-            });
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="footer-content section-content">
+        <div class="footer-brand">
+            <h2 class="logo-text">Rolling Up</h2>
+            <p>Descubre y comparte skateparks, plazas y spots de calle.</p>
+        </div>
+        <div class="footer-links">
+            <a href="#mapa">Mapa</a>
+            <a href="#spots">Spots</a>
+            <a href="/spots/new/">Añadir Spot</a>
+            <a href="#nosotros">Nosotros</a>
+            <a href="/profile/">Perfil</a>
+        </div>
+        <div class="footer-copy">
+            <p>&copy; {% now "Y" %} Rolling Up. Hecho por riders, para riders.</p>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'session.js' %}"></script>
+<script src="{% static 'landing_scroll.js' %}"></script>
+<script>
+    // Logout from any page.
+    document.querySelectorAll('#logout-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            window.location.href = '/profile/';
         });
-    </script>
-    </body>
-</html>
+    });
+</script>
+{% endblock %}

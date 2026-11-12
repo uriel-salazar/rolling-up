@@ -1,207 +1,210 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil &mdash; Rolling Up</title>
-    {% load static %}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body class="profile-page">
-    <header class="app-topbar">
-        {% include "_navbar.html" %}
-    </header>
+{% extends "base.html" %}
+{% block title %}Perfil &mdash; Rolling Up{% endblock %}
+{% block body_class %}profile-page{% endblock %}
+{% block content %}
+<header class="app-topbar">
+    {% include "_navbar.html" %}
+</header>
 
-    <main class="profile-main login-enter">
-        <div data-session="in" hidden>
-            <h1 class="profile-title">Bienvenido, <span id="profile-username">{{ user.username }}</span></h1>
-            <p class="profile-info" id="profile-details">Has iniciado sesión.</p>
-            <p class="profile-actions">
-                <a href="/profile/" class="btn-primary">Mi perfil</a>
-                <button type="button" id="logout-btn-profile" class="btn-ghost">Cerrar sesión</button>
-            </p>
-        </div>
+<main class="profile-main login-enter">
+    {% block profile_content %}
+    <div data-session="in" hidden>
+        <h1 class="profile-title">Bienvenido, <span id="profile-username">{{ user.username }}</span></h1>
+        <p class="profile-info" id="profile-details">Has iniciado sesión.</p>
+        <p class="profile-actions">
+            <a href="/profile/" class="btn-primary">Mi perfil</a>
+            <button type="button" id="logout-btn-profile" class="btn-ghost">Cerrar sesión</button>
+        </p>
+    </div>
 
-        <div data-session="out">
-            <h1 class="profile-title">Iniciar sesión</h1>
-            <p id="profile-info" class="profile-info form-status is-visible">Bienvenido de nuevo a Rolling Up.</p>
+    <div data-session="out">
+        <h1 class="profile-title">Iniciar sesión</h1>
+        <p id="profile-info" class="profile-info form-status is-visible">Bienvenido de nuevo a Rolling Up.</p>
 
-            <form id="login-form" class="profile-form">
-                <div class="field password-field">
-                    <label for="username">Usuario o correo</label>
-                    <input type="text" id="username" name="username" autocomplete="username" required>
+        <form id="login-form" class="profile-form">
+            <div class="field password-field">
+                <label for="username">Usuario o correo</label>
+                <input type="text" id="username" name="username" autocomplete="username" required>
+            </div>
+            <div class="field password-field">
+                <label for="password">Contraseña</label>
+                <div class="password-input">
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                    <button type="button" class="password-toggle" aria-label="Mostrar contraseña" aria-pressed="false">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
-                <div class="field password-field">
-                    <label for="password">Contraseña</label>
-                    <div class="password-input">
-                        <input type="password" id="password" name="password" autocomplete="current-password" required>
-                        <button type="button" class="password-toggle" aria-label="Mostrar contraseña" aria-pressed="false">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-                <button type="submit" class="btn-primary" id="login-btn">
-                    Iniciar sesión
-                    <span class="login-spinner" hidden></span>
-                </button>
-            </form>
+            </div>
+        </form>
 
-            <p class="profile-info" style="margin-top: 24px; font-size: 0.85rem; text-align: center;">
-                ¿No tienes cuenta? <a href="/register/" style="color: var(--white-color); text-decoration: underline;">Crear cuenta</a>
-            </p>
-            <p class="profile-info" style="font-size: 0.85rem; text-align: center;">
-                O {% include "google_button.html" with label="Iniciar sesión con Google" %}
-            </p>
-        </div>
-    </main>
+        <p class="profile-info" style="margin-top: 24px; font-size: 0.85rem; text-align: center;">
+            ¿No tienes cuenta? <a href="/register/" style="color: var(--white-color); text-decoration: underline;">Crear cuenta</a>
+        </p>
+        <p class="profile-info" style="font-size: 0.85rem; text-align: center;">
+            O {% include "google_button.html" with label="Iniciar sesión con Google" %}
+        </p>
+    </div>
+    {% endblock %}
+</main>
+{% endblock %}
 
-    <script src="{% static 'session.js' %}"></script>
-    <script>
-        // The API is on the same host as the page.
-        const API_URL = '';
+{% block extra_scripts %}
+<script src="{% static 'session.js' %}"></script>
+<script>
+    // The API is on the same host as the page.
+    const API_URL = '';
 
-        // When Google OAuth redirects here with the tokens in the
-        // fragment of the url, store them in local storage and clean up
-        // the address bar. The fragment is used because the browser
-        // never sends it to the server.
-        const hash = window.location.hash.replace(/^#/, '');
-        const params = new URLSearchParams(hash || window.location.search);
-        const access = params.get('access');
-        const refresh = params.get('refresh');
-        if (access && refresh) {
-            localStorage.setItem('access', access);
-            localStorage.setItem('refresh', refresh);
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
+    // When Google OAuth redirects here with the tokens in the
+    // fragment of the url, store them in local storage and clean up
+    // the address bar. The fragment is used because the browser
+    // never sends it to the server.
+    const hash = window.location.hash.replace(/^#/, '');
+    const params = new URLSearchParams(hash || window.location.search);
+    const access = params.get('access');
+    const refresh = params.get('refresh');
+    if (access && refresh) {
+        localStorage.setItem('access', access);
+        localStorage.setItem('refresh', refresh);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
-        async function loadProfile() {
-            const token = localStorage.getItem('access');
-            if (!token) return;
+    async function loadProfile() {
+        const token = localStorage.getItem('access');
+        if (!token) return;
 
-            const res = await fetch(`${API_URL}/api/users/?limit=1`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!res.ok) {
-                localStorage.removeItem('access');
-                localStorage.removeItem('refresh');
-                return;
-            }
-
-            const data = await res.json();
-            const user = data.results[0];
-            if (!user) return;
-
-            const username = document.getElementById('profile-username');
-            if (username) {
-                username.textContent = user.username;
-            }
-
-            const details = document.getElementById('profile-details');
-            if (details) {
-                details.textContent = `Has iniciado sesión como ${user.username}.`;
-            }
-        }
-
-        // Toggle password visibility.
-        const toggleBtn = document.querySelector('.password-toggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', function () {
-                const input = document.getElementById('password');
-                const icon = this.querySelector('i');
-                const showing = this.getAttribute('aria-pressed') === 'true';
-                if (showing) {
-                    input.type = 'password';
-                    icon.classList.remove('fa-eye-slash');
-                    icon.classList.add('fa-eye');
-                    this.setAttribute('aria-pressed', 'false');
-                    this.setAttribute('aria-label', 'Show password');
-                } else {
-                    input.type = 'text';
-                    icon.classList.remove('fa-eye');
-                    icon.classList.add('fa-eye-slash');
-                    this.setAttribute('aria-pressed', 'true');
-                    this.setAttribute('aria-label', 'Hide password');
-                }
-            });
-        }
-
-        // Logout handler (works from any page).
-        const logoutBtns = document.querySelectorAll('#logout-btn, #logout-btn-profile');
-        logoutBtns.forEach(btn => {
-            btn.addEventListener('click', async function () {
-                localStorage.removeItem('access');
-                localStorage.removeItem('refresh');
-                window.location.href = '/profile/';
-            });
+        const res = await fetch(`${API_URL}/api/users/?limit=1`, {
+            headers: { Authorization: `Bearer ${token}` }
         });
-
-        // Muestra un mensaje de estado con fade + slide suave.
-        function setStatus(element, message, color) {
-            element.classList.remove('is-visible');
-            element.textContent = message;
-            element.style.color = color;
-            requestAnimationFrame(() => {
-                element.classList.add('is-visible');
-            });
+        if (!res.ok) {
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            return;
         }
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const data = await res.json();
+        const user = data.results[0];
+        if (!user) return;
 
-            const btn = document.getElementById('login-btn');
-            const spinner = btn.querySelector('.login-spinner');
-            const info = document.getElementById('profile-info');
+        const username = document.getElementById('profile-username');
+        if (username) {
+            username.textContent = user.username;
+        }
 
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+        const details = document.getElementById('profile-details');
+        if (details) {
+            details.textContent = `Has iniciado sesión como ${user.username}.`;
+        }
+    }
 
-            // Loading state: spinner dentro del botón, sin mover el layout.
-            btn.disabled = true;
-            spinner.hidden = false;
-            setStatus(info, '', '#f5f5f5');
-
-            try {
-                const res = await fetch(`${API_URL}/api/token/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                if (res.ok) {
-                    const { access, refresh } = await res.json();
-                    localStorage.setItem('access', access);
-                    localStorage.setItem('refresh', refresh);
-
-                    setStatus(info, 'Sesión iniciada.', '#8cc88c');
-
-                    await loadProfile();
-
-                    // Fade suave hacia la página siguiente; el retraso coincide
-                    // con la duración de la transición, no la excede.
-                    document.querySelector('main').classList.add('fade-out');
-
-                    const next = new URLSearchParams(window.location.search).get('next');
-                    setTimeout(() => {
-                        window.location.href = next || '/profile/';
-                    }, 300);
-                } else {
-                    let message = 'Usuario o contraseña incorrectos.';
-                    try {
-                        const data = await res.json();
-                        if (data.detail) message = data.detail;
-                    } catch {}
-                    setStatus(info, message, '#d98b7a');
-                }
-            } catch {
-                setStatus(info, 'No se pudo conectar al servidor. Intenta de nuevo.', '#d98b7a');
-            } finally {
-                btn.disabled = false;
-                spinner.hidden = true;
+    // Toggle password visibility.
+    const toggleBtn = document.querySelector('.password-toggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            const input = document.getElementById('password');
+            const icon = this.querySelector('i');
+            const showing = this.getAttribute('aria-pressed') === 'true';
+            if (showing) {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+                this.setAttribute('aria-pressed', 'false');
+                this.setAttribute('aria-label', 'Show password');
+            } else {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+                this.setAttribute('aria-pressed', 'true');
+                this.setAttribute('aria-label', 'Hide password');
             }
         });
+    }
 
-        loadProfile();
-    </script>
-</body>
-</html>
+    // Logout handler (works from any page).
+    const logoutBtns = document.querySelectorAll('#logout-btn, #logout-btn-profile');
+    logoutBtns.forEach(btn => {
+        btn.addEventListener('click', async function () {
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            window.location.href = '/profile/';
+        });
+    });
+
+    // Muestra un mensaje de estado con fade + slide suave.
+    function setStatus(element, message, color) {
+        element.classList.remove('is-visible');
+        element.textContent = message;
+        element.style.color = color;
+        requestAnimationFrame(() => {
+            element.classList.add('is-visible');
+        });
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btn = document.getElementById('login-btn');
+        const spinner = btn.querySelector('.login-spinner');
+        const info = document.getElementById('profile-info');
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        // Loading state: spinner dentro del botón, sin mover el layout.
+        btn.disabled = true;
+        spinner.hidden = false;
+        setStatus(info, '', '#f5f5f5');
+
+        try {
+            const res = await fetch(`${API_URL}/api/token/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (res.ok) {
+                const { access, refresh } = await res.json();
+                localStorage.setItem('access', access);
+                localStorage.setItem('refresh', refresh);
+
+                setStatus(info, 'Sesión iniciada.', '#8cc88c');
+
+                await loadProfile();
+
+                // Fade suave hacia la página siguiente; el retraso coincide
+                // con la duración de la transición, no la excede.
+                document.querySelector('main').classList.add('fade-out');
+
+                const next = new URLSearchParams(window.location.search).get('next');
+                setTimeout(() => {
+                    window.location.href = next || '/profile/';
+                }, 300);
+            } else {
+                let message = 'Usuario o contraseña incorrectos.';
+                try {
+                    const data = await res.json();
+                    if (data.detail) message = data.detail;
+                } catch {}
+                setStatus(info, message, '#d98b7a');
+            }
+        } catch {
+            setStatus(info, 'No se pudo conectar al servidor. Intenta de nuevo.', '#d98b7a');
+        } finally {
+            btn.disabled = false;
+            spinner.hidden = true;
+        }
+    });
+
+    loadProfile();
+</script>
+
+<script>
+    // Logout from any page.
+    document.querySelectorAll('#logout-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            window.location.href = '/profile/';
+        });
+    });
+</script>
+{% endblock %}

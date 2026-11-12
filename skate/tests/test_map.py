@@ -267,9 +267,10 @@ class TileProxyTests(TestCase):
         self.assertEqual(tile_range(None, None, 15), [])
         self.assertEqual(tile_range("abc", 1.5, 15), [])
 
-    @patch("skate.tiles._session.get")
-    def test_the_tiles_are_brought_into_the_cache(self, mock_get):
+    @patch("skate.tiles._thread_session")
+    def test_the_tiles_are_brought_into_the_cache(self, mock_session):
         """The tiles are fetched before the browser asks for them."""
+        mock_get = mock_session.return_value.get
         mock_get.return_value = FakeTileResponse(
             200, b"a-png", {"Content-Type": "image/png"}
         )
@@ -284,8 +285,9 @@ class TileProxyTests(TestCase):
         )
         self.assertIsNotNone(cache.get(key))
 
-    @patch("skate.tiles._session.get")
-    def test_the_tiles_that_are_in_the_cache_are_not_fetched(self, mock_get):
+    @patch("skate.tiles._thread_session")
+    def test_the_tiles_that_are_in_the_cache_are_not_fetched(self, mock_session):
+        mock_get = mock_session.return_value.get
         mock_get.return_value = FakeTileResponse(
             200, b"a-png", {"Content-Type": "image/png"}
         )
