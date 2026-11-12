@@ -895,7 +895,6 @@
             }
             // The registered spots stay usable when Overpass is down.
             console.warn('The live skateparks could not be loaded:', error);
-            showStatus('No se pudieron cargar los spots de OpenStreetMap.', 'error');
         }
     }
 
