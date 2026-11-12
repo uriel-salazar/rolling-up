@@ -72,6 +72,8 @@ const elements = {};
     'feed-grid', 'feed-count', 'feed-search', 'feed-search-clear',
     'feed-location-search', 'feed-location-results', 'feed-location-clear',
     'feed-more',
+    'feed-pagination', 'feed-pagination-prev', 'feed-pagination-next',
+    'feed-pagination-page',
     'spot-modal', 'spot-modal-close', 'spot-modal-image', 'spot-modal-name',
     'spot-modal-category', 'spot-modal-address', 'spot-modal-directions',
     'spot-modal-body',
@@ -79,6 +81,9 @@ const elements = {};
 elements['feed-search'].value = '';
 elements['feed-location-search'].value = '';
 elements['feed-more'].hidden = true;
+elements['feed-pagination'].hidden = true;
+elements['feed-pagination-prev'].hidden = true;
+elements['feed-pagination-next'].hidden = true;
 
 // ------------------------------------------------------------------
 // The API
@@ -376,6 +381,7 @@ function textOf(node) {
             json: () => Promise.resolve({
                 count: 2,
                 next: 'http://test/api/spots/?limit=24&offset=24',
+                previous: null,
                 results: SPOTS.slice(0, 1),
             }),
         });
@@ -384,8 +390,19 @@ function textOf(node) {
     elements['feed-search'].value = '';
     elements['feed-search'].dispatch('input');
     await wait(450);
-    check('the next page is asked', fetchCalls.length > 1, String(fetchCalls.length));
-    check('it follows the link of the API',
+    check('the first page is asked', fetchCalls.length === 1, String(fetchCalls.length));
+    check('the button of the next page is shown',
+        elements['feed-pagination-next'].hidden === false,
+        String(elements['feed-pagination-next'].hidden));
+    check('the button of the previous page is hidden',
+        elements['feed-pagination-prev'].hidden === true,
+        String(elements['feed-pagination-prev'].hidden));
+
+    // The button asks for the next page.
+    elements['feed-pagination-next'].dispatch('click');
+    await wait(60);
+    check('the next page is asked', fetchCalls.length === 2, String(fetchCalls.length));
+    check('it asks for the spots that follow',
         fetchCalls.some((url) => url.indexOf('offset=24') !== -1),
         fetchCalls.join(' | '));
 

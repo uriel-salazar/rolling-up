@@ -28,8 +28,15 @@ function makeElement(id, attribute) {
         tagName: 'DIV',
         hidden: false,
         attributes: {},
+        listeners: {},
         getAttribute(name) { return this.attributes[name]; },
         setAttribute(name, value) { this.attributes[name] = value; },
+        addEventListener(name, fn) {
+            (this.listeners[name] = this.listeners[name] || []).push(fn);
+        },
+        dispatch(name) {
+            (this.listeners[name] || []).forEach((fn) => fn());
+        },
     };
     if (attribute) {
         element.attributes[attribute] = attribute;
@@ -56,6 +63,9 @@ function buildSandbox(store) {
                 return Object.values(elements).filter(function (element) {
                     return element.getAttribute('data-session') !== undefined;
                 });
+            },
+            getElementById(id) {
+                return elements[id] || null;
             },
         },
         localStorage: {
@@ -126,6 +136,43 @@ console.log('\n== 2. A visitor with a session ==');
     check('the part without a session is hidden', outPart.hidden === true);
     check('the script tells that there is a session',
         built.sandbox.RollingUpSession.hasSession() === true);
+}
+
+// ------------------------------------------------------------------
+// 3. The menu of the mobile
+// ------------------------------------------------------------------
+
+console.log('\n== 3. The menu of the mobile ==');
+{
+    const store = {};
+    const built = buildSandbox(store);
+    const open = makeElement('menu-open-button');
+    const close = makeElement('menu-close-button');
+    built.elements['menu-open-button'] = open;
+    built.elements['menu-close-button'] = close;
+
+    const bodyClasses = new Set();
+    built.sandbox.document.body.classList = {
+        _set: bodyClasses,
+        add(name) { bodyClasses.add(name); },
+        remove(name) { bodyClasses.delete(name); },
+        contains(name) { return bodyClasses.has(name); },
+        toggle(name) { bodyClasses.has(name) ? bodyClasses.delete(name) : bodyClasses.add(name); },
+    };
+
+    vm.createContext(built.sandbox);
+    vm.runInContext(fs.readFileSync(JS_PATH, 'utf8'), built.sandbox);
+
+    check('the menu is closed at the start',
+        bodyClasses.has('show-mobile-menu') === false);
+
+    open.dispatch('click');
+    check('the button opens the menu',
+        bodyClasses.has('show-mobile-menu') === true);
+
+    close.dispatch('click');
+    check('the button closes the menu',
+        bodyClasses.has('show-mobile-menu') === false);
 }
 
 // ------------------------------------------------------------------

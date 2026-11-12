@@ -224,7 +224,8 @@ class MapPageTests(TestCase):
         self.assertTemplateUsed(response, "map.html")
         self.assertContains(response, 'id="map"')
         self.assertContains(response, 'id="spot-list"')
-        self.assertContains(response, 'id="spot-search"')
+        # The search of the map is in the list of the results.
+        self.assertContains(response, 'id="map-location-search"')
 
     def test_the_key_of_the_provider_is_not_in_the_page(self):
         """The tiles go through the proxy, the key stays on the server."""

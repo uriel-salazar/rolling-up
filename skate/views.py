@@ -454,7 +454,7 @@ class SpotsViewSet(ModelViewSet):
         * ``category`` -- ``skatepark``, ``street`` or ``diy``,
         * ``source``   -- ``osm`` or ``community``.
         """
-        queryset = Spots.objects.annotate(
+        queryset = Spots.objects.select_related('user').prefetch_related('photos').annotate(
             average_rating=Avg('rating__score'),
             rating_count=Count('rating', distinct=True),
             has_image=Case(

@@ -26,7 +26,7 @@
      *                       `{ search: 'oasis' }`. They are the ones the
      *                       endpoint already understands.
      * @param {Object} options `{ limit, maxPages }`.
-     * @returns {Promise<Object>} `{ results, count }`.
+     * @returns {Promise<Object>} `{ results, count, next, previous }`.
      */
     async function fetchSpots(params, options) {
         const settings = options || {};
@@ -45,6 +45,10 @@
         let results = [];
         let count = 0;
         let pages = 0;
+        // The links to the pages that follow and to the ones that come
+        // before, so the pages of the feed can be shown.
+        let next = null;
+        let previous = null;
 
         while (url && pages < maxPages) {
             const response = await fetch(url, {
@@ -61,6 +65,8 @@
 
             results = results.concat(page);
             count = typeof data.count === 'number' ? data.count : results.length;
+            next = data.next || null;
+            previous = data.previous || null;
             url = data.next;
             pages += 1;
 
@@ -69,7 +75,12 @@
             }
         }
 
-        return { results: results, count: count };
+        return {
+            results: results,
+            count: count,
+            next: next,
+            previous: previous,
+        };
     }
 
     /**

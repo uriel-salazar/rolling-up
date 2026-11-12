@@ -433,19 +433,37 @@ class FeedNavbarTests(TestCase):
     def test_the_button_to_add_a_spot_is_always_there(self):
         response = self.client.get("/feed/")
 
-        self.assertContains(response, 'href="/spots/new/" class="app-add"')
-        self.assertNotContains(response, 'class="app-add" data-session="in"')
+        self.assertContains(response, 'href="/spots/new/"')
+        self.assertContains(response, "Añadir Spot")
+
+    def test_the_bar_of_the_page_is_the_shared_one(self):
+        """Every page of the application uses the same bar."""
+        response = self.client.get("/feed/")
+
+        self.assertContains(response, 'class="navbar section-content"')
 
     def test_the_stylesheet_has_the_hover_of_the_button(self):
-        stylesheet = (PROJECT_ROOT / "skate" / "static" / "styles.css").read_text(
-            encoding="utf-8"
-        )
+        """The button has to react when the pointer is on it."""
+        stylesheets = [
+            (PROJECT_ROOT / "skate" / "static" / name).read_text(encoding="utf-8")
+            for name in ("styles.css", "feed.css")
+        ]
 
-        self.assertIn(".app-add:hover", stylesheet)
+        self.assertTrue(
+            any(".nav-link:hover" in sheet for sheet in stylesheets),
+            "The stylesheet needs a rule for the hover of the button that "
+            "adds a spot.",
+        )
 
     def test_the_button_uses_the_font_of_the_application(self):
-        stylesheet = (PROJECT_ROOT / "skate" / "static" / "feed.css").read_text(
-            encoding="utf-8"
-        )
+        """The button of the bar has to use the font of the page."""
+        stylesheets = [
+            (PROJECT_ROOT / "skate" / "static" / name).read_text(encoding="utf-8")
+            for name in ("styles.css", "feed.css")
+        ]
 
-        self.assertIn(".feed-page .app-add", stylesheet)
+        self.assertTrue(
+            any(".nav-link" in sheet and "Manrope" in sheet for sheet in stylesheets),
+            "The button that adds a spot has to use the font of the "
+            "application.",
+        )
