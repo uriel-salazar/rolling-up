@@ -5,10 +5,6 @@
 <link rel="stylesheet" href="{% static 'feed.css' %}">
 {% endblock %}
 {% block content %}
-<header class="app-topbar">
-    {% include "_navbar.html" %}
-</header>
-
 <main class="feed-main">
     <section class="feed-intro">
         <div class="feed-intro-text">
@@ -82,9 +78,20 @@
 
 <!-- The scripts go at the end of the page, so the whole markup of
      the page exists when they look for their elements. -->
+{% block extra_scripts %}
 <script src="{% static 'session.js' %}"></script>
 <script src="{% static 'api.js' %}"></script>
 <script src="{% static 'rating.js' %}"></script>
 <script src="{% static 'location_search.js' %}"></script>
 <script src="{% static 'feed.js' %}"></script>
+<script>
+    // Logout from any page.
+    document.querySelectorAll('#logout-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            window.location.href = '/profile/';
+        });
+    });
+</script>
 {% endblock %}

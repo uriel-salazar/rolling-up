@@ -10,13 +10,13 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}home-page{% endblock %}">
-    <!-- Shared fixed header -->
-    <header class="app-topbar">
-        {% include "_navbar.html" %}
-    </header>
+    {% block navbar %}
+    {% include "_navbar.html" %}
+    {% endblock %}
 
     <div class="page-content">
         {% block content %}{% endblock %}
     </div>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

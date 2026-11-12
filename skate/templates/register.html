@@ -3,10 +3,6 @@
 {% block title %}Crear cuenta &mdash; Rolling Up{% endblock %}
 {% block body_class %}profile-page{% endblock %}
 {% block content %}
-<header class="app-topbar">
-    {% include "_navbar.html" %}
-</header>
-
 <main>
     <div class="profile-main login-enter">
         <div data-session="in" hidden>
@@ -48,7 +44,6 @@
     </div>
 </main>
 {% endblock %}
-
 {% block extra_scripts %}
 <script src="{% static 'session.js' %}"></script>
 <script>

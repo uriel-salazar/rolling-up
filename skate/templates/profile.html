@@ -3,10 +3,6 @@
 {% block title %}Perfil &mdash; Rolling Up{% endblock %}
 {% block body_class %}profile-page{% endblock %}
 {% block content %}
-<header class="app-topbar">
-    {% include "_navbar.html" %}
-</header>
-
 <main>
     <div class="profile-main login-enter">
         {% block profile_content %}
@@ -37,6 +33,10 @@
                         </button>
                     </div>
                 </div>
+                <button type="submit" class="btn-primary" id="login-btn">
+                    Iniciar sesión
+                    <span class="login-spinner" hidden></span>
+                </button>
             </form>
 
             <p class="profile-info" style="margin-top: 24px; font-size: 0.85rem; text-align: center;">
@@ -50,7 +50,6 @@
     </div>
 </main>
 {% endblock %}
-
 {% block extra_scripts %}
 <script src="{% static 'session.js' %}"></script>
 <script>

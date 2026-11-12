@@ -1,26 +1,25 @@
-<nav class="navbar section-content">
-    <a href="/" class="logo-text">Rolling Up</a>
-    <ul class="nav-menu">
-        <button id="menu-close-button" class="fas fa-times"> </button>
-        <li class="nav-item"><a href="/map/" class="nav-link">Mapa</a></li>
-        <li class="nav-item"><a href="/feed/" class="nav-link">Spots</a></li>
-        <li class="nav-item"><a href="/spots/new/" class="nav-link">Añadir Spot</a></li>
-        <li class="nav-item" data-session="in" hidden>
-            <a href="/profile/" class="nav-link">Perfil</a>
-        </li>
-        <li class="nav-item" data-session="in" hidden>
-            <div class="auth-dropdown">
-                <button type="button" class="nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-user"></i>
-                </button>
-                <ul class="auth-dropdown-menu" role="menu">
-                    <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
-                    <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
-                </ul>
-            </div>
-        </li>
-        <li class="nav-item" data-session="out"><a href="/profile/" class="nav-link">Iniciar sesión</a></li>
-        <li class="nav-item" data-session="out"><a href="/register/" class="nav-link">Crear cuenta</a></li>
-    </ul>
-    <button id='menu-open-button' class='fas fa-bars'></button>
+<nav class="app-topbar" aria-label="Principal">
+    <a href="/" class="app-brand">Rolling Up</a>
+
+    <nav class="app-nav" aria-label="Navegación principal">
+        <a href="/map/">Mapa</a>
+        <a href="/feed/">Spots</a>
+        <a href="/profile/" class="app-nav-profile" data-session="in" hidden>Perfil</a>
+        <div class="auth-dropdown" data-session="in" hidden>
+            <button type="button" class="app-nav-profile" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-user"></i>
+            </button>
+            <ul class="auth-dropdown-menu" role="menu">
+                <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
+                <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
+            </ul>
+        </div>
+        <a href="/profile/" class="nav-login" data-session="out">Iniciar sesión</a>
+        <a href="/register/" class="nav-signup" data-session="out">Crear cuenta</a>
+    </nav>
+
+    <span class="app-topbar-spacer"></span>
+
+    <a href="/spots/new/" class="app-add" data-session="in" hidden>Añadir spot</a>
+    <a href="/profile/" class="app-add nav-login-btn" data-session="out">Iniciar sesión</a>
 </nav>

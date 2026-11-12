@@ -993,27 +993,29 @@
             });
     }
 
-    searchInput.addEventListener('input', function () {
-        window.clearTimeout(searchTimer);
-        clearSearchButton.hidden = searchInput.value === '';
+    if (searchInput && clearSearchButton) {
+        searchInput.addEventListener('input', function () {
+            window.clearTimeout(searchTimer);
+            clearSearchButton.hidden = searchInput.value === '';
 
-        searchTimer = window.setTimeout(refresh, SEARCH_DELAY);
-    });
+            searchTimer = window.setTimeout(refresh, SEARCH_DELAY);
+        });
 
-    searchInput.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
+        searchInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                searchInput.value = '';
+                clearSearchButton.hidden = true;
+                refresh();
+            }
+        });
+
+        clearSearchButton.addEventListener('click', function () {
             searchInput.value = '';
             clearSearchButton.hidden = true;
             refresh();
-        }
-    });
-
-    clearSearchButton.addEventListener('click', function () {
-        searchInput.value = '';
-        clearSearchButton.hidden = true;
-        refresh();
-        searchInput.focus();
-    });
+            searchInput.focus();
+        });
+    }
 
     filtersPanel.addEventListener('change', function () {
         refresh();

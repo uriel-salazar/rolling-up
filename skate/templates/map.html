@@ -3,7 +3,39 @@
 {% block title %}Spots &mdash; Rolling Up - Map{% endblock %}
 {% block body_class %}map-page{% endblock %}
 {% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="{% static 'map.css' %}">
+{% endblock %}
+{% block navbar %}
+<header class="map-topbar">
+    <a href="/" class="map-brand">Rolling Up</a>
+
+    <nav class="map-nav">
+        <a href="/feed/" class="map-nav-link">Lista</a>
+        <a href="/spots/new/" class="map-nav-link">Añadir Spot</a>
+        <a href="/profile/" class="map-nav-link" data-session="in" hidden>Perfil</a>
+        <div class="auth-dropdown map-auth-dropdown" data-session="in" hidden>
+            <button type="button" class="map-nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-user"></i>
+            </button>
+            <ul class="auth-dropdown-menu" role="menu">
+                <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
+                <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
+            </ul>
+        </div>
+        <a href="/profile/" class="map-nav-link" data-session="out">Iniciar sesión</a>
+        <a href="/register/" class="map-nav-link" data-session="out">Crear cuenta</a>
+    </nav>
+
+    <div class="map-search">
+        <label class="visually-hidden" for="spot-search">Buscar spots</label>
+        <span class="map-search-icon" aria-hidden="true">&#9906;</span>
+        <input type="search" id="spot-search" autocomplete="off"
+               placeholder="Busca un spot por nombre o descripción">
+        <button type="button" id="clear-search" class="map-search-clear"
+                aria-label="Limpiar la búsqueda" hidden>&times;</button>
+    </div>
+</header>
 {% endblock %}
 {% block content %}
 <div class="map-layout">
@@ -65,42 +97,42 @@
              role="application"
              aria-label="Mapa de los spots de skate"></div>
 
-            <!-- Sidebar with the results -->
-            <aside class="map-sidebar" id="map-sidebar">
-                <div class="sidebar-head">
-                    <h1 class="sidebar-title">Spots</h1>
-                    <button type="button" id="sidebar-toggle" class="sidebar-toggle"
-                            aria-expanded="false" aria-controls="map-sidebar">
-                        <span class="visually-hidden">Mostrar u ocultar la lista</span>
-                        <span aria-hidden="true">&#9776;</span>
-                    </button>
-                </div>
+        <!-- Sidebar with the results -->
+        <aside class="map-sidebar" id="map-sidebar">
+            <div class="sidebar-head">
+                <h1 class="sidebar-title">Spots</h1>
+                <button type="button" id="sidebar-toggle" class="sidebar-toggle"
+                        aria-expanded="false" aria-controls="map-sidebar">
+                    <span class="visually-hidden">Mostrar u ocultar la lista</span>
+                    <span aria-hidden="true">&#9776;</span>
+                </button>
+            </div>
 
-                <p id="map-status" class="sidebar-status" role="status" aria-live="polite">
-                    Cargando spots...
+            <p id="map-status" class="sidebar-status" role="status" aria-live="polite">
+                Cargando spots...
+            </p>
+
+            <ul id="spot-list" class="spot-list"></ul>
+
+            <div id="spot-preview" class="spot-preview" hidden>
+                <button type="button" id="preview-close" class="preview-close"
+                        aria-label="Cerrar">&times;</button>
+                <img id="preview-image" class="preview-image" alt="" hidden>
+                <span id="preview-image-attribution" class="visually-hidden"></span>
+                <h2 class="preview-name" id="preview-name"></h2>
+                <p class="preview-meta">
+                    <span class="preview-category" id="preview-category"></span>
+                    <span class="preview-rating" id="preview-rating"></span>
+                    <span class="preview-source" id="preview-source"></span>
                 </p>
-
-                <ul id="spot-list" class="spot-list"></ul>
-
-                <div id="spot-preview" class="spot-preview" hidden>
-                    <button type="button" id="preview-close" class="preview-close"
-                            aria-label="Cerrar">&times;</button>
-                    <img id="preview-image" class="preview-image" alt="" hidden>
-                    <span id="preview-image-attribution" class="visually-hidden"></span>
-                    <h2 class="preview-name" id="preview-name"></h2>
-                    <p class="preview-meta">
-                        <span class="preview-category" id="preview-category"></span>
-                        <span class="preview-rating" id="preview-rating"></span>
-                        <span class="preview-source" id="preview-source"></span>
-                    </p>
-                    <p class="preview-body" id="preview-body"></p>
-                <div class="preview-actions">
-                    <a class="preview-link" id="preview-link" href="#">Ver detalle</a>
-                    <a class="preview-link" id="preview-directions" href="#"
-                       target="_blank" rel="noopener" hidden>Obtener indicaciones</a>
-                </div>
-                </div>
-            </aside>
+                <p class="preview-body" id="preview-body"></p>
+            <div class="preview-actions">
+                <a class="preview-link" id="preview_link" href="#">Ver detalle</a>
+                <a class="preview-link" id="preview-directions" href="#"
+                   target="_blank" rel="noopener" hidden>Obtener indicaciones</a>
+            </div>
+            </div>
+        </aside>
     </div>
 </div>
 
@@ -110,9 +142,20 @@
     <span id="sheet-handle-text">Spots</span>
     <span aria-hidden="true" class="sheet-handle-arrow">&#9650;</span>
 </button>
-
+{% endblock %}
+{% block extra_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" referrerpolicy="no-referrer"></script>
 <script src="{% static 'session.js' %}"></script>
 <script src="{% static 'location_search.js' %}"></script>
 <script src="{% static 'map.js' %}"></script>
+<script>
+    // Logout from any page.
+    document.querySelectorAll('#logout-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            window.location.href = '/profile/';
+        });
+    });
+</script>
 {% endblock %}
