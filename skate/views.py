@@ -13,6 +13,8 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.viewsets import ModelViewSet
+
+from skate.tiles import warm_tiles
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.generics import RetrieveUpdateAPIView
 from . import google_auth
@@ -132,6 +134,10 @@ def spot_detail_page(request, pk):
             user_rating = Rating.objects.get(spot=spot, user=request.user)
         except Rating.DoesNotExist:
             pass
+
+    # Warm up the tiles around the spot so they are already in the cache
+    # when the browser asks for them.
+    warm_tiles(spot.latitude, spot.longitude, tile_config['zoom'])
 
     return render(
         request,

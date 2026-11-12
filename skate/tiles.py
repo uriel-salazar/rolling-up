@@ -9,13 +9,16 @@ directly for two reasons:
   application and the caching headers of the provider can be passed on,
   which the usage policies of the tile services ask for.
 
-Only the tiles that the browser is showing are fetched, there is no
-prefetching and no offline mode.
+Only the tiles that the browser is showing are fetched by the proxy, but
+the tiles that will be needed around a spot can be warmed up in advance
+with :func:`warm_tiles`, so they are already in the cache when the
+browser asks for them.
 """
 
 from __future__ import annotations
 
 import logging
+import math
 import re
 
 import requests
@@ -26,6 +29,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 logger = logging.getLogger(__name__)
+
+# The connection to the provider of the tiles is kept open. Without it
+# every tile opens a new connection and repeats the handshake, and
+# the map waits for it.
+_session = requests.Session()
+_session.headers.update({"User-Agent": settings.OVERPASS_USER_AGENT})
 
 # A tile is /{z}/{x}/{y}.png and the retina version adds @2x before the
 # extension.
@@ -77,7 +86,7 @@ def tile(request, path):
     headers = {'User-Agent': settings.OVERPASS_USER_AGENT}
 
     try:
-        response = requests.get(url, headers=headers, timeout=30)
+        response = _session.get(url, headers=headers, timeout=30)
     except requests.RequestException as exc:
         logger.warning("The tile %s could not be fetched: %s", path, exc)
         return HttpResponse("The tile could not be fetched.", status=502)
@@ -160,3 +169,84 @@ def pick_subdomain(zoom: int, x: int, y: int) -> str:
     if not subdomains:
         return 'a'
     return subdomains[(zoom * 31 + x * 17 + y) % len(subdomains)]
+
+
+def tile_range(latitude: float, longitude: float, zoom: int):
+    """Return the tiles that show a place at a level of zoom.
+
+    The map of the page of a spot is small, but the browser asks for
+    the tiles around the place, and it asks for them at the same time.
+    The server answers them one after the other, so the map appears
+    slowly. The tiles are brought here before the browser asks for
+    them, and then the answer comes from the cache.
+
+    Args:
+        latitude: The latitude of the place.
+        longitude: The longitude of the place.
+        zoom: The level of zoom of the map.
+
+    Returns:
+        A list of ``(zoom, x, y)``.
+    """
+    if not all(isinstance(value, (int, float)) for value in (latitude, longitude)):
+        return []
+
+    # The number of tiles that the browser asks for around the place.
+    radius = 2
+
+    # The position of the place in the grid of tiles.
+    scale = 2 ** zoom
+    x = int((longitude + 180.0) / 360.0 * scale)
+    sin_lat = math.sin(math.radians(max(-85.0, min(85.0, latitude))))
+    y = int(
+        (0.5 - math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * math.pi)) * scale
+    )
+
+    tiles = []
+    for delta_x in range(-radius, radius + 1):
+        for delta_y in range(-radius, radius + 1):
+            tile_x = x + delta_x
+            tile_y = y + delta_y
+            if 0 <= tile_x < scale and 0 <= tile_y < scale:
+                tiles.append((zoom, tile_x, tile_y))
+
+    return tiles
+
+
+def warm_tiles(latitude, longitude, zoom):
+    """Bring the tiles of a place into the cache of the server.
+
+    It is called when the page of a spot is served, before the browser
+    asks for the tiles. The tiles that are already in the cache are
+    left alone.
+    """
+    if not settings.OSM_TILE_URL:
+        return
+
+    for tile_zoom, tile_x, tile_y in tile_range(latitude, longitude, zoom):
+        cache_key = 'tile:%d:%d:%d:%s' % (tile_zoom, tile_x, tile_y, '1x')
+        if cache.get(cache_key) is not None:
+            continue
+
+        url = build_tile_url(tile_zoom, tile_x, tile_y, '')
+        if url is None:
+            continue
+
+        try:
+            response = _session.get(url, timeout=10)
+        except requests.RequestException:
+            continue
+
+        if not response.ok:
+            continue
+
+        content_type = response.headers.get('Content-Type', 'image/png')
+        max_age = response.headers.get('Cache-Control')
+        if not max_age:
+            max_age = f"public, max-age={DEFAULT_CACHE_SECONDS}"
+
+        cache.set(
+            cache_key,
+            (response.content, content_type, max_age),
+            DEFAULT_CACHE_SECONDS,
+        )
