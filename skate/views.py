@@ -137,13 +137,14 @@ def spot_detail_page(request, pk):
 
     # Warm up the tiles around the spot so they are already in the cache
     # when the browser asks for them.
-    warm_tiles(spot.latitude, spot.longitude, tile_config['zoom'])
+    warm_tiles(spot.latitude, spot.longitude, tile_config['max_zoom'])
 
     return render(
         request,
         'spot_detail.html',
         {
             'spot': spot,
+            'spot_user_id': spot.user_id,
             'main_image': main_image,
             'additional_photos': additional_photos,
             'address': address,

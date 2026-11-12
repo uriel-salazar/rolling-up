@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <link rel="stylesheet" href="{% static 'map.css' %}">
 </head>
-<body class="spot-detail-page" data-spot-id="{{ spot.id }}">
+<body class="spot-detail-page" data-spot-id="{{ spot.id }}" data-spot-user-id="{{ spot_user_id }}">
     <header class="app-topbar">
         <a href="/" class="app-brand">Rolling Up</a>
 
@@ -46,6 +46,18 @@
             {% if spot.body %}
             <p class="spot-description">{{ spot.body }}</p>
             {% endif %}
+            {% if spot.created_at %}
+            <p class="spot-added">Añadido el {{ spot.created_at|date:"d/m/Y" }}</p>
+            {% endif %}
+
+            <div class="spot-actions">
+                <a href="{% url 'spot_edit' spot.id %}" class="btn-primary spot-edit" hidden>
+                    Editar spot
+                </a>
+                <button type="button" class="btn-ghost spot-delete" hidden data-spot-id="{{ spot.id }}">
+                    Eliminar spot
+                </button>
+            </div>
         </section>
 
         <!-- Photos --------------------------------------------------------- -->

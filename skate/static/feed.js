@@ -100,15 +100,13 @@
         const info = document.createElement('div');
         info.className = 'spot-card-info';
 
-        // The name opens the spot on the map.
-        const name = document.createElement('h2');
-        name.className = 'spot-card-name';
-
+        // The name opens the detail page of the spot. It never opens
+        // the map: every spot has its own page at /spots/<id>/.
         const title = document.createElement('a');
         title.className = 'spot-card-title';
         title.href = spot.external && spot.osm_type && spot.osm_id
             ? 'https://www.openstreetmap.org/' + spot.osm_type + '/' + spot.osm_id
-            : '/map/?spot=' + encodeURIComponent(spot.id);
+            : '/spots/' + String(spot.id) + '/';
         title.textContent = spot.name_spot;
 
         if (spot.external) {
@@ -116,6 +114,8 @@
             title.rel = 'noopener noreferrer';
         }
 
+        const name = document.createElement('h2');
+        name.className = 'spot-card-name';
         name.appendChild(title);
         info.appendChild(name);
 

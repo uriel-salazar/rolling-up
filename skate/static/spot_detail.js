@@ -9,6 +9,7 @@
     'use strict';
 
     const spotId = document.body.dataset.spotId;
+    const spotUserId = document.body.dataset.spotUserId || null;
     const token = localStorage.getItem('access');
 
     /**
@@ -204,6 +205,68 @@
 
     // The delete buttons are shown only to the uploader of the photo.
     refreshDeleteButtons();
+
+    // ------------------------------------------------------------------
+    // The actions that only the owner of the spot can do
+    // ------------------------------------------------------------------
+
+    /** Show the edit and delete buttons only when the visitor of the
+         browser is the rider who published the spot. The session lives
+         in the local storage, so the server can not know who reads the
+         page: this is decided here, and the API enforces it again when
+         the request is sent. */
+    function showOwnerActions() {
+        const id = sessionUserId();
+        const isOwner = Boolean(id && spotUserId && String(id) === String(spotUserId));
+
+        document.querySelectorAll('.spot-edit, .spot-delete').forEach(function (button) {
+            button.hidden = !isOwner;
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Delete the spot (only its owner can do it)
+    // ------------------------------------------------------------------
+
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('.spot-delete');
+        if (!button) {
+            return;
+        }
+
+        if (!token) {
+            return;
+        }
+
+        if (!confirm('¿Eliminar este spot? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        const id = button.getAttribute('data-spot-id') || spotId;
+
+        fetch('/api/spots/' + id + '/', {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Accept': 'application/json',
+            },
+        })
+            .then(function (response) {
+                if (response.ok) {
+                    window.location.href = '/feed/';
+                    return;
+                }
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('access');
+                    localStorage.removeItem('refresh');
+                    window.location.href = '/profile/';
+                    return;
+                }
+            })
+            .catch(function () {
+                // The delete failed, the page stays as it was.
+            });
+    });
 
     // ------------------------------------------------------------------
     // Rating
@@ -620,5 +683,8 @@
     if (spotId) {
         document.body.dataset.spotId = spotId;
     }
+
+    // The edit and delete buttons belong only to the owner of the spot.
+    showOwnerActions();
 
 })();
