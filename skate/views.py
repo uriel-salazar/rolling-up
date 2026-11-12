@@ -25,7 +25,12 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly,AllowAny
 from .serializers import UserSerializer,SpotSerializer,RatingSerializer,SpotPhotoSerializer
 from rest_framework.pagination import LimitOffsetPagination
-from .permissions import IsOwnerOrReadOnly, IsUploaderOrReadOnly
+from .permissions import (
+    IsOwnerOrReadOnly,
+    IsOwnerOrReadOnlyOrSpotImageManager,
+    IsUploaderOrReadOnly,
+    is_special_image_manager,
+)
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -199,6 +204,7 @@ def spot_detail_page(request, pk):
             'rating_count': rating_count,
             'user_rating': user_rating,
             'tile_config': tile_config,
+            'can_manage_any_spot': is_special_image_manager(request.user),
         },
     )
 
@@ -379,6 +385,7 @@ def spot_form(request, pk=None):
         spot is not None
         and request.user.is_authenticated
         and spot.user_id != request.user.id
+        and not is_special_image_manager(request.user)
     ):
         raise PermissionDenied("You can only edit your own spots.")
 
@@ -445,7 +452,7 @@ class UserViewSet(ModelViewSet):
     
 class SpotsViewSet(ModelViewSet):
 
-    permission_classes = [IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnlyOrSpotImageManager]
 
     queryset= Spots.objects.all()
     pagination_class = LimitOffsetPagination

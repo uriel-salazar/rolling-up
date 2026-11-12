@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <link rel="stylesheet" href="{% static 'map.css' %}">
 </head>
-<body class="spot-detail-page" data-spot-id="{{ spot.id }}" data-spot-user-id="{{ spot_user_id }}">
+<body class="spot-detail-page" data-spot-id="{{ spot.id }}" data-spot-user-id="{{ spot_user_id }}" data-can-manage-any-spot="{{ can_manage_any_spot|yesno:'true,false' }}">
     <main class="spot-detail-main">
         <section class="spot-header" id="spot-header">
             <div class="spot-badge">{{ spot.get_source_display }}</div>

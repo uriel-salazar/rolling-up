@@ -253,6 +253,27 @@ class SpotCoordinateAPITests(TestCase):
         spot.refresh_from_db()
         self.assertAlmostEqual(float(spot.latitude), 20.0, places=6)
 
+    def test_the_special_image_manager_can_edit_any_spot(self):
+        manager = User.objects.create_user(
+            username="urieelsalazarr",
+            email="urieelsalazarr@gmail.com",
+            password="secret-password",
+        )
+        spot = Spots.objects.create(
+            name_spot="Un spot", user=self.other_user, latitude=20.0, longitude=-103.0
+        )
+        self.client.force_authenticate(manager)
+
+        response = self.client.patch(
+            f"/api/spots/{spot.pk}/",
+            {"image_url": make_image_file("cover.jpg")},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        spot.refresh_from_db()
+        self.assertTrue(spot.image_url)
+
     def test_the_spot_can_still_be_deleted(self):
         spot = Spots.objects.create(
             name_spot="Un spot", user=self.user, latitude=20.0, longitude=-103.0

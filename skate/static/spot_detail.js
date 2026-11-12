@@ -217,7 +217,8 @@
          the request is sent. */
     function showOwnerActions() {
         const id = sessionUserId();
-        const isOwner = Boolean(id && spotUserId && String(id) === String(spotUserId));
+        const canManageAnySpot = document.body.dataset.canManageAnySpot === 'true';
+        const isOwner = canManageAnySpot || Boolean(id && spotUserId && String(id) === String(spotUserId));
 
         document.querySelectorAll('.spot-edit, .spot-delete').forEach(function (button) {
             button.hidden = !isOwner;
