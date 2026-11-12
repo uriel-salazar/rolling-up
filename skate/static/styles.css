@@ -1441,6 +1441,7 @@ header .navbar{
 
 .app-nav {
     display: flex;
+    align-items: center;
     gap: 24px;
     flex-wrap: wrap;
     row-gap: 10px;
