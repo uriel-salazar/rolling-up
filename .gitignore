@@ -2,6 +2,7 @@
 __pycache__/
 /media
 .env
+.env.production
 .venv/
 node_modules/
 tempCodeRunnerFile.js
