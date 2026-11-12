@@ -37,6 +37,10 @@
     let selectedLocation = null;
     let externalController = null;
     let loadVersion = 0;
+    let currentOffset = 0;
+    const PAGE_SIZE = 24;
+    let apiNext = null;
+    let apiPrevious = null;
 
     const CATEGORY_LABELS = {
         skatepark: 'Skatepark',
@@ -522,18 +526,12 @@
         countBox.textContent = '';
 
         try {
-            const externalPromise = selectedLocation
-                ? fetchExternal()
-                : Promise.resolve([]);
             const embedded = document.body.classList.contains('is-embed');
             const data = await window.RollingUpApi.fetchSpots(
-                { search: query },
+                { search: query, offset: currentOffset },
                 {
-                    limit: embedded ? EMBED_LIMIT : 24,
-                    // The embedded feed only shows the first spots, so
-                    // one page is enough. The whole feed follows the
-                    // pages until it has them all.
-                    maxPages: embedded ? 1 : 10,
+                    limit: embedded ? EMBED_LIMIT : PAGE_SIZE,
+                    maxPages: 1,
                 }
             );
 
@@ -541,10 +539,16 @@
                 return;
             }
 
+            const externalPromise = selectedLocation
+                ? fetchExternal()
+                : Promise.resolve([]);
             const external = await externalPromise;
             if (version !== loadVersion) {
                 return;
             }
+
+            apiNext = data.next;
+            apiPrevious = data.previous;
 
             const registered = selectedLocation
                 ? data.results.filter(isInsideSelectedArea)
@@ -590,6 +594,7 @@
                             : 'There is no spot yet. Be the first to add one.',
                     false
                 );
+                updatePaginationButtons();
                 return;
             }
 
@@ -605,7 +610,9 @@
             // The button "Ver más" opens the whole feed. It only shows
             // in the embedded feed of the landing page, and only when
             // there are more spots than the ones that are shown.
-            updateMoreButton(embedded, ordered.length, data.count);
+            updateMoreButton(embedded, ordered.length, typeof data.count === 'number' ? data.count : results.length);
+
+            updatePaginationButtons();
         } catch (error) {
             if (error.name === 'AbortError') {
                 return;
@@ -645,16 +652,64 @@
         moreBox.hidden = !embedded || !thereAreMore;
     }
 
+    /** Show or hide the Previous/Next pagination buttons. */
+    function updatePaginationButtons() {
+        const prevBtn = document.getElementById('feed-pagination-prev');
+        const nextBtn = document.getElementById('feed-pagination-next');
+        const pageBox = document.getElementById('feed-pagination-page');
+        const pagination = document.getElementById('feed-pagination');
+
+        if (!pagination) {
+            return;
+        }
+
+        const embedded = document.body.classList.contains('is-embed');
+        pagination.hidden = embedded;
+
+        const currentPage = Math.floor(currentOffset / PAGE_SIZE) + 1;
+        if (pageBox) {
+            pageBox.textContent = 'Página ' + currentPage;
+        }
+
+        if (prevBtn) {
+            prevBtn.hidden = !apiPrevious || currentOffset <= 0;
+        }
+        if (nextBtn) {
+            nextBtn.hidden = !apiNext;
+        }
+    }
+
     // ------------------------------------------------------------------
-    // The search
+    // Pagination click handlers
     // ------------------------------------------------------------------
+
+    const paginationPrev = document.getElementById('feed-pagination-prev');
+    const paginationNext = document.getElementById('feed-pagination-next');
+
+    if (paginationPrev) {
+        paginationPrev.addEventListener('click', function () {
+            if (currentOffset > 0) {
+                currentOffset = Math.max(0, currentOffset - PAGE_SIZE);
+                loadSpots();
+            }
+        });
+    }
+
+    if (paginationNext) {
+        paginationNext.addEventListener('click', function () {
+            currentOffset += PAGE_SIZE;
+            loadSpots();
+        });
+    }
+
+    // Reset to page 1 when searching or changing location.
 
     let searchTimer = null;
 
     searchInput.addEventListener('input', function () {
         window.clearTimeout(searchTimer);
         clearButton.hidden = searchInput.value === '';
-
+        currentOffset = 0;
         searchTimer = window.setTimeout(loadSpots, SEARCH_DELAY);
     });
 
@@ -662,6 +717,7 @@
         if (event.key === 'Escape') {
             searchInput.value = '';
             clearButton.hidden = true;
+            currentOffset = 0;
             loadSpots();
         }
     });
@@ -669,6 +725,7 @@
     clearButton.addEventListener('click', function () {
         searchInput.value = '';
         clearButton.hidden = true;
+        currentOffset = 0;
         loadSpots();
         searchInput.focus();
     });
@@ -689,10 +746,12 @@
             clearButton: locationClearButton,
             onSelect: function (place) {
                 selectedLocation = place;
+                currentOffset = 0;
                 loadSpots();
             },
             onClear: function () {
                 selectedLocation = null;
+                currentOffset = 0;
                 loadSpots();
             },
         });
