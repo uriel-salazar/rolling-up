@@ -58,10 +58,6 @@ main {
     color: #f5f5f5;
 }
 
-.landing-section .section-title::after {
-    background: #f5f5f5;
-}
-
 .landing-map-frame,
 .landing-feed-frame,
 .landing-form-frame {
@@ -259,19 +255,6 @@ header .navbar{
     letter-spacing: -0.5px;
 }
 
-
-
-
-.section-title::after {
-    content: "";
-    width: 80px;
-    height: 8px;
-    margin: 4px auto 0;
-    display: block;
-    background: var(--secondary-color);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 8'%3E%3Cpath d='M3 4 Q13 1 23 4 T43 4 T63 4 T77 4' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 8'%3E%3Cpath d='M3 4 Q13 1 23 4 T43 4 T63 4 T77 4' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain;
-}
 .navbar .logo-text {
     color:var(--white-color);
     font-size: var(--font-size-xl);
@@ -625,17 +608,6 @@ header .navbar{
 .menu-section .menu-title{
     color: var(--light-lime-color);
     font-size: var(--font-size-xxl);
-}
-
-.menu-title::after{
-    content: "";
-    width: 80px;
-    height: 8px;
-    margin: 4px auto 0;
-    display: block;
-    background: var(--dark-color);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 8'%3E%3Cpath d='M3 4 Q13 1 23 4 T43 4 T63 4 T77 4' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 8'%3E%3Cpath d='M3 4 Q13 1 23 4 T43 4 T63 4 T77 4' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain;
 }
 
 .details{
@@ -1423,189 +1395,6 @@ header .navbar{
    that creates a spot.
    ========================================================================== */
 
-.app-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    display: flex;
-    align-items: center;
-    gap: 28px;
-    height: 66px;
-    padding: 0 28px;
-    background: rgba(10, 10, 10, 0.92);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid #1c1c1c;
-}
-
-.app-brand {
-    font-family: "LINE Seed JP", sans-serif;
-    font-size: 1.45rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: #f5f5f5;
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-.app-nav {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-    row-gap: 10px;
-    min-width: 0;
-}
-
-.app-nav a {
-    font-size: 0.72rem;
-    font-weight: 400;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #7a7a7a;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: color 0.2s ease;
-}
-
-.app-nav a:hover,
-.app-nav a[aria-current="page"] {
-    color: #f5f5f5;
-}
-
-/* On the login and the register pages the bar uses the same type as
-   the bar of the home page: the same font, the same size and the
-   same rounded shape. */
-.profile-page .app-nav a {
-    font-family: "Manrope", sans-serif;
-    font-size: var(--font-size-m);
-    font-weight: var(--font-weight-normal);
-    letter-spacing: normal;
-    text-transform: none;
-    color: var(--white-color);
-    padding: 10px 18px;
-    border-radius: var(--border-radius-m);
-    transition: 0.3s ease;
-}
-
-.profile-page .app-nav a:hover,
-.profile-page .app-nav a[aria-current="page"] {
-    color: var(--primary-color);
-    background-color: var(--secondary-color);
-}
-
-.profile-page .app-nav a.nav-login,
-.profile-page .app-nav a.nav-signup {
-    font-family: "Manrope", sans-serif;
-    font-size: var(--font-size-m);
-    font-weight: var(--font-weight-normal);
-    letter-spacing: normal;
-    text-transform: none;
-    color: var(--white-color);
-    padding: 10px 18px;
-    border-radius: var(--border-radius-m);
-}
-
-.profile-page .app-nav a.nav-login:hover,
-.profile-page .app-nav a.nav-signup:hover {
-    color: var(--primary-color);
-    background-color: var(--secondary-color);
-}
-
-.app-nav-profile {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: var(--secondary-color);
-    color: var(--white-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    text-decoration: none;
-    font-size: 0.75rem;
-    flex: 0 0 auto;
-}
-
-/* The "Profile" link is a text, so it never stays inside the circle
-   and never sticks out of the bar. */
-.app-nav a.app-nav-profile {
-    width: auto;
-    height: auto;
-    border-radius: 0;
-    background: none;
-    color: #7a7a7a;
-    font-size: 0.72rem;
-    font-weight: 400;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    display: inline-block;
-    padding: 0;
-}
-
-.profile-page .app-nav a.app-nav-profile {
-    border-radius: var(--border-radius-m);
-    color: var(--white-color);
-    font-size: var(--font-size-m);
-    font-weight: var(--font-weight-normal);
-    letter-spacing: normal;
-    text-transform: none;
-    padding: 10px 18px;
-}
-
-.profile-page .app-nav a.app-nav-profile:hover,
-.profile-page .app-nav a.app-nav-profile[aria-current="page"] {
-    color: var(--primary-color);
-    background-color: var(--secondary-color);
-}
-
-.app-topbar-spacer {
-    flex: 1;
-}
-
-.app-add {
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #0a0a0a;
-    background: #f5f5f5;
-    padding: 9px 18px;
-    border-radius: 2px;
-    text-decoration: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.app-add:hover {
-    opacity: 0.85;
-    transform: translateY(-1px);
-}
-
-@media (max-width: 720px) {
-    .app-topbar {
-        height: auto;
-        flex-wrap: wrap;
-        gap: 14px;
-        padding: 12px 18px;
-    }
-
-    .app-nav {
-        order: 3;
-        width: 100%;
-        gap: 18px;
-        flex-wrap: wrap;
-        row-gap: 10px;
-        overflow-x: visible;
-    }
-
-    .app-topbar-spacer {
-        display: none;
-    }
-
-    .app-add {
-        margin-left: auto;
-    }
-}
 
 
 /* ==========================================================================
@@ -1818,6 +1607,33 @@ header .navbar{
 
 .photo-delete:hover {
     background: rgba(217, 139, 122, 0.9);
+}
+
+.cover-delete {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    color: #f7f7f7;
+    border-radius: 2px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cover-delete:hover {
+    background: rgba(217, 139, 122, 0.9);
+}
+
+.cover-delete:hidden {
+    display: none;
 }
 
 .spot-no-photos {
@@ -2228,11 +2044,6 @@ header .navbar{
     text-align: left;
 }
 
-/* Map auth dropdown (compact) */
-.map-auth-dropdown .auth-dropdown-menu {
-    min-width: 140px;
-}
-
 /* Password field wrapper */
 .password-field .password-input {
     position: relative;
@@ -2433,16 +2244,6 @@ header .navbar{
     }
 }
 
-.app-nav a,
-.app-add {
-    transition: color 180ms ease-out, opacity 180ms ease-out, transform 180ms ease-out;
-}
-
-.app-nav a:hover,
-.app-add:hover {
-    transform: translateY(-1px);
-}
-
 .btn-primary:hover:not(:disabled) {
     opacity: 0.92;
     transform: translateY(-2px);
@@ -2493,16 +2294,6 @@ header .navbar{
         transform: none;
     }
 
-    .app-nav a,
-    .app-add {
-        transition: none;
-    }
-
-    .app-nav a:hover,
-    .app-add:hover {
-        transform: none;
-    }
-
     .btn-primary:hover:not(:disabled) {
         transform: none;
         box-shadow: none;
@@ -2511,39 +2302,6 @@ header .navbar{
     .btn-ghost:hover {
         transform: none;
     }
-}
-
-/* Auth links in navbar (app-nav style) */
-.nav-login,
-.nav-signup {
-    font-family: "Manrope", sans-serif;
-    font-size: 0.9rem;
-    color: #eaeaea;
-    text-decoration: none;
-    padding: 6px 14px;
-    border-radius: 2px;
-}
-
-.nav-login:hover,
-.nav-signup:hover {
-    background: #1a1a1a;
-    color: #c9a227;
-}
-
-.nav-login-btn {
-    font-family: "Manrope", sans-serif;
-    font-size: 0.85rem;
-    color: #0a0a0a;
-    background: #f5f5f5;
-    padding: 9px 18px;
-    border-radius: 2px;
-    text-decoration: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.nav-login-btn:hover {
-    opacity: 0.85;
-    transform: translateY(-1px);
 }
 
 /* Profile actions on logged-in profile page */
@@ -2742,39 +2500,7 @@ header .navbar{
     }
 }
 
-/* Mobile: app-nav (profile, register, feed pages) */
 @media screen and (max-width: 720px) {
-    .app-topbar {
-        height: auto;
-        flex-wrap: wrap;
-        gap: 12px;
-        padding: 10px 18px;
-    }
-
-    .app-nav {
-        order: 3;
-        width: 100%;
-        gap: 16px;
-        flex-wrap: wrap;
-        row-gap: 10px;
-        overflow-x: visible;
-    }
-
-    .app-topbar-spacer {
-        display: none;
-    }
-
-    .app-add {
-        margin-left: auto;
-        width: 100%;
-        text-align: center;
-        padding: 10px 16px;
-    }
-
-    .app-brand {
-        font-size: 1.3rem;
-    }
-
     .profile-main,
     .register-main {
         padding-top: 70px;
@@ -3070,6 +2796,164 @@ header .navbar{
     .cover-image {
         height: 100px;
     }
+}
+
+/* ==========================================================================
+   Subtle micro-animations across the site
+   ========================================================================== */
+
+/* Gentle lift on interactive cards and buttons */
+.spot-card,
+.about-section .social-link {
+    transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.spot-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.about-section .social-link:hover {
+    transform: translateY(-2px);
+    color: var(--secondary-color);
+}
+
+/* Subtle scale on action buttons */
+.btn-primary:hover:not(:disabled),
+.btn-ghost:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled),
+.btn-ghost:active {
+    transform: scale(0.98);
+}
+
+/* Subtle glow on focused inputs */
+.field input:focus,
+.field textarea:focus,
+.location-search input:focus {
+    box-shadow: 0 0 0 3px rgba(234, 234, 234, 0.12);
+}
+
+/* Subtle hover on category chips and search results */
+.category-option:hover,
+.search-result:hover {
+    transform: translateX(3px);
+}
+
+/* Subtle fade-in for page content on load */
+.profile-main,
+.register-main {
+    animation: page-fade 400ms ease-out forwards;
+}
+
+@keyframes page-fade {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Subtle pulse on live/active indicators */
+.spot-source-live,
+.spot-rating {
+    animation: subtle-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes subtle-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spot-card,
+    .about-section .social-link,
+    .btn-primary,
+    .btn-ghost,
+    .category-option,
+    .search-result,
+    .profile-main,
+    .register-main,
+    .spot-source-live,
+    .spot-rating {
+        transition: none;
+        animation: none;
+        transform: none;
+        opacity: 1;
+        box-shadow: none;
+    }
+
+    .hero-section .subtitle,
+    .hero-section .description,
+    .hero-section .button,
+    .hero-image-wrapper img {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Hero section animations */
+
+.hero-section .subtitle,
+.hero-section .description,
+.hero-section .button {
+    opacity: 0;
+    animation: hero-fade-up 450ms ease-out forwards;
+}
+
+.hero-section .subtitle {
+    animation-delay: 100ms;
+}
+
+.hero-section .description {
+    animation-delay: 220ms;
+}
+
+.hero-section .button {
+    animation-delay: 340ms;
+}
+
+@keyframes hero-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-image-wrapper img {
+    opacity: 0;
+    animation: hero-image-float 550ms ease-out forwards;
+    animation-delay: 460ms;
+}
+
+@keyframes hero-image-float {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-section .button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.hero-section .button:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 

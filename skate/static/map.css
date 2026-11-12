@@ -33,114 +33,6 @@
     height: 100dvh;
 }
 
-.map-page.is-embed .map-topbar {
-    display: none;
-}
-
-/* Top bar ---------------------------------------------------------------- */
-
-.map-topbar {
-    /* The global rule of the site makes a header fixed, which is
-       right for the hero page but not for the map: the bar has to
-       take its place in the layout. */
-    position: relative;
-    top: auto;
-    left: auto;
-    width: auto;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    height: 60px;
-    padding: 0 20px;
-    background: #0a0a0a;
-    border-bottom: 1px solid #1e1e1e;
-    z-index: 20;
-}
-
-.map-brand {
-    font-family: "LINE Seed JP", sans-serif;
-    font-size: 1.45rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: #f5f5f5;
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-.map-nav {
-    display: flex;
-    gap: 18px;
-}
-
-.map-nav-link {
-    font-family: "Manrope", sans-serif;
-    font-size: 0.78rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #8a8a8a;
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.map-nav-link:hover {
-    color: #f5f5f5;
-}
-
-.map-search {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    width: 340px;
-}
-
-.map-search-icon {
-    position: absolute;
-    left: 12px;
-    color: #7a7a7a;
-    font-size: 0.95rem;
-    pointer-events: none;
-}
-
-.map-search input {
-    width: 100%;
-    padding: 10px 34px 10px 34px;
-    background: #161616;
-    border: 1px solid #242424;
-    border-radius: 4px;
-    color: #f5f5f5;
-    font-family: inherit;
-    font-size: 0.88rem;
-}
-
-.map-search input:focus {
-    outline: none;
-    border-color: #3d3d3d;
-}
-
-.map-search input::placeholder {
-    color: #6a6a6a;
-}
-
-.map-search-clear {
-    position: absolute;
-    right: 8px;
-    width: 22px;
-    height: 22px;
-    border: none;
-    border-radius: 3px;
-    background: none;
-    color: #8a8a8a;
-    font-size: 1.1rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.map-search-clear:hover {
-    color: #f5f5f5;
-}
 
 /* Filters ---------------------------------------------------------------- */
 
@@ -569,25 +461,6 @@
 /* Responsive -------------------------------------------------------------- */
 
 @media (max-width: 900px) {
-    .map-topbar {
-        flex-wrap: wrap;
-        height: auto;
-        padding: 10px 14px;
-        gap: 10px;
-    }
-    .map-nav {
-        order: 3;
-        width: 100%;
-        gap: 14px;
-        overflow-x: auto;
-    }
-
-    .map-search {
-        width: 100%;
-        margin-left: 0;
-        order: 2;
-    }
-
     .map-location-search {
         width: 220px;
     }
@@ -674,10 +547,6 @@
 }
 
 @media (max-width: 480px) {
-    .map-brand {
-        font-size: 1.05rem;
-    }
-
     .filter-chip {
         font-size: 0.7rem;
         padding: 4px 9px;

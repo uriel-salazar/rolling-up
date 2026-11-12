@@ -14,36 +14,7 @@
 <body class="form-page tile-provider-{{ tile_config.provider }}{% if embed %} is-embed{% endif %}">
     <main>
         <header class="form-header">
-            <nav class="navbar section-content">
-                <a href="/" class="logo-text">Rolling Up</a>
-                <ul class="nav-menu">
-                    <button id="menu-close-button" class="fas fa-times"> </button>
-                    <li class="nav-item">
-                        <a href="/feed/" class="nav-link"> Spots </a>
-                    </li>
-                    <li class="nav-item" data-session="in" hidden>
-                        <a href="/profile/" class="nav-link"> Perfil </a>
-                    </li>
-                    <li class="nav-item" data-session="in" hidden>
-                        <div class="auth-dropdown">
-                            <button type="button" class="nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-user"></i>
-                            </button>
-                            <ul class="auth-dropdown-menu" role="menu">
-                                <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
-                                <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="nav-item" data-session="out">
-                        <a href="/profile/" class="nav-link">Iniciar sesión</a>
-                    </li>
-                    <li class="nav-item" data-session="out">
-                        <a href="/register/" class="nav-link">Crear cuenta</a>
-                    </li>
-                </ul>
-                <button id='menu-open-button' class='fas fa-bars'></button>
-            </nav>
+            {% include "_navbar.html" %}
         </header>
 
         <div class="form-layout">
@@ -197,18 +168,5 @@
     <script src="{% static 'session.js' %}"></script>
     <script src="{% static 'script.js' %}"></script>
     <script src="{% static 'spot_form.js' %}"></script>
-    <script>
-        // Mobile menu toggle for the spot form navbar.
-        const menuOpen = document.getElementById('menu-open-button');
-        const menuClose = document.getElementById('menu-close-button');
-        if (menuOpen && menuClose) {
-            menuOpen.addEventListener('click', function () {
-                document.body.classList.add('show-mobile-menu');
-            });
-            menuClose.addEventListener('click', function () {
-                document.body.classList.remove('show-mobile-menu');
-            });
-        }
-    </script>
 </body>
 </html>

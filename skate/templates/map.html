@@ -14,34 +14,8 @@
     <main class="map-layout">
 
         <!-- Top bar -->
-        <header class="map-topbar">
-            <a href="/" class="map-brand">Rolling Up</a>
-
-            <nav class="map-nav">
-                <a href="/feed/" class="map-nav-link">Lista</a>
-                <a href="/spots/new/" class="map-nav-link">Añadir Spot</a>
-                <a href="/profile/" class="map-nav-link" data-session="in" hidden>Perfil</a>
-                <div class="auth-dropdown map-auth-dropdown" data-session="in" hidden>
-                    <button type="button" class="map-nav-link profile-icon" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-user"></i>
-                    </button>
-                    <ul class="auth-dropdown-menu" role="menu">
-                        <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
-                        <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
-                    </ul>
-                </div>
-                <a href="/profile/" class="map-nav-link" data-session="out">Iniciar sesión</a>
-                <a href="/register/" class="map-nav-link" data-session="out">Crear cuenta</a>
-            </nav>
-
-            <div class="map-search">
-                <label class="visually-hidden" for="spot-search">Buscar spots</label>
-                <span class="map-search-icon" aria-hidden="true">&#9906;</span>
-                <input type="search" id="spot-search" autocomplete="off"
-                       placeholder="Busca un spot por nombre o descripción">
-                <button type="button" id="clear-search" class="map-search-clear"
-                        aria-label="Limpiar la búsqueda" hidden>&times;</button>
-            </div>
+        <header class="app-topbar">
+            {% include "_navbar.html" %}
         </header>
 
         <!-- Filters -->

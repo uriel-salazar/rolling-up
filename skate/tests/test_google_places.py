@@ -75,6 +75,7 @@ class ClientTests(SimpleTestCase):
         self.assertEqual(kwargs["headers"]["X-Goog-Api-Key"], "the-key")
         self.assertIn("places.id", kwargs["headers"]["X-Goog-FieldMask"])
         self.assertIn("places.photos", kwargs["headers"]["X-Goog-FieldMask"])
+        self.assertNotIn("nextPageToken", kwargs["headers"]["X-Goog-FieldMask"])
 
     @override_settings(GOOGLE_PLACES_API_KEY="the-key")
     @patch("requests.Session.get")
@@ -91,6 +92,28 @@ class ClientTests(SimpleTestCase):
         _, kwargs = mock_get.call_args
         self.assertEqual(kwargs["params"]["key"], "the-key")
         self.assertEqual(kwargs["params"]["maxWidthPx"], 800)
+
+    @override_settings(GOOGLE_PLACES_API_KEY="the-key")
+    @patch("requests.Session.get")
+    def test_missing_photos_are_filled_from_place_details(self, mock_get):
+        detail_response = FakeResponse(
+            200,
+            {
+                "id": "abc123",
+                "displayName": {"text": "Skatepark Oasis"},
+                "location": {"latitude": 20.7, "longitude": -103.3},
+                "photos": [{"name": "places/abc123/photos/ref"}],
+            },
+        )
+        mock_get.return_value = detail_response
+
+        client = GooglePlacesClient()
+        enriched = client.enrich_places_with_photos([
+            {"id": "abc123", "displayName": {"text": "Skatepark Oasis"}, "location": {"latitude": 20.7, "longitude": -103.3}}
+        ])
+
+        self.assertEqual(enriched[0]["photos"][0]["name"], "places/abc123/photos/ref")
+        self.assertEqual(mock_get.call_count, 1)
 
 
 class ParserTests(SimpleTestCase):

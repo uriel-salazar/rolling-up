@@ -29,10 +29,13 @@ from .exceptions import (
 logger = logging.getLogger(__name__)
 
 NEARBY_SEARCH_URL = "https://places.googleapis.com/v1/places:searchNearby"
+PLACE_DETAILS_URL = "https://places.googleapis.com/v1/places/{place_id}"
 PHOTO_MEDIA_URL = "https://places.googleapis.com/v1/{name}/media"
 
 # The fields the application uses. Sending a field mask is required by
 # the Places API (New) and keeps the response small.
+# ``nextPageToken`` is returned at the top level of the JSON response,
+# not as a place field, so it is not valid in the field mask.
 NEARBY_FIELD_MASK = ",".join(
     (
         "places.id",
@@ -47,7 +50,14 @@ NEARBY_FIELD_MASK = ",".join(
         "places.primaryType",
         "places.googleMapsUri",
         "places.websiteUri",
-        "nextPageToken",
+    )
+)
+PLACE_DETAILS_FIELD_MASK = ",".join(
+    (
+        "id",
+        "displayName",
+        "location",
+        "photos",
     )
 )
 
@@ -159,7 +169,101 @@ class GooglePlacesClient:
             if not token:
                 break
 
-        return places
+        return self.enrich_places_with_photos(places)
+
+    def fetch_place_details(self, place_id: str) -> Dict[str, Any]:
+        """Fetch a single Place Details record for a place id."""
+        self._require_key()
+
+        if not isinstance(place_id, str) or not place_id.strip():
+            raise GooglePlacesResponseError("Google Places did not provide a valid place id.")
+
+        url = PLACE_DETAILS_URL.format(place_id=place_id)
+        headers = {
+            "X-Goog-Api-Key": self.api_key,
+            "X-Goog-FieldMask": PLACE_DETAILS_FIELD_MASK,
+            "User-Agent": settings.OVERPASS_USER_AGENT,
+        }
+
+        try:
+            response = self.session.get(
+                url,
+                headers=headers,
+                timeout=self.timeout,
+            )
+        except requests.RequestException as exc:
+            logger.warning("Google Place Details could not be reached: %s", exc)
+            raise GooglePlacesRequestError(
+                "Google Place Details could not be reached."
+            ) from exc
+
+        if response.status_code in RETRYABLE_STATUS_CODES:
+            logger.warning(
+                "Google Place Details answered HTTP %s.", response.status_code
+            )
+            raise GooglePlacesRequestError(
+                f"Google Place Details answered HTTP {response.status_code}."
+            )
+
+        if not response.ok:
+            raise GooglePlacesResponseError(
+                "Google Place Details rejected the request: "
+                f"{self._extract_error_message(response)}"
+            )
+
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise GooglePlacesResponseError(
+                "Google Place Details returned a response that is not valid JSON."
+            ) from exc
+
+        if not isinstance(payload, dict):
+            raise GooglePlacesResponseError(
+                "Google Place Details returned an unexpected payload."
+            )
+
+        return payload
+
+    def enrich_places_with_photos(
+        self,
+        places: Iterable[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """Fill missing photo metadata by fetching Place Details for each place."""
+        enriched: List[Dict[str, Any]] = []
+
+        for place in places:
+            if not isinstance(place, dict):
+                enriched.append(place)
+                continue
+
+            photos = place.get("photos")
+            if isinstance(photos, list) and photos:
+                enriched.append(place)
+                continue
+
+            place_id = place.get("id")
+            if not isinstance(place_id, str) or not place_id.strip():
+                enriched.append(place)
+                continue
+
+            try:
+                details = self.fetch_place_details(place_id)
+            except (GooglePlacesRequestError, GooglePlacesResponseError):
+                logger.warning(
+                    "Skipping Place Details fallback for %s because Google did not provide photos.",
+                    place_id,
+                )
+                enriched.append(place)
+                continue
+
+            detail_photos = details.get("photos")
+            if isinstance(detail_photos, list):
+                place["photos"] = detail_photos
+
+            enriched.append(place)
+
+        return enriched
 
     # ------------------------------------------------------------------
     # Place Photos

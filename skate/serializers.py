@@ -301,10 +301,14 @@ class SpotSerializer(serializers.ModelSerializer):
 
         if new_image:
             validated_data['image_url'] = self._process_image(new_image)
+        elif 'image_url' in validated_data and new_image is None and old_image_name:
+            validated_data['image_url'] = None
 
         instance = super().update(instance, validated_data)
 
-        if new_image and old_image_name and old_image_name != instance.image_url.name:
+        if old_image_name and not instance.image_url:
+            instance.image_url.storage.delete(old_image_name)
+        elif old_image_name and instance.image_url and old_image_name != instance.image_url.name:
             instance.image_url.storage.delete(old_image_name)
 
         return instance

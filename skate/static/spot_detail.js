@@ -189,9 +189,51 @@
                 'Accept': 'application/json',
             }
         })
+        .then(function (response) {
+            if (response.ok) {
+                button.closest('.spot-photo-item').remove();
+                return;
+            }
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('access');
+                localStorage.removeItem('refresh');
+                window.location.href = '/profile/';
+            }
+        });
+});
+
+    // ------------------------------------------------------------------
+    // Delete the cover photo (only the owner or an admin can)
+    // ------------------------------------------------------------------
+
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('.cover-delete');
+        if (!button) {
+            return;
+        }
+
+        if (!token) {
+            return;
+        }
+
+        if (!confirm('¿Eliminar la foto de portada?')) {
+            return;
+        }
+
+        const id = button.getAttribute('data-spot-id') || spotId;
+
+        fetch('/api/spots/' + id + '/', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ image_url: null }),
+        })
             .then(function (response) {
                 if (response.ok) {
-                    button.closest('.spot-photo-item').remove();
+                    location.reload();
                     return;
                 }
                 if (response.status === 401 || response.status === 403) {

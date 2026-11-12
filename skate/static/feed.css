@@ -10,28 +10,8 @@
     background: #0a0a0a;
     color: #eaeaea;
     font-family: "Manrope", sans-serif;
-    min-height: 100vh;
 }
 
-.feed-page.is-embed .app-topbar {
-    display: none;
-}
-
-.feed-page .app-topbar,
-.feed-page .app-brand,
-.feed-page .app-nav a,
-.feed-page .app-add {
-    font-family: inherit;
-}
-
-.feed-page .app-brand {
-    font-family: "LINE Seed JP", sans-serif;
-}
-
-.feed-page .app-nav a,
-.feed-page .app-add {
-    font-family: "Manrope", sans-serif;
-}
 
 /* The measurements of the page have to include the padding, otherwise
    the containers become wider than the screen. */
@@ -461,6 +441,46 @@
 .feed-more-link:hover {
     opacity: 0.85;
     transform: translateY(-1px);
+}
+
+/* Pagination controls ----------------------------------------------------- */
+
+.feed-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 48px 0;
+    font-family: "Manrope", sans-serif;
+    font-size: 0.9rem;
+    color: #b5b5b5;
+}
+
+.feed-pagination-btn {
+    background: transparent;
+    border: 1px solid #333;
+    color: #eaeaea;
+    padding: 8px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: background-color 180ms ease-out, border-color 180ms ease-out;
+}
+
+.feed-pagination-btn:hover {
+    background-color: #1a1a1a;
+    border-color: #555;
+}
+
+.feed-pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.feed-pagination-page {
+    color: #f7f7f7;
+    font-weight: 500;
 }
 
 /* Responsive -------------------------------------------------------------- */

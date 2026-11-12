@@ -10,29 +10,7 @@
 </head>
 <body class="profile-page">
     <header class="app-topbar">
-        <a href="/" class="app-brand">Rolling Up</a>
-
-        <nav class="app-nav" aria-label="Principal">
-            <a href="/map/">Mapa</a>
-            <a href="/feed/">Spots</a>
-            <a href="/profile/" class="app-nav-profile" aria-current="page" data-session="in" hidden>Perfil</a>
-            <div class="auth-dropdown" data-session="in" hidden>
-                <button type="button" class="app-nav-profile" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-user"></i>
-                </button>
-                <ul class="auth-dropdown-menu" role="menu">
-                    <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
-                    <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
-                </ul>
-            </div>
-            <a href="/profile/" class="nav-login" data-session="out">Iniciar sesión</a>
-            <a href="/register/" class="nav-signup" aria-current="page" data-session="out">Crear cuenta</a>
-        </nav>
-
-        <span class="app-topbar-spacer"></span>
-
-        <a href="/spots/new/" class="app-add" data-session="in" hidden>Añadir spot</a>
-        <a href="/profile/" class="app-add nav-login-btn" data-session="out">Iniciar sesión</a>
+        {% include "_navbar.html" %}
     </header>
 
     <main class="profile-main login-enter">
