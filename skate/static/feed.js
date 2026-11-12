@@ -210,7 +210,7 @@
         if (!hasRating) {
             const item = document.createElement('span');
             item.className = 'spot-meta-item spot-rating-empty';
-            item.textContent = 'Not rated yet';
+            item.textContent = 'Sin votos';
             return item;
         }
 

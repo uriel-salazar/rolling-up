@@ -31,6 +31,16 @@
     flex-direction: column;
     height: 100vh;
     height: 100dvh;
+    padding-top: var(--header-height, 80px);
+}
+
+/* Fix: content after the fixed header needs top padding/margin */
+
+/* Scroll margin so section headings don't get hidden under the fixed header */
+.section-title,
+.feed-title,
+.hero-details {
+    scroll-margin-top: var(--header-height, 80px);
 }
 
 
@@ -113,12 +123,6 @@
 /* The map and the list share the space under the bars. The map stops
    where the list starts, so the attribution of the tiles is never
    hidden under it. */
-.map-body {
-    position: relative;
-    display: flex;
-    flex: 1;
-    min-height: 0;
-}
 
 .map-canvas {
     flex: 1;
@@ -489,9 +493,6 @@
     }
 
     /* The list becomes a sheet that comes up from the bottom. */
-    .map-body {
-        display: block;
-    }
 
     .map-canvas {
         width: 100%;

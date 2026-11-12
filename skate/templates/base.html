@@ -15,14 +15,8 @@
         {% include "_navbar.html" %}
     </header>
 
-    <main class="page-layout">
+    <div class="page-content">
         {% block content %}{% endblock %}
-    </main>
-
-    {% block scripts %}
-    <script src="{% static 'session.js' %}"></script>
-    {% endblock %}
-
-    {% block extra_scripts %}{% endblock %}
+    </div>
 </body>
 </html>

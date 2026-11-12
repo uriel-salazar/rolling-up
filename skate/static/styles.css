@@ -10,12 +10,14 @@
     box-sizing: border-box;
 }
 
-/* The attribute "hidden" has to hide the element, always. The browser
-   does it with a rule of its own, but any rule of the application that
-   sets a "display" wins over it, and the element stays on the screen
-   even though the script marked it as hidden. */
-[hidden] {
-    display: none !important;
+/* The measurements of the map have to include the padding, otherwise
+   the bar becomes wider than the screen. */
+.map-page,
+.map-page *,
+.map-page *::before,
+.map-page *::after {
+    box-sizing: border-box;
+    font-family: "Manrope", sans-serif;
 }
 
 html,
@@ -190,6 +192,9 @@ main {
 
     /* Layout */
     --site-max-width:1200px;
+
+    /* Header height for fixed positioning compensation */
+    --header-height: 80px;
 }
 
 
