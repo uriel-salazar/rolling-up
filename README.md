@@ -769,6 +769,78 @@ the simpler option.
 
 ---
 
+## Deploying on Render
+
+The service lives on Render and the code is on GitHub, in the repository
+`uriel-salazar/rolling-up`. The branch that is deployed is `develope`,
+the one where the work is done.
+
+Three files describe the deploy:
+
+| File | What it does |
+| --- | --- |
+| `build.sh` | The build command: installs the dependencies, collects the static files and applies the migrations. |
+| `render.yaml` | The blueprint: the service, the commands, the version of Python and the environment variables. |
+| `.python-version` | The version of Python, `3.14.10`. |
+
+The `Procfile` is the one of Heroku and Render ignores it, the start
+command is in the blueprint and in the dashboard:
+
+```bash
+gunicorn skate.wsgi:application --log-file -
+```
+
+### The environment variables
+
+The secrets are not in the repository, they are set in the dashboard of
+Render, in the *Environment* page of the service. The ones that the
+application needs:
+
+| Variable | What it is |
+| --- | --- |
+| `SECRET_KEY` | The key of Django. It has to be long and random. |
+| `DATABASE_URL` | The connection to the PostgreSQL of Neon. |
+| `DEBUG` | `False` in production. |
+| `HOST` | The public address, `https://rolling-up.onrender.com`. |
+| `ALLOWED_HOSTS` | The hosts the service answers to. |
+| `CSRF_TRUSTED_ORIGINS` | The origins trusted for the POST requests. |
+| `ADMIN_URL` | The path of the administration, for example `uriel-panel-8193`. |
+| `USE_CLOUDINARY` | `True`, the photographs are stored in Cloudinary. |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | The credentials of Cloudinary. |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | The sign in with Google. The callback is `https://rolling-up.onrender.com/auth/google/callback/`. |
+| `GOOGLE_PLACES_API_KEY` | The photographs and the addresses of Google Places. |
+| `OSM_TILE_API_KEY` | The key of the provider of the tiles of the map. |
+
+The file `.env` holds the same variables for the development. It is
+not in the repository.
+
+### The first deploy
+
+The service already exists, so a deploy is a push:
+
+```bash
+git push origin develope
+```
+
+Render builds it and the changes are live at
+`https://rolling-up.onrender.com`. The deploys can be seen in the
+dashboard, in the *Deploys* page of the service.
+
+To change the build command, the start command, the branch or the
+version of Python, edit `render.yaml` and push. The blueprint is
+applied the next time the service is synced from the dashboard, in the
+*Blueprints* page.
+
+### The administration
+
+The administration is at the path of `ADMIN_URL`, not at `/admin/`:
+
+```bash
+python manage.py createsuperuser
+```
+
+---
+
 ## Tests
 
 The whole suite mocks the external services, it never depends on a live
