@@ -460,3 +460,53 @@ class FeedNavbarTests(TestCase):
         )
 
         self.assertIn(".feed-page .app-add", stylesheet)
+
+
+class FeedPaginationTests(TestCase):
+    """The public feed uses server-side pagination."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="rider",
+            email="rider@example.com",
+            password="secret-password",
+        )
+
+        for index in range(1, 26):
+            Spots.objects.create(
+                name_spot=f"Spot {index:03d}",
+                body=f"Spot body {index:03d}",
+                user=self.user,
+                source=Spots.SOURCE_COMMUNITY,
+                category=Spots.CATEGORY_SKATEPARK,
+            )
+
+    def test_page_one_and_page_two_display_different_spots(self):
+        page_one = self.client.get("/feed/?page=1")
+        page_two = self.client.get("/feed/?page=2")
+
+        self.assertContains(page_one, "Mostrando 1–12 de 25")
+        self.assertContains(page_two, "Mostrando 13–24 de 25")
+        self.assertContains(page_one, "Spot 001")
+        self.assertContains(page_one, "Spot 012")
+        self.assertNotContains(page_one, "Spot 013")
+
+        self.assertContains(page_two, "Spot 013")
+        self.assertContains(page_two, "Spot 024")
+        self.assertNotContains(page_two, "Spot 001")
+
+    def test_invalid_pages_are_handled_gracefully(self):
+        response = self.client.get("/feed/?page=999")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Spot 025")
+        self.assertContains(response, "Mostrando 25–25 de 25")
+
+    def test_search_keeps_the_pagination_links(self):
+        response = self.client.get("/feed/?search=Spot")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Spot 001")
+        self.assertContains(response, "search=Spot")
+        self.assertContains(response, "?search=Spot&page=2")

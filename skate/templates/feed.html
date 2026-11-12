@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <link rel="stylesheet" href="{% static 'feed.css' %}">
 </head>
-<body class="feed-page{% if embed %} is-embed{% endif %}">
+<body class="feed-page{% if embed %} is-embed{% endif %}" data-server-rendered="true">
     <header class="app-topbar">
         <a href="/" class="app-brand">Rolling Up</a>
 
@@ -49,6 +49,7 @@
                 <div class="feed-search">
                     <label class="visually-hidden" for="feed-search">Buscar los spots</label>
                     <input type="search" id="feed-search" autocomplete="off"
+                           value="{{ search_query }}"
                            placeholder="Buscar por nombre o descripción">
                     <button type="button" id="feed-search-clear" class="feed-search-clear"
                             aria-label="Limpiar la búsqueda" hidden>&times;</button>
@@ -65,10 +66,70 @@
             </div>
         </section>
 
-        <p class="feed-count" id="feed-count"></p>
+        {% if page_obj.paginator.count %}
+            <p class="feed-count" id="feed-count">
+                Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+            </p>
+        {% else %}
+            <p class="feed-count" id="feed-count"></p>
+        {% endif %}
 
         <section class="feed-grid" id="feed-grid" aria-label="Spots de skate"
-                 aria-busy="true"></section>
+                 aria-busy="false">
+            {% for spot in spots %}
+            <article class="spot-card">
+                <div class="spot-card-media">
+                    {% if spot.image_url %}
+                        <img src="{{ spot.image_url.url }}" alt="{{ spot.name_spot }}" loading="lazy">
+                    {% else %}
+                        <div class="spot-plate" aria-hidden="true">
+                            <span class="spot-plate-initial">{{ spot.name_spot|first|upper }}</span>
+                            <span class="spot-plate-label">{{ spot.get_category_display }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="spot-card-info">
+                    <h2 class="spot-card-name">
+                        <a href="/spots/{{ spot.id }}/" class="spot-card-title">{{ spot.name_spot }}</a>
+                    </h2>
+                    {% if spot.body %}
+                    <div class="spot-card-meta">
+                        <span class="spot-meta-item spot-rating-empty">{{ spot.get_source_display }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </article>
+            {% empty %}
+            <div class="feed-message">
+                <h2 class="feed-message-title">No se encontraron spots</h2>
+                <p class="feed-message-text">Prueba otra búsqueda o vuelve más tarde.</p>
+            </div>
+            {% endfor %}
+        </section>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="feed-pagination" aria-label="Paginación del feed">
+            {% if page_obj.has_previous %}
+                <a class="feed-page-button" href="?{% if base_query_string %}{{ base_query_string }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Página anterior">Anterior</a>
+            {% else %}
+                <span class="feed-page-button is-disabled" aria-disabled="true">Anterior</span>
+            {% endif %}
+
+            {% for page_number in page_obj.paginator.page_range %}
+                {% if page_number == page_obj.number %}
+                    <span class="feed-page-button is-current" aria-current="page">{{ page_number }}</span>
+                {% else %}
+                    <a class="feed-page-button" href="?{% if base_query_string %}{{ base_query_string }}&{% endif %}page={{ page_number }}">{{ page_number }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a class="feed-page-button" href="?{% if base_query_string %}{{ base_query_string }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Página siguiente">Siguiente</a>
+            {% else %}
+                <span class="feed-page-button is-disabled" aria-disabled="true">Siguiente</span>
+            {% endif %}
+        </nav>
+        {% endif %}
 
         <!-- The button that opens the whole feed. It only shows when the
              feed is embedded in the landing page, which shows a few

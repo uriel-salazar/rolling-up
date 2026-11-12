@@ -7,6 +7,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render,get_object_or_404
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Avg, Count, Q, Case, When, IntegerField
 from django.utils.safestring import mark_safe
@@ -59,15 +60,54 @@ def skate_map(request):
 
 @xframe_options_sameorigin
 def feed_page(request):
-    """ Render the feed of the skate spots.
+    """Render the feed of the skate spots with server-side pagination."""
+    queryset = Spots.objects.annotate(
+        average_rating=Avg('rating__score'),
+        rating_count=Count('rating', distinct=True),
+        has_image=Case(
+            When(
+                Q(image_url__isnull=False) & ~Q(image_url=''),
+                then=1,
+            ),
+            When(google_metadata__photos__0__name__isnull=False, then=1),
+            When(osm_metadata__image__url__isnull=False, then=1),
+            default=0,
+            output_field=IntegerField(),
+        ),
+    ).order_by('-has_image', 'name_spot')
 
-        The page is public, the spots are read from the public API
-        without an account.
-    """
+    search = (request.GET.get('search') or '').strip()
+    if search:
+        queryset = queryset.filter(
+            Q(name_spot__icontains=search) | Q(body__icontains=search)
+        )
+
+    category = (request.GET.get('category') or '').strip()
+    if category and category in Spots.CATEGORY_VALUES:
+        queryset = queryset.filter(category=category)
+
+    source = (request.GET.get('source') or '').strip()
+    if source and source in Spots.SOURCE_VALUES:
+        queryset = queryset.filter(source=source)
+
+    paginator = Paginator(queryset, 12)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    params = request.GET.copy()
+    params.pop('page', None)
+
     return render(
         request,
         'feed.html',
-        {'embed': request.GET.get('embed') == '1'},
+        {
+            'embed': request.GET.get('embed') == '1',
+            'spots': page_obj.object_list,
+            'page_obj': page_obj,
+            'paginator': paginator,
+            'search_query': search,
+            'base_query_string': params.urlencode(),
+        },
     )
 
 

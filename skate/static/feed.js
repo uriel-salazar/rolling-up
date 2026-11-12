@@ -753,5 +753,7 @@
     // ------------------------------------------------------------------
 
     setupLocationSearch();
-    loadSpots();
+    if (document.body.dataset.serverRendered !== 'true') {
+        loadSpots();
+    }
 })();

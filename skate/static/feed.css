@@ -17,11 +17,20 @@
     display: none;
 }
 
-/* Keep the feed header aligned with the shared app topbar styling. The
-   rest of the site styling already defines the nav links, spacing and hover
-   treatment; the feed page only needs its editorial brand treatment. */
+.feed-page .app-topbar,
+.feed-page .app-brand,
+.feed-page .app-nav a,
+.feed-page .app-add {
+    font-family: inherit;
+}
+
 .feed-page .app-brand {
     font-family: "LINE Seed JP", sans-serif;
+}
+
+.feed-page .app-nav a,
+.feed-page .app-add {
+    font-family: "Manrope", sans-serif;
 }
 
 /* The measurements of the page have to include the padding, otherwise
@@ -134,6 +143,52 @@
 
 .feed-search-clear[hidden] {
     display: none;
+}
+
+.feed-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 28px 0 0;
+    padding: 0 0 80px;
+}
+
+.feed-page-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 10px 14px;
+    border: 1px solid #262626;
+    border-radius: 999px;
+    background: transparent;
+    color: #d7d7d7;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.feed-page-button:hover,
+.feed-page-button:focus-visible {
+    border-color: #555;
+    color: #f5f5f5;
+}
+
+.feed-page-button.is-current {
+    background: #f5f5f5;
+    border-color: #f5f5f5;
+    color: #0a0a0a;
+}
+
+.feed-page-button.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
 }
 
 /* The grid ---------------------------------------------------------------- */
