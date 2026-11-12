@@ -1,0 +1,58 @@
+# Infrastructure of the application on Render.
+#
+# The database is not declared here: the project uses the Neon
+# PostgreSQL of the "DATABASE_URL" variable, which is set in the
+# dashboard of Render (and in the file .env for the development).
+#
+# The secrets (SECRET_KEY, the keys of Google, Cloudinary, the token
+# of the database) are not in this file either. They live in the
+# environment of the service, in the dashboard of Render.
+
+services:
+  - type: web
+    name: rolling-up
+    runtime: python
+    plan: free
+    branch: develope
+    buildCommand: ./build.sh
+    startCommand: gunicorn skate.wsgi:application --log-file -
+    healthCheckPath: /api/spots/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.10
+      - key: DEBUG
+        value: "False"
+      # The public address of the service. It is used for the allowed
+      # hosts, for the trusted origins of the CSRF and for the callback
+      # of the sign in with Google.
+      - key: HOST
+        value: https://rolling-up.onrender.com
+      - key: ALLOWED_HOSTS
+        value: rolling-up.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://rolling-up.onrender.com
+      # The following secrets are set in the dashboard of Render.
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_URL
+        sync: false
+      - key: USE_CLOUDINARY
+        value: "True"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        value: https://rolling-up.onrender.com/auth/google/callback/
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: OSM_TILE_API_KEY
+        sync: false

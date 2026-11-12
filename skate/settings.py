@@ -46,6 +46,12 @@ if _host and _host.startswith("https://"):
 if _host:
     ALLOWED_HOSTS.append(_host)
 
+# Render sets the name of the service in this variable, so the service
+# answers even when HOST was not configured.
+_render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if _render_hostname and _render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_render_hostname)
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
@@ -54,6 +60,9 @@ CSRF_TRUSTED_ORIGINS = [
 
 if _host:
     CSRF_TRUSTED_ORIGINS.append("https://" + _host)
+
+if _render_hostname:
+    CSRF_TRUSTED_ORIGINS.append("https://" + _render_hostname)
 
 if DEBUG:
     # The local development server can be reached over plain HTTP or over
