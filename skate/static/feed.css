@@ -17,20 +17,11 @@
     display: none;
 }
 
-.feed-page .app-topbar,
-.feed-page .app-brand,
-.feed-page .app-nav a,
-.feed-page .app-add {
-    font-family: inherit;
-}
-
+/* Keep the feed header aligned with the shared app topbar styling. The
+   rest of the site styling already defines the nav links, spacing and hover
+   treatment; the feed page only needs its editorial brand treatment. */
 .feed-page .app-brand {
     font-family: "LINE Seed JP", sans-serif;
-}
-
-.feed-page .app-nav a,
-.feed-page .app-add {
-    font-family: "Manrope", sans-serif;
 }
 
 /* The measurements of the page have to include the padding, otherwise
