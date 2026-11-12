@@ -277,10 +277,7 @@ class SpotSerializer(serializers.ModelSerializer):
         return value
 
     def _process_image(self, image):
-        """ 
-        Resize the uploaded image to 800x800 with quality 85 before it is
-        stored, keeping the original file name.
-        """
+        """Keep the visual quality of uploaded photos without huge files."""
         try:
             image.seek(0)
             resized_image = image_logic.image_resize_800(image)

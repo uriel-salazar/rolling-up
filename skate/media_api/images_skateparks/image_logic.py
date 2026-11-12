@@ -1,21 +1,32 @@
-from PIL import Image
 from io import BytesIO
 
+from PIL import Image, ImageOps
+
+
 def image_resize_800(file):
-    """ Resizes image to 800x800 and sets a quality of 85
+    """Keep uploaded spot photos sharp while still reducing file size.
 
-    Args:
-        file (_type_): original image 
-
-    Returns:
-        output (BytesIO): image result
+    The old implementation always squeezed each image down to 800px on its
+    longest side, which made otherwise high-quality photos look soft. We keep
+    the same “normalise uploaded files” workflow, but cap the long side at 1600px
+    and use a much lighter JPEG/WebP compression profile.
     """
 
     image = Image.open(file)
-            
-    image.thumbnail((800, 800))
-    
+    image = ImageOps.exif_transpose(image)
+
+    if image.mode in {"RGBA", "LA", "P"}:
+        image = image.convert("RGB")
+
+    image.thumbnail((1600, 1600), getattr(Image, "Resampling", Image).LANCZOS)
+
     output = BytesIO()
-    image.save(output, format=image.format or "JPEG",quality=85)
+    save_format = image.format or "JPEG"
+    save_args = {"format": save_format, "quality": 92, "optimize": True}
+
+    if save_format in {"JPEG", "WEBP"}:
+        save_args["subsampling"] = 0
+
+    image.save(output, **save_args)
     output.seek(0)
     return output

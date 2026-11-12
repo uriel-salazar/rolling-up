@@ -14,11 +14,13 @@ import io
 from decimal import Decimal
 from pathlib import Path
 
+from PIL import Image
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 
+from skate.media_api.images_skateparks import image_logic
 from skate.models import Rating, Spots
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -275,6 +277,24 @@ class SpotPhotoApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIn("image", response.data)
         self.assertTrue(response.data["image"])
+
+
+class SpotPhotoProcessingTests(TestCase):
+    """Uploaded spot photos keep more detail to avoid visible quality loss."""
+
+    def test_uploaded_photos_keep_a_larger_long_side_than_800px(self):
+        image = Image.new('RGB', (2400, 1600), color=(255, 0, 0))
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG', quality=100)
+        buffer.seek(0)
+
+        processed = image_logic.image_resize_800(
+            SimpleUploadedFile('park.jpg', buffer.read(), content_type='image/jpeg')
+        )
+
+        with Image.open(processed) as result:
+            self.assertGreaterEqual(max(result.size), 1200)
+            self.assertLess(max(result.size), 1801)
 
 
 class SpotDetailPageTests(TestCase):
