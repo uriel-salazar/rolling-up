@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import io
 from decimal import Decimal
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -19,6 +20,8 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from skate.models import Rating, Spots
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 User = get_user_model()
 
@@ -382,3 +385,67 @@ class SessionNavigationTests(TestCase):
         response = self.client.get("/feed/")
 
         self.assertContains(response, "session.js")
+
+
+class FeedMoreButtonTests(TestCase):
+    """The button that opens the whole feed.
+
+    The landing page shows a few spots inside a frame, and the button
+    "Ver más" opens the whole feed. The button is in the page and the
+    script shows it when there are more spots than the ones on screen.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_the_button_is_in_the_page(self):
+        response = self.client.get("/feed/")
+
+        self.assertContains(response, 'id="feed-more"')
+        self.assertContains(response, "Ver más")
+
+    def test_the_button_opens_the_whole_feed(self):
+        response = self.client.get("/feed/")
+
+        self.assertContains(response, 'href="/feed/"')
+        # The feed is embedded in a frame of the landing page, so the
+        # button has to open the whole page and not the frame.
+        self.assertContains(response, 'target="_top"')
+
+    def test_the_button_starts_hidden(self):
+        """The script shows it only when it has to be shown."""
+        response = self.client.get("/feed/")
+
+        self.assertContains(response, 'class="feed-more" id="feed-more" hidden')
+
+
+class FeedNavbarTests(TestCase):
+    """The button that adds a spot, in the bar of the feed.
+
+    The page of the form is public and it asks the visitor to log in
+    when they send it, so the button is always there and its hover can
+    be seen.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_the_button_to_add_a_spot_is_always_there(self):
+        response = self.client.get("/feed/")
+
+        self.assertContains(response, 'href="/spots/new/" class="app-add"')
+        self.assertNotContains(response, 'class="app-add" data-session="in"')
+
+    def test_the_stylesheet_has_the_hover_of_the_button(self):
+        stylesheet = (PROJECT_ROOT / "skate" / "static" / "styles.css").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(".app-add:hover", stylesheet)
+
+    def test_the_button_uses_the_font_of_the_application(self):
+        stylesheet = (PROJECT_ROOT / "skate" / "static" / "feed.css").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(".feed-page .app-add", stylesheet)

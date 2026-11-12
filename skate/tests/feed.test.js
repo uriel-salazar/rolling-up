@@ -71,12 +71,14 @@ const elements = {};
 [
     'feed-grid', 'feed-count', 'feed-search', 'feed-search-clear',
     'feed-location-search', 'feed-location-results', 'feed-location-clear',
+    'feed-more',
     'spot-modal', 'spot-modal-close', 'spot-modal-image', 'spot-modal-name',
     'spot-modal-category', 'spot-modal-address', 'spot-modal-directions',
     'spot-modal-body',
 ].forEach((id) => { elements[id] = makeElement('div'); });
 elements['feed-search'].value = '';
 elements['feed-location-search'].value = '';
+elements['feed-more'].hidden = true;
 
 // ------------------------------------------------------------------
 // The API
@@ -457,6 +459,51 @@ function textOf(node) {
     await wait(40);
     check('clearing the place removes the live results',
         findByClass(grid, 'spot-source-live').length === 0);
+
+    // ------------------------------------------------------------------
+    console.log('\n== The button "Ver mas" ==');
+    // ------------------------------------------------------------------
+
+    const more = elements['feed-more'];
+
+    // The embedded feed shows a few spots and the button opens the
+    // rest.
+    sandbox.document.body.classList.add('is-embed');
+    fetchCalls = [];
+    fetchPages = [{ count: 25, next: null, results: SPOTS }];
+    loadFeed();
+    await wait(60);
+
+    check('the embedded feed asks for nine spots',
+        fetchCalls.some((url) => url.indexOf('limit=9') !== -1),
+        fetchCalls.join(' | '));
+    check('the embedded feed asks for one page',
+        fetchCalls.length === 1, String(fetchCalls.length));
+    check('the button is shown when there are more spots',
+        more.hidden === false, String(more.hidden));
+
+    // The whole feed shows every spot, so there is nothing more to see.
+    sandbox.document.body.classList.remove('is-embed');
+    fetchCalls = [];
+    fetchPages = [{ count: 25, next: null, results: SPOTS }];
+    loadFeed();
+    await wait(60);
+
+    check('the whole feed asks for the usual page',
+        fetchCalls.some((url) => url.indexOf('limit=24') !== -1),
+        fetchCalls.join(' | '));
+    check('the button is hidden in the whole feed',
+        more.hidden === true, String(more.hidden));
+
+    // When every spot is shown, the button has nothing to open.
+    sandbox.document.body.classList.add('is-embed');
+    fetchCalls = [];
+    fetchPages = [{ count: 3, next: null, results: SPOTS }];
+    loadFeed();
+    await wait(60);
+
+    check('the button is hidden when all the spots are shown',
+        more.hidden === true, String(more.hidden));
 
     console.log('\n' + (failures === 0
         ? 'ALL CHECKS PASSED'

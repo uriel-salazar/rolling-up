@@ -10,6 +10,7 @@
 
     const grid = document.getElementById('feed-grid');
     const countBox = document.getElementById('feed-count');
+    const moreBox = document.getElementById('feed-more');
     const searchInput = document.getElementById('feed-search');
     const clearButton = document.getElementById('feed-search-clear');
     const locationSearchInput = document.getElementById('feed-location-search');
@@ -21,6 +22,10 @@
 
     // How many plates are shown while the spots are loaded.
     const SKELETONS = 6;
+
+    // How many spots the embedded feed shows. The landing page only
+    // shows a few of them and the button "Ver más" opens the rest.
+    const EMBED_LIMIT = 9;
 
     // The live results of a selected place. They are never saved.
     const DISCOVERY_LIMIT = 250;
@@ -523,7 +528,13 @@
             const embedded = document.body.classList.contains('is-embed');
             const data = await window.RollingUpApi.fetchSpots(
                 { search: query },
-                { limit: embedded ? 9 : 24, maxPages: 10 }
+                {
+                    limit: embedded ? EMBED_LIMIT : 24,
+                    // The embedded feed only shows the first spots, so
+                    // one page is enough. The whole feed follows the
+                    // pages until it has them all.
+                    maxPages: embedded ? 1 : 10,
+                }
             );
 
             if (version !== loadVersion) {
@@ -590,6 +601,11 @@
             ordered.forEach(function (spot) {
                 grid.appendChild(buildCard(spot));
             });
+
+            // The button "Ver más" opens the whole feed. It only shows
+            // in the embedded feed of the landing page, and only when
+            // there are more spots than the ones that are shown.
+            updateMoreButton(embedded, ordered.length, data.count);
         } catch (error) {
             if (error.name === 'AbortError') {
                 return;
@@ -600,6 +616,33 @@
                 true
             );
         }
+    }
+
+    // ------------------------------------------------------------------
+    // The button "Ver más"
+    // ------------------------------------------------------------------
+
+    /**
+     * Show or hide the button that opens the whole feed.
+     *
+     * The landing page shows a few spots inside a frame, and the
+     * button opens the rest. It only shows when the feed is embedded
+     * and there are more spots than the ones that are shown.
+     *
+     * @param {boolean} embedded Whether the feed is inside a frame.
+     * @param {number} shown How many spots are on the page.
+     * @param {number} total How many spots the API has.
+     */
+    function updateMoreButton(embedded, shown, total) {
+        if (!moreBox) {
+            return;
+        }
+
+        const thereAreMore = typeof total === 'number'
+            ? total > shown
+            : shown > EMBED_LIMIT;
+
+        moreBox.hidden = !embedded || !thereAreMore;
     }
 
     // ------------------------------------------------------------------

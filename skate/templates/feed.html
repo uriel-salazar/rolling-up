@@ -32,8 +32,7 @@
 
         <span class="app-topbar-spacer"></span>
 
-        <a href="/spots/new/" class="app-add" data-session="in" hidden>Añadir spot</a>
-        <a href="/profile/" class="app-add nav-login-btn" data-session="out">Iniciar sesión</a>
+        <a href="/spots/new/" class="app-add">Añadir spot</a>
     </header>
 
     <main class="feed-main">
@@ -70,6 +69,15 @@
 
         <section class="feed-grid" id="feed-grid" aria-label="Spots de skate"
                  aria-busy="true"></section>
+
+        <!-- The button that opens the whole feed. It only shows when the
+             feed is embedded in the landing page, which shows a few
+             spots and the rest are here. -->
+        <div class="feed-more" id="feed-more" hidden>
+            <a class="feed-more-link" href="/feed/" target="_top" rel="noopener">
+                Ver más
+            </a>
+        </div>
     </main>
 
     <!-- Modal de detalle del spot -->
