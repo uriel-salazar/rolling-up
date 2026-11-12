@@ -463,6 +463,23 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Cache of the server
+# -------------------
+
+# The tiles of the map are kept here, so the same tile is not asked to
+# the provider again. The cache is in memory, it does not need to be
+# shared between servers and it is lost when the server restarts,
+# which is fine: the tiles are in the browser too.
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "rolling-up",
+        "TIMEOUT": 60 * 60 * 24 * 30,
+    }
+}
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 

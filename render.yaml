@@ -15,7 +15,11 @@ services:
     plan: free
     branch: develope
     buildCommand: ./build.sh
-    startCommand: gunicorn skate.wsgi:application --log-file -
+    # The threads matter: the tiles of the map are asked to the provider
+    # of the tiles, and that answer takes a moment. With one worker the
+    # tiles would be asked one after the other and the map would take a
+    # long time to appear.
+    startCommand: gunicorn skate.wsgi:application --log-file - --workers 2 --threads 8 --worker-class gthread
     healthCheckPath: /api/spots/
     envVars:
       - key: PYTHON_VERSION

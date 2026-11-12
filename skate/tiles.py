@@ -20,6 +20,7 @@ import re
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
@@ -63,6 +64,16 @@ def tile(request, path):
             "The tile provider is not configured.", status=404
         )
 
+    # The tile is kept in the cache of the server, so the same tile is
+    # not asked to the provider again. Without this, every visitor of
+    # the map waits for the provider while the server has the answer
+    # already.
+    cache_key = 'tile:%d:%d:%d:%s' % (zoom, x, y, retina or '1x')
+    cached = cache.get(cache_key)
+    if cached is not None:
+        content, content_type, max_age = cached
+        return tile_response(content, content_type, max_age, 'cache')
+
     headers = {'User-Agent': settings.OVERPASS_USER_AGENT}
 
     try:
@@ -91,12 +102,24 @@ def tile(request, path):
     if not max_age:
         max_age = f"public, max-age={DEFAULT_CACHE_SECONDS}"
 
-    http_response = HttpResponse(
-        response.content, content_type=content_type
+    cache.set(
+        cache_key,
+        (response.content, content_type, max_age),
+        DEFAULT_CACHE_SECONDS,
     )
-    http_response['Cache-Control'] = max_age
-    http_response['X-Tile-Source'] = 'proxy'
 
+    return tile_response(response.content, content_type, max_age, 'proxy')
+
+
+def tile_response(content, content_type, max_age, source):
+    """Build the answer of a tile.
+
+    The caching headers of the provider are passed on, so the browser
+    does not ask again for a tile it already has.
+    """
+    http_response = HttpResponse(content, content_type=content_type)
+    http_response['Cache-Control'] = max_age
+    http_response['X-Tile-Source'] = source
     return http_response
 
 

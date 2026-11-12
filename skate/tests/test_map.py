@@ -10,6 +10,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -242,6 +243,15 @@ class MapPageTests(TestCase):
 class TileProxyTests(TestCase):
     """The proxy that serves the tiles."""
 
+    def setUp(self):
+        # The tiles are kept in the cache of the server, so it has to
+        # be empty before every test, or a test would find the tile of
+        # another one.
+        cache.clear()
+
+    def tearDown(self):
+        cache.clear()
+
     def test_the_url_of_a_tile_is_built_with_the_key(self):
         with override_settings(
             OSM_TILE_URL="https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png",
@@ -284,6 +294,34 @@ class TileProxyTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, b"a-png")
         self.assertEqual(response["Content-Type"], "image/png")
+
+    @patch("skate.tiles.requests.get")
+    def test_the_tile_is_kept_in_the_cache_of_the_server(self, mock_get):
+        """The same tile is not asked to the provider again."""
+        mock_get.return_value = FakeTileResponse(
+            200, b"a-png", {"Content-Type": "image/png"}
+        )
+
+        first = self.client.get("/tiles/13/1744/3614.png")
+        second = self.client.get("/tiles/13/1744/3614.png")
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(second.content, b"a-png")
+        self.assertEqual(first["X-Tile-Source"], "proxy")
+        self.assertEqual(second["X-Tile-Source"], "cache")
+        mock_get.assert_called_once()
+
+    @patch("skate.tiles.requests.get")
+    def test_a_different_tile_is_asked_to_the_provider(self, mock_get):
+        mock_get.return_value = FakeTileResponse(
+            200, b"a-png", {"Content-Type": "image/png"}
+        )
+
+        self.client.get("/tiles/13/1744/3614.png")
+        self.client.get("/tiles/13/1744/3615.png")
+
+        self.assertEqual(mock_get.call_count, 2)
 
     @patch("skate.tiles.requests.get")
     def test_the_caching_headers_of_the_provider_are_passed_on(self, mock_get):
