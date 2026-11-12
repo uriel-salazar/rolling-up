@@ -86,11 +86,7 @@
             });
             media.appendChild(image);
 
-            // Tap the picture to open the detail modal.
-            image.style.cursor = 'pointer';
-            image.addEventListener('click', function () {
-                openSpotModal(spot);
-            });
+            // La foto no abre nada: el enlace al detalle va en el título.
         } else {
             media.appendChild(buildPlate(spot));
         }
