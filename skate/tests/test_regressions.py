@@ -16,6 +16,7 @@ from pathlib import Path
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -278,6 +279,22 @@ class SpotPhotoApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIn("image", response.data)
         self.assertTrue(response.data["image"])
+
+    def test_the_same_image_as_the_cover_is_not_uploaded_as_an_extra_photo(self):
+        """The main cover and the gallery should never show the same file twice."""
+        self.client.force_authenticate(self.user)
+
+        cover = a_png()
+        self.spot.image_url.save("cover.png", ContentFile(cover), save=True)
+
+        response = self.client.post(
+            "/api/spots/%d/photos/" % self.spot.id,
+            {"image": SimpleUploadedFile("duplicate.png", cover, "image/png")},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn("cover", str(response.data).lower())
 
 
 class SpotPhotoProcessingTests(TestCase):

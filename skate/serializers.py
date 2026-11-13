@@ -1,3 +1,5 @@
+import hashlib
+
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.validators import UniqueValidator
@@ -340,8 +342,58 @@ class SpotPhotoSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def _hash_file(self, value):
+        if value is None:
+            return None
+        try:
+            value.seek(0)
+            digest = hashlib.sha256()
+            for chunk in iter(lambda: value.read(65536), b""):
+                digest.update(chunk)
+            value.seek(0)
+            return digest.hexdigest()
+        except Exception:
+            return None
+
+    def _is_duplicate_image_for_spot(self, spot, image):
+        if spot is None or image is None:
+            return False
+
+        incoming_hash = self._hash_file(image)
+        if incoming_hash is None:
+            return False
+
+        if spot.image_url:
+            try:
+                with spot.image_url.open('rb') as current:
+                    current_hash = hashlib.sha256(current.read()).hexdigest()
+                if current_hash == incoming_hash:
+                    return True
+            except Exception:
+                pass
+
+        for other in spot.photos.all():
+            if not other.image:
+                continue
+            try:
+                with other.image.open('rb') as current:
+                    current_hash = hashlib.sha256(current.read()).hexdigest()
+                if current_hash == incoming_hash:
+                    return True
+            except Exception:
+                continue
+
+        return False
+
     def create(self, validated_data):
-        validated_data['image'] = self._process_image(validated_data['image'])
+        image = validated_data.get('image')
+        spot = validated_data.get('spot')
+        if self._is_duplicate_image_for_spot(spot, image):
+            raise serializers.ValidationError(
+                {"image": "Esta foto ya está usada como portada o en la galería de este spot."}
+            )
+
+        validated_data['image'] = self._process_image(image)
         return super().create(validated_data)
 
     def _process_image(self, image):

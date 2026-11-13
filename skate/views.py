@@ -123,6 +123,16 @@ def feed_page(request):
     )
 
 
+def _image_hash(file_obj):
+    if file_obj is None:
+        return None
+    try:
+        with file_obj.open('rb') as fh:
+            return hashlib.sha256(fh.read()).hexdigest()
+    except Exception:
+        return None
+
+
 def profile_page(request):
     """ Render the page of the profile, where the user signs in.
 
@@ -160,16 +170,20 @@ def spot_detail_page(request, pk):
 
     # Additional photos uploaded by users.
     photos = SpotPhoto.objects.filter(spot=spot).select_related('uploaded_by')
-    additional_photos = [
-        {
+    main_image_hash = _image_hash(spot.image_url) if spot.image_url else None
+    additional_photos = []
+    for photo in photos:
+        if not photo.image:
+            continue
+        if main_image_hash and main_image_hash == _image_hash(photo.image):
+            continue
+        additional_photos.append({
             'id': photo.id,
-            'image_url': photo.image.url if photo.image else None,
+            'image_url': photo.image.url,
             'caption': photo.caption,
             'uploaded_by': photo.uploaded_by_id,
             'uploaded_by_username': photo.uploaded_by.username,
-        }
-        for photo in photos
-    ]
+        })
 
     # Average rating and count.
     stats = spot.rating_set.aggregate(
