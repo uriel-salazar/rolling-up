@@ -160,11 +160,17 @@ main {
 #nosotros {
     position: relative;
     background-color: #0a0a0a;
-    background-image: url("images/stocksnap-skateboarding-2562281_1920.jpg");
+    background-image: linear-gradient(
+        180deg,
+        rgba(10, 10, 10, 0.72) 0%,
+        rgba(10, 10, 10, 0.62) 45%,
+        rgba(10, 10, 10, 0.86) 100%
+    ), url("images/stocksnap-skateboarding-2562281_1920.jpg");
     background-size: cover;
-    background-position: center 60%;
+    background-position: center top;
     background-repeat: no-repeat;
-    padding: 110px 0 120px;
+    min-height: 100vh;
+    padding: 90px 0 120px;
 }
 
 #nosotros::before {
@@ -182,6 +188,15 @@ main {
 #nosotros .section-content {
     position: relative;
     z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+@media (min-width: 1600px) {
+    #nosotros {
+        background-position: center 15%;
+        min-height: 90vh;
+    }
 }
 
 #nosotros .landing-about-text {
@@ -386,7 +401,7 @@ header .navbar{
     position: relative;
     z-index: 2;
     padding-left: 6%;
-    padding-top: 140px;
+    padding-top: 88px;
 }
 
 
@@ -406,7 +421,7 @@ header .navbar{
 
 
 .hero-section .hero-details .subtitle{
-    margin-top: 80px;
+    margin-top: 0;
     max-width: 600px;
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-semibold);
