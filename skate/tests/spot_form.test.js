@@ -319,33 +319,36 @@ setTimeout(() => {
         );
 
         elements['location-search'].dispatch('keydown', { key: 'Enter' });
-        check('pressing Enter does hit the server', lastFetch !== null);
-        check(
-            'it calls Nominatim directly',
-            lastFetch.url.indexOf('https://nominatim.openstreetmap.org/search') === 0,
-            lastFetch.url
-        );
-        check(
-            'it asks for Mexico results in Spanish',
-            lastFetch.url.includes('countrycodes=mx')
-                && lastFetch.url.includes('accept-language=es'),
-            lastFetch.url
-        );
-        check('no bearer token is sent to Nominatim',
-            lastFetch.options.headers.Authorization === undefined,
-            JSON.stringify(lastFetch.options.headers));
         check('the button is busy while searching',
             elements['search-button'].disabled === true
             && elements['search-button'].textContent === 'Buscando...');
 
         setTimeout(() => {
+            check('pressing Enter does hit the server', lastFetch !== null);
+            check(
+                'it calls Nominatim directly',
+                lastFetch.url.indexOf('https://nominatim.openstreetmap.org/search') === 0,
+                lastFetch.url
+            );
+            check(
+                'it asks for Mexico results in Spanish',
+                lastFetch.url.includes('countrycodes=mx')
+                    && lastFetch.url.includes('accept-language=es'),
+                lastFetch.url
+            );
+            check('no bearer token is sent to Nominatim',
+                lastFetch.options.headers.Authorization === undefined,
+                JSON.stringify(lastFetch.options.headers));
+
+            setTimeout(() => {
             check('the not found message is shown',
                 elements['search-results'].hidden === false
-                && elements['search-results'].textContent.indexOf('No se encontró') !== -1,
-                elements['search-results'].textContent);
-            check('the button is back to normal',
-                elements['search-button'].disabled === false
-                && elements['search-button'].textContent === 'Buscar');
+                && elements['search-results'].children.length === 1
+                && elements['search-results'].children[0].textContent.indexOf('No se encontró') !== -1,
+                elements['search-results'].children.length);
+                check('the button is back to normal',
+                    elements['search-button'].disabled === false
+                    && elements['search-button'].textContent === 'Buscar');
 
             console.log('\n== 11. Several results can be chosen ==');
             fetchResponse = {
@@ -403,8 +406,9 @@ setTimeout(() => {
                 check('the max zoom is passed on',
                     mapState.tile.options.maxZoom === 19,
                     String(mapState.tile.options.maxZoom));
-            }, 0);
+            }, 1200);
         }, 0);
+    }, 0);
 
         console.log('\n== 13. Editing an existing spot ==');
         elements.map.dataset.spotId = '42';

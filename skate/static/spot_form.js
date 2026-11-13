@@ -274,7 +274,7 @@
     }
 
     function processResults(data) {
-        const results = data || [];
+        const results = Array.isArray(data) ? data : (data && data.results) || [];
         const valid = results.filter(function (result) {
             return Number.isFinite(parseFloat(result.lat))
                 && Number.isFinite(parseFloat(result.lon));
