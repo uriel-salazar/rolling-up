@@ -5,14 +5,13 @@
  * place by name and keeps the hidden latitude / longitude inputs in
  * sync with the selection.
  *
- * The search goes through the backend proxy at /api/geocode/search/,
- * which identifies the application, caches the answers and throttles
- * the requests.
+ * The search calls Nominatim directly:
+ * https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=mx&accept-language=es&q=<texto>
  *
- * The search is only sent when the visitor asks for it, by pressing
- * Enter or the search button. The Nominatim usage policy forbids
- * building an auto-complete on top of the public API, so nothing is
- * requested while the visitor is typing.
+ * The Nominatim usage policy forbids an auto-complete built on the
+ * public API, so nothing is requested while the visitor types: the
+ * request is only sent when the search is confirmed, by pressing Enter
+ * or the search button, and at most one request per second is sent.
  */
 
 (function () {
@@ -22,6 +21,12 @@
     const DEFAULT_CENTER = [20.6767, -103.3475];
     const DEFAULT_ZOOM = 13;
     const MIN_QUERY_LENGTH = 3;
+
+    const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org/search';
+    const NOMINATIM_PARAMS =
+        'format=jsonv2&addressdetails=1&limit=5&countrycodes=mx&accept-language=es';
+    // Nominatim asks for at most one request per second.
+    const SEARCH_INTERVAL_MS = 1000;
 
     const mapElement = document.getElementById('map');
     if (!mapElement) {
@@ -45,6 +50,8 @@
     let map = null;
     let marker = null;
     let searchController = null;
+    let lastSearchTime = 0;
+    const searchButtonLabel = searchButton.textContent || 'Buscar';
 
     // Navigation links of the embedded form must escape the iframe.
     if (document.body.classList.contains('is-embed')) {
@@ -123,7 +130,11 @@
         }
 
         if (settings.pan !== false) {
-            map.setView(position, settings.zoom || Math.max(map.getZoom(), 15));
+            if (settings.fly) {
+                map.flyTo(position, settings.zoom || 17);
+            } else {
+                map.setView(position, settings.zoom || Math.max(map.getZoom(), 15));
+            }
         }
     }
 
@@ -210,37 +221,82 @@
     function renderResults(results) {
         resultsBox.innerHTML = '';
 
-        if (!results.length) {
-            hideResults();
-            return;
-        }
-
         results.forEach(function (result) {
+            const lat = parseFloat(result.lat);
+            const lon = parseFloat(result.lon);
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                return;
+            }
+
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'search-result';
 
             const title = document.createElement('span');
             title.className = 'search-result-title';
-            title.textContent = result.short_label || result.label;
+            title.textContent = result.name || result.display_name;
 
             const detail = document.createElement('span');
             detail.className = 'search-result-detail';
-            detail.textContent = result.label || '';
+            detail.textContent = result.display_name || '';
 
             item.appendChild(title);
             item.appendChild(detail);
 
             item.addEventListener('click', function () {
-                selectPosition(result.latitude, result.longitude, { zoom: 16 });
+                selectPosition(lat, lon, { fly: true, zoom: 17 });
                 hideResults();
-                searchInput.value = result.short_label || result.label;
+                searchInput.value = result.name || result.display_name;
             });
 
             resultsBox.appendChild(item);
         });
 
         resultsBox.hidden = false;
+    }
+
+    function showNotFound() {
+        resultsBox.innerHTML = '';
+        const message = document.createElement('div');
+        message.className = 'search-result search-result-empty';
+        message.textContent = 'No se encontró esa dirección, intenta ser más específico';
+        resultsBox.appendChild(message);
+        resultsBox.hidden = false;
+    }
+
+    function buildUrl(query) {
+        return NOMINATIM_BASE + '?' + NOMINATIM_PARAMS + '&q=' + encodeURIComponent(query);
+    }
+
+    function setSearchLoading(loading) {
+        searchButton.disabled = loading;
+        searchButton.textContent = loading ? 'Buscando...' : searchButtonLabel;
+    }
+
+    function processResults(data) {
+        const results = data || [];
+        const valid = results.filter(function (result) {
+            return Number.isFinite(parseFloat(result.lat))
+                && Number.isFinite(parseFloat(result.lon));
+        });
+
+        if (valid.length === 0) {
+            showNotFound();
+            return;
+        }
+
+        // Un solo resultado: se lleva al mapa directamente.
+        if (valid.length === 1) {
+            const result = valid[0];
+            const lat = parseFloat(result.lat);
+            const lon = parseFloat(result.lon);
+            selectPosition(lat, lon, { fly: true, zoom: 17 });
+            hideResults();
+            searchInput.value = result.name || result.display_name;
+            return;
+        }
+
+        renderResults(valid);
     }
 
     function runSearch(query) {
@@ -250,19 +306,29 @@
         }
         searchController = new AbortController();
 
-        const token = localStorage.getItem('access');
-        const headers = { 'Accept': 'application/json' };
-        if (token) {
-            headers['Authorization'] = 'Bearer ' + token;
-        }
+        setSearchLoading(true);
 
-        fetch('/api/geocode/search/?q=' + encodeURIComponent(query), {
-            headers: headers,
-            signal: searchController.signal,
+        const wait = Math.max(0, SEARCH_INTERVAL_MS - (Date.now() - lastSearchTime));
+        const start = wait > 0
+            ? new Promise(function (resolve) {
+                setTimeout(resolve, wait);
+            })
+            : Promise.resolve();
+
+        start.then(function () {
+            lastSearchTime = Date.now();
+            return fetch(buildUrl(query), {
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'Rolling Up spot form',
+                },
+                signal: searchController.signal,
+            });
         })
             .then(function (response) {
                 if (response.status === 429) {
                     showStatus('Demasiadas búsquedas, espera un momento.', 'error');
+                    setSearchLoading(false);
                     return;
                 }
                 if (!response.ok) {
@@ -270,6 +336,7 @@
                         'La búsqueda no está disponible. Puedes marcar el spot en el mapa.',
                         'error'
                     );
+                    setSearchLoading(false);
                     return;
                 }
                 return response.json();
@@ -278,7 +345,7 @@
                 if (!data) {
                     return;
                 }
-                renderResults(data.results || []);
+                processResults(data);
             })
             .catch(function (error) {
                 if (error.name === 'AbortError') {
@@ -288,6 +355,9 @@
                     'La búsqueda no está disponible. Puedes marcar el spot en el mapa.',
                     'error'
                 );
+            })
+            .finally(function () {
+                setSearchLoading(false);
             });
     }
 

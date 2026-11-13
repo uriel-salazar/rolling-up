@@ -85,6 +85,7 @@ elements.map.dataset = {
 };
 elements['spot-form']._csrf = makeElement('csrf', 'input');
 elements['spot-form']._csrf.value = 'csrf-token-123';
+elements['search-button'].textContent = 'Buscar';
 
 // The form fields start with the values the server rendered.
 elements.name_spot.value = 'Parque de las Americas';
@@ -103,6 +104,7 @@ const L = {
         mapState.zoom = options.zoom;
         return {
             setView(c, z) { mapState.center = c; mapState.zoom = z; },
+            flyTo(c, z) { mapState.center = c; mapState.zoom = z; },
             getZoom() { return mapState.zoom; },
             on(name, fn) { mapState.events[name] = fn; },
             removeLayer(m) { mapState.layers = mapState.layers.filter((x) => x !== m); },
@@ -130,6 +132,10 @@ const L = {
 // ------------------------------------------------------------------
 
 let lastFetch = null;
+let fetchResponse = {
+    ok: true,
+    json: () => Promise.resolve({ results: [] }),
+};
 const sandbox = {
     console: console,
     setTimeout: setTimeout,
@@ -157,11 +163,7 @@ const sandbox = {
     },
     fetch: function (url, options) {
         lastFetch = { url: url, options: options };
-        return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ results: [] }),
-        });
+        return Promise.resolve(fetchResponse);
     },
     AbortController: function () {
         this.signal = {};
@@ -299,6 +301,10 @@ setTimeout(() => {
         sandbox.localStorage.store.access = 'jwt-token';
 
         console.log('\n== 10. The search is only sent when it is asked for ==');
+        fetchResponse = {
+            ok: true,
+            json: () => Promise.resolve({ results: [] }),
+        };
         lastFetch = null;
         elements['location-search'].value = 'sk';
         elements['location-search'].dispatch('input');
@@ -314,36 +320,91 @@ setTimeout(() => {
 
         elements['location-search'].dispatch('keydown', { key: 'Enter' });
         check('pressing Enter does hit the server', lastFetch !== null);
-        check('it goes to the geocode endpoint',
-            lastFetch.url === '/api/geocode/search/?q=skatepark%20guadalajara',
-            lastFetch.url);
-        check('the token is sent',
-            lastFetch.options.headers.Authorization === 'Bearer jwt-token');
+        check(
+            'it calls Nominatim directly',
+            lastFetch.url.indexOf('https://nominatim.openstreetmap.org/search') === 0,
+            lastFetch.url
+        );
+        check(
+            'it asks for Mexico results in Spanish',
+            lastFetch.url.includes('countrycodes=mx')
+                && lastFetch.url.includes('accept-language=es'),
+            lastFetch.url
+        );
+        check('no bearer token is sent to Nominatim',
+            lastFetch.options.headers.Authorization === undefined,
+            JSON.stringify(lastFetch.options.headers));
+        check('the button is busy while searching',
+            elements['search-button'].disabled === true
+            && elements['search-button'].textContent === 'Buscando...');
 
-        console.log('\n== 11. The search button also works ==');
-        lastFetch = null;
-        elements['location-search'].value = 'parque de las americas';
-        elements['search-button'].dispatch('click');
-        check('the request is sent', lastFetch !== null);
-        check('with the right query',
-            lastFetch.url === '/api/geocode/search/?q=parque%20de%20las%20americas',
-            lastFetch.url);
+        setTimeout(() => {
+            check('the not found message is shown',
+                elements['search-results'].hidden === false
+                && elements['search-results'].textContent.indexOf('No se encontró') !== -1,
+                elements['search-results'].textContent);
+            check('the button is back to normal',
+                elements['search-button'].disabled === false
+                && elements['search-button'].textContent === 'Buscar');
 
-        console.log('\n== 12. The tile layer follows the usage policy ==');
-        check('the tile url is the one the policy asks for',
-            mapState.tile.url === 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            mapState.tile.url);
-        check('the url has no subdomain shortcut',
-            !mapState.tile.url.includes('{s}'), mapState.tile.url);
-        check('no subdomains are sent',
-            mapState.tile.options.subdomains === undefined,
-            String(mapState.tile.options.subdomains));
-        check('the attribution is passed on',
-            mapState.tile.options.attribution.includes('OpenStreetMap'),
-            mapState.tile.options.attribution);
-        check('the max zoom is passed on',
-            mapState.tile.options.maxZoom === 19,
-            String(mapState.tile.options.maxZoom));
+            console.log('\n== 11. Several results can be chosen ==');
+            fetchResponse = {
+                ok: true,
+                json: () => Promise.resolve({
+                    results: [
+                        {
+                            lat: '20.6767',
+                            lon: '-103.3475',
+                            name: 'Guadalajara',
+                            display_name: 'Guadalajara, Jalisco, México',
+                        },
+                        {
+                            lat: '20.6590',
+                            lon: '-103.3870',
+                            name: 'Tonalá',
+                            display_name: 'Tonalá, Jalisco, México',
+                        },
+                    ],
+                }),
+            };
+            lastFetch = null;
+            elements['location-search'].value = 'guadalajara';
+            elements['search-button'].dispatch('click');
+
+            setTimeout(() => {
+                check('two suggestions are shown',
+                    elements['search-results'].children.length === 2,
+                    elements['search-results'].children.length);
+                elements['search-results'].children[0].dispatch('click');
+                check('the map flies to the chosen place',
+                    mapState.center[0] === 20.6767 && mapState.center[1] === -103.3475,
+                    JSON.stringify(mapState.center));
+                check('the marker was placed', mapState.layers.length === 1);
+                check('the coordinates were stored',
+                    elements.latitude.value === '20.6767'
+                    && elements.longitude.value === '-103.3475');
+                check('the input keeps the chosen label',
+                    elements['location-search'].value === 'Guadalajara');
+                check('the result box is closed',
+                    elements['search-results'].hidden === true);
+
+                console.log('\n== 12. The tile layer follows the usage policy ==');
+                check('the tile url is the one the policy asks for',
+                    mapState.tile.url === 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    mapState.tile.url);
+                check('the url has no subdomain shortcut',
+                    !mapState.tile.url.includes('{s}'), mapState.tile.url);
+                check('no subdomains are sent',
+                    mapState.tile.options.subdomains === undefined,
+                    String(mapState.tile.options.subdomains));
+                check('the attribution is passed on',
+                    mapState.tile.options.attribution.includes('OpenStreetMap'),
+                    mapState.tile.options.attribution);
+                check('the max zoom is passed on',
+                    mapState.tile.options.maxZoom === 19,
+                    String(mapState.tile.options.maxZoom));
+            }, 0);
+        }, 0);
 
         console.log('\n== 13. Editing an existing spot ==');
         elements.map.dataset.spotId = '42';
