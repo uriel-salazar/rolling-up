@@ -3,16 +3,16 @@
     <a href="/" class="app-brand">Rolling Up</a>
 
     <nav class="app-nav" aria-label="Principal">
-        <a href="/map/">Mapa</a>
-        <a href="/feed/">Spots</a>
-        <a href="/profile/" class="app-nav-profile" data-session="in" hidden>Perfil</a>
+        <a href="/map/" {% if nav_map_active %}aria-current="page"{% endif %}>Mapa</a>
+        <a href="/feed/" {% if nav_feed_active %}aria-current="page"{% endif %}>Spots</a>
+        <a href="/profile/" class="app-nav-profile" {% if nav_profile_active %}aria-current="page"{% endif %} data-session="in" hidden>Perfil</a>
         <div class="auth-dropdown" data-session="in" hidden>
             <button type="button" class="app-nav-profile" aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-user"></i>
             </button>
             <ul class="auth-dropdown-menu" role="menu">
                 <li role="menuitem"><a href="/profile/">Mi perfil</a></li>
-                <li role="menuitem"><button type="button" id="logout-btn">Cerrar sesión</button></li>
+                <li role="menuitem"><button type="button" id="logout-btn" data-logout-button data-redirect="{% if logout_redirect %}{{ logout_redirect }}{% else %}/profile/{% endif %}">Cerrar sesión</button></li>
             </ul>
         </div>
         <a href="/profile/" class="nav-login" data-session="out">Iniciar sesión</a>
