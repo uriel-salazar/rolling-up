@@ -327,28 +327,24 @@ class SpotPhotoProcessingTests(TestCase):
             longitude=-103.0,
         )
 
-        small = SimpleUploadedFile(
-            "small.jpg",
-            b"small-image-data",
-            content_type="image/jpeg",
-        )
-        large = SimpleUploadedFile(
-            "large.jpg",
-            b"large-image-data-very-large",
-            content_type="image/jpeg",
-        )
+        def make_jpeg(width, height, color, name):
+            image = Image.new('RGB', (width, height), color=color)
+            buffer = io.BytesIO()
+            image.save(buffer, format='JPEG', quality=95)
+            buffer.seek(0)
+            return SimpleUploadedFile(name, buffer.read(), content_type='image/jpeg')
 
         from skate.models import SpotPhoto
 
         SpotPhoto.objects.create(
             spot=spot,
-            image=small,
+            image=make_jpeg(400, 300, (255, 0, 0), 'small.jpg'),
             caption="small",
             uploaded_by=user,
         )
         large_photo = SpotPhoto.objects.create(
             spot=spot,
-            image=large,
+            image=make_jpeg(1600, 1200, (0, 255, 0), 'large.jpg'),
             caption="large",
             uploaded_by=user,
         )

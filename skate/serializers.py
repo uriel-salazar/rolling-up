@@ -390,7 +390,7 @@ class SpotPhotoSerializer(serializers.ModelSerializer):
         spot = validated_data.get('spot')
         if self._is_duplicate_image_for_spot(spot, image):
             raise serializers.ValidationError(
-                {"image": "Esta foto ya está usada como portada o en la galería de este spot."}
+                {"image": "Esta foto ya está usada como portada/cover o en la galería de este spot."}
             )
 
         validated_data['image'] = self._process_image(image)
