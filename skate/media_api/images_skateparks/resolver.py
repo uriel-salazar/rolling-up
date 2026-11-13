@@ -55,26 +55,52 @@ def resolve_spot_address(spot: Any) -> str:
 
 
 def _local_image(spot: Any, request: Any = None) -> Optional[Dict[str, Any]]:
+    """Prefer the biggest uploaded photograph of the spot for the landing page.
+
+    When the spot has a gallery, the most detailed photo is the one that looks
+    best in the feed. The cover field remains the fallback, so older spots keep
+    their existing image when they do not have a larger upload.
+    """
+    candidates: list[tuple[int, str]] = []
+
+    photos = getattr(spot, "photos", None)
+    if photos is not None:
+        for photo in photos.all():
+            try:
+                image_field = getattr(photo, "image", None)
+                if not image_field:
+                    continue
+                url = image_field.url
+                if not url:
+                    continue
+                size = getattr(image_field, "size", 0) or 0
+                candidates.append((int(size), url))
+            except Exception:  # pragma: no cover - defensive
+                continue
+
     image_field = getattr(spot, "image_url", None)
-    if not image_field:
-        return None
-
-    try:
-        url = image_field.url
-    except (AttributeError, ValueError):
-        return None
-
-    if not url:
-        return None
-
-    if request is not None and not str(url).lower().startswith(("http://", "https://")):
+    if image_field:
         try:
-            url = request.build_absolute_uri(url)
+            image_url = image_field.url
+        except (AttributeError, ValueError):
+            image_url = None
+        if image_url:
+            size = getattr(image_field, "size", 0) or 0
+            candidates.append((int(size), image_url))
+
+    if not candidates:
+        return None
+
+    _, preferred_url = max(candidates, key=lambda item: item[0])
+
+    if request is not None and not str(preferred_url).lower().startswith(("http://", "https://")):
+        try:
+            preferred_url = request.build_absolute_uri(preferred_url)
         except Exception:  # pragma: no cover - defensive
             pass
 
     return {
-        "url": url,
+        "url": preferred_url,
         "attribution": None,
         "license": None,
         "license_url": None,

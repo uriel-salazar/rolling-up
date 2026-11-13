@@ -21,6 +21,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from skate.media_api.images_skateparks import image_logic
+from skate.media_api.images_skateparks.resolver import resolve_spot_image
 from skate.models import Rating, Spots
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -295,6 +296,50 @@ class SpotPhotoProcessingTests(TestCase):
         with Image.open(processed) as result:
             self.assertGreaterEqual(max(result.size), 1200)
             self.assertLess(max(result.size), 1801)
+
+    def test_the_biggest_uploaded_photo_is_used_for_the_landing_cover(self):
+        user = User.objects.create_user(
+            username="rider",
+            email="rider@example.com",
+            password="secret-password",
+        )
+        spot = Spots.objects.create(
+            name_spot="Skatepark Patio",
+            user=user,
+            latitude=20.0,
+            longitude=-103.0,
+        )
+
+        small = SimpleUploadedFile(
+            "small.jpg",
+            b"small-image-data",
+            content_type="image/jpeg",
+        )
+        large = SimpleUploadedFile(
+            "large.jpg",
+            b"large-image-data-very-large",
+            content_type="image/jpeg",
+        )
+
+        from skate.models import SpotPhoto
+
+        SpotPhoto.objects.create(
+            spot=spot,
+            image=small,
+            caption="small",
+            uploaded_by=user,
+        )
+        large_photo = SpotPhoto.objects.create(
+            spot=spot,
+            image=large,
+            caption="large",
+            uploaded_by=user,
+        )
+
+        image = resolve_spot_image(spot)
+
+        self.assertIsNotNone(image)
+        self.assertTrue(image["url"].endswith(large_photo.image.name))
 
 
 class SpotDetailPageTests(TestCase):
