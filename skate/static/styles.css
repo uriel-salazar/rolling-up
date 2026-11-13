@@ -33,7 +33,11 @@ body {
 }
 
 html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
+}
+
+#spot-title {
+    scroll-margin-top: 100px;
 }
 
 main {
@@ -1757,6 +1761,7 @@ header .navbar{
     text-transform: uppercase;
     margin: 0 0 10px;
     color: #f7f7f7;
+    scroll-margin-top: 100px;
 }
 
 .spot-category {

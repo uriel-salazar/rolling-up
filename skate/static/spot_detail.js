@@ -12,6 +12,27 @@
     const spotUserId = document.body.dataset.spotUserId || null;
     const token = localStorage.getItem('access');
 
+    function scrollToSpotTitle() {
+        const title = document.getElementById('spot-title');
+        if (!title) {
+            return;
+        }
+        title.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+
+    window.addEventListener('pageshow', scrollToSpotTitle);
+    window.addEventListener('load', scrollToSpotTitle);
+
+    /*
+     * Keep the title at the top when the page loads or when the visitor
+     * comes back to a spot from the browser history.
+     */
+    scrollToSpotTitle();
+
     /**
      * The id of the rider of the session of the browser.
      *

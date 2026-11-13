@@ -62,6 +62,15 @@ function makeElement(id, tag) {
         },
         focus() {},
     };
+    Object.defineProperty(el, 'innerHTML', {
+        get() { return this._innerHTML; },
+        set(value) {
+            this._innerHTML = value;
+            if (value === '') {
+                this.children = [];
+            }
+        },
+    });
     return el;
 }
 
